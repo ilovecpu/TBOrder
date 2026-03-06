@@ -1,9 +1,11 @@
 <!DOCTYPE html>
+<!-- The Bap Admin v1.0 | 2026-03-06 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Bap Admin Panel</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍚</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
     <style>
         * {
@@ -813,9 +815,85 @@
         .sector-controls select {
             max-width: 300px;
         }
+
+        /* ═══ Custom Popup Modal ═══ */
+        .tb-popup-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,.55);
+            z-index: 99999; display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity .2s; pointer-events: none;
+        }
+        .tb-popup-overlay.active { opacity: 1; pointer-events: auto; }
+        .tb-popup {
+            background: #fff; border-radius: 18px; padding: 32px 28px 24px;
+            min-width: 320px; max-width: 440px; width: 90%;
+            box-shadow: 0 24px 80px rgba(0,0,0,.25);
+            transform: scale(.9) translateY(20px);
+            transition: transform .25s cubic-bezier(.22,1,.36,1);
+            text-align: center;
+        }
+        .tb-popup-overlay.active .tb-popup { transform: scale(1) translateY(0); }
+        .tb-popup-icon { font-size: 48px; margin-bottom: 12px; }
+        .tb-popup-title { font-size: 18px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; }
+        .tb-popup-msg { font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 24px; white-space: pre-line; }
+        .tb-popup-btns { display: flex; gap: 10px; justify-content: center; }
+        .tb-popup-btns button {
+            padding: 12px 28px; border: none; border-radius: 12px;
+            font-size: 15px; font-weight: 600; cursor: pointer; transition: all .15s;
+            min-width: 100px;
+        }
+        .tb-popup-btns .tb-btn-confirm {
+            background: linear-gradient(135deg, #e74c3c, #c0392b); color: #fff;
+        }
+        .tb-popup-btns .tb-btn-confirm:hover { transform: scale(1.03); box-shadow: 0 4px 16px rgba(231,76,60,.3); }
+        .tb-popup-btns .tb-btn-confirm.ok-btn {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+        }
+        .tb-popup-btns .tb-btn-cancel {
+            background: #f0f0f0; color: #555;
+        }
+        .tb-popup-btns .tb-btn-cancel:hover { background: #e0e0e0; }
     </style>
 </head>
 <body>
+    <!-- ═══ Custom Popup Container ═══ -->
+    <div class="tb-popup-overlay" id="tbPopup">
+        <div class="tb-popup">
+            <div class="tb-popup-icon" id="tbPopupIcon">⚠️</div>
+            <div class="tb-popup-title" id="tbPopupTitle">Confirm</div>
+            <div class="tb-popup-msg" id="tbPopupMsg"></div>
+            <div class="tb-popup-btns" id="tbPopupBtns"></div>
+        </div>
+    </div>
+    <script>
+    // ═══ Custom Popup Utilities ═══
+    function tbAlert(msg, title, icon) {
+        return new Promise(resolve => {
+            const ov = document.getElementById('tbPopup');
+            document.getElementById('tbPopupIcon').textContent = icon || 'ℹ️';
+            document.getElementById('tbPopupTitle').textContent = title || 'Notice';
+            document.getElementById('tbPopupMsg').textContent = msg;
+            document.getElementById('tbPopupBtns').innerHTML =
+                '<button class="tb-btn-confirm ok-btn" id="tbPopupOk">OK</button>';
+            ov.classList.add('active');
+            document.getElementById('tbPopupOk').onclick = () => { ov.classList.remove('active'); resolve(true); };
+        });
+    }
+    function tbConfirm(msg, title, icon) {
+        return new Promise(resolve => {
+            const ov = document.getElementById('tbPopup');
+            document.getElementById('tbPopupIcon').textContent = icon || '⚠️';
+            document.getElementById('tbPopupTitle').textContent = title || 'Confirm';
+            document.getElementById('tbPopupMsg').textContent = msg;
+            document.getElementById('tbPopupBtns').innerHTML =
+                '<button class="tb-btn-cancel" id="tbPopupNo">Cancel</button>' +
+                '<button class="tb-btn-confirm" id="tbPopupYes">Delete</button>';
+            ov.classList.add('active');
+            document.getElementById('tbPopupYes').onclick = () => { ov.classList.remove('active'); resolve(true); };
+            document.getElementById('tbPopupNo').onclick = () => { ov.classList.remove('active'); resolve(false); };
+        });
+    }
+    </script>
+
     <!-- PIN LOCK OVERLAY -->
     <div id="pinLockOverlay" class="pin-lock-overlay">
         <div class="pin-lock-panel">
@@ -843,7 +921,7 @@
     <div class="container" id="mainContainer" style="display: none;">
         <!-- SIDEBAR -->
         <div class="sidebar">
-            <div class="logo">The Bap Admin</div>
+            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v1.0</span></div>
             <div class="nav-menu">
                 <div class="nav-item active" data-section="dashboard">
                     <div class="nav-icon">📊</div>
@@ -852,6 +930,10 @@
                 <div class="nav-item" data-section="branches">
                     <div class="nav-icon">🏢</div>
                     <span>지점관리 Branches</span>
+                </div>
+                <div class="nav-item" data-section="categories">
+                    <div class="nav-icon">📂</div>
+                    <span>카테고리 Categories</span>
                 </div>
                 <div class="nav-item" data-section="menu">
                     <div class="nav-icon">🍜</div>
@@ -898,7 +980,7 @@
                     <div class="clock" id="clock">00:00:00</div>
                     <div class="status-indicator">
                         <div class="status-dot"></div>
-                        <span>Online</span>
+                        <span id="wsStatus">Online</span>
                     </div>
                 </div>
             </div>
@@ -957,6 +1039,30 @@
                         <button class="btn-primary" onclick="app.openBranchForm()">+ Add Branch</button>
                     </div>
                     <div id="branchesContainer"></div>
+                </div>
+
+                <!-- CATEGORIES SECTION -->
+                <div class="content-section" id="section-categories">
+                    <h2 style="margin-bottom:16px">📂 카테고리 관리 Category Management</h2>
+                    <div style="margin-bottom: 20px;">
+                        <button class="btn-primary" onclick="app.openCategoryForm()">+ Add Category</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width:30px">#</th>
+                                <th>ID</th>
+                                <th>Icon</th>
+                                <th>Name (EN)</th>
+                                <th>Name (KR)</th>
+                                <th>Color</th>
+                                <th>Order</th>
+                                <th>Active</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="categoriesTable"></tbody>
+                    </table>
                 </div>
 
                 <!-- MENU SECTION -->
@@ -1023,7 +1129,12 @@
 
                 <!-- ORDERS SECTION -->
                 <div class="content-section" id="section-orders">
-                    <div class="sector-controls">
+                    <!-- 날짜 선택 + 히스토리 -->
+                    <div class="sector-controls" style="margin-bottom:8px;">
+                        <label>📅 Date:</label>
+                        <select id="orderDateFilter" onchange="app.loadOrdersByDate()">
+                            <option value="live">🟢 Live (Today)</option>
+                        </select>
                         <label>Branch:</label>
                         <select id="orderBranchFilter" onchange="app.filterOrders()">
                             <option value="">All Branches</option>
@@ -1031,17 +1142,26 @@
                         <label>Status:</label>
                         <select id="orderStatusFilter" onchange="app.filterOrders()">
                             <option value="">All Status</option>
-                            <option value="pending">Pending</option>
+                            <option value="new">New</option>
                             <option value="preparing">Preparing</option>
                             <option value="ready">Ready</option>
-                            <option value="completed">Completed</option>
+                            <option value="done">Done</option>
                         </select>
                         <button class="btn-secondary" onclick="app.exportOrders()">Export CSV</button>
+                        <button class="btn-danger" onclick="app.deleteAllOrders()" style="margin-left:8px;">🗑 Delete All</button>
+                    </div>
+                    <!-- 히스토리 요약 -->
+                    <div id="ordersSummary" style="display:flex;gap:24px;padding:12px 16px;background:#f8f8f8;border-radius:8px;margin-bottom:12px;font-size:14px;">
+                        <span>📦 Total: <strong id="summaryCount">0</strong></span>
+                        <span>💰 Revenue: <strong id="summaryRevenue">£0.00</strong></span>
+                        <span>🍽 Eat In: <strong id="summaryEatIn">0</strong></span>
+                        <span>🥡 Takeaway: <strong id="summaryTakeaway">0</strong></span>
                     </div>
                     <table>
                         <thead>
                             <tr>
                                 <th>Order ID</th>
+                                <th>Name</th>
                                 <th>Branch</th>
                                 <th>Items</th>
                                 <th>Total</th>
@@ -1059,37 +1179,31 @@
                     <div class="grid-2">
                         <div class="card">
                             <div style="margin-bottom: 16px;">
-                                <h3>Google Sheets Sync</h3>
+                                <h3>Server Menu Sync</h3>
+                                <p style="font-size:12px;color:#888;margin-top:4px">Push/pull menu data to/from server (all clients will update)</p>
                             </div>
-                            <div class="form-group">
-                                <label>Spreadsheet ID</label>
-                                <input type="text" id="spreadsheetId" placeholder="1a2b3c4d5e6f...">
+                            <div id="syncStatus" style="padding:12px;border-radius:8px;background:#f0f9ff;margin-bottom:12px;font-size:13px;color:#1e40af;display:none"></div>
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button class="btn-primary" onclick="app.pushMenuToServer()" style="flex:1">⬆️ Push to Server</button>
+                                <button class="btn-secondary" onclick="app.pullMenuFromServer()" style="flex:1">⬇️ Pull from Server</button>
                             </div>
-                            <div class="form-group">
-                                <label>API Key</label>
-                                <input type="text" id="apiKey" placeholder="AIza...">
-                            </div>
-                            <div style="display: flex; gap: 8px;">
-                                <button class="btn-primary" onclick="app.syncToSheets()">Sync</button>
-                                <button class="btn-secondary" onclick="app.importFromSheets()">Import</button>
+                            <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e5e7eb">
+                                <p style="font-size:12px;color:#888;margin-bottom:8px">Broadcast menu update to all connected clients (Kiosk, POS, Kitchen)</p>
+                                <button class="btn-primary" onclick="app.broadcastMenuUpdate()" style="width:100%;background:#059669">📡 Broadcast Menu Update</button>
                             </div>
                         </div>
                         <div class="card">
                             <div style="margin-bottom: 16px;">
-                                <h3>Recommended Structure</h3>
+                                <h3>Google Sheets Sync</h3>
+                                <p style="font-size:12px;color:#888;margin-top:4px">Sync with Google Sheets (requires GOOGLE_MENU_API env)</p>
                             </div>
-                            <div style="font-size: 13px; color: #666; line-height: 1.8;">
-                                <strong>Sheet Tabs:</strong><br>
-                                • Branches<br>
-                                • Categories<br>
-                                • MenuItems<br>
-                                • BranchMenu<br>
-                                • BranchPricing<br>
-                                • Sauces<br>
-                                • Allergens<br>
-                                • Nutrition<br>
-                                • Orders<br>
-                                • DailySummary
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button class="btn-primary" onclick="app.syncToGoogle()" style="flex:1">⬆️ Push to Google</button>
+                                <button class="btn-secondary" onclick="app.syncFromGoogle()" style="flex:1">⬇️ Pull from Google</button>
+                            </div>
+                            <div style="margin-top:12px;font-size:12px;color:#888">
+                                <strong>Server API:</strong> /api/menu<br>
+                                <strong>Google Sheets:</strong> Set GOOGLE_MENU_API in server env
                             </div>
                         </div>
                     </div>
@@ -1237,9 +1351,19 @@
                     <input type="number" id="menuPrice" step="0.01" required>
                 </div>
                 <div class="form-group">
-                    <label>Image URL (Google Drive or HTTP)</label>
-                    <input type="text" id="menuImageUrl" placeholder="https://...">
-                    <img id="menuImagePreview" class="image-preview" style="display: none;">
+                    <label>Image (Upload or URL)</label>
+                    <div style="display:flex;gap:8px;margin-bottom:8px">
+                        <label class="btn-secondary" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:8px 16px;border-radius:8px;font-size:13px">
+                            📷 Upload Image
+                            <input type="file" id="menuImageFile" accept="image/*" onchange="app.previewMenuImage(this)" style="display:none">
+                        </label>
+                        <span style="color:#999;font-size:12px;line-height:36px">or paste URL below</span>
+                    </div>
+                    <input type="text" id="menuImageUrl" placeholder="https://drive.google.com/uc?export=view&id=..." onchange="app.previewMenuImageUrl(this.value)">
+                    <img id="menuImagePreview" class="image-preview" style="display:none;max-width:200px;max-height:150px;border-radius:8px;margin-top:8px;object-fit:cover">
+                    <input type="hidden" id="menuImageBase64">
+                    <input type="hidden" id="menuImageFileName">
+                    <input type="hidden" id="menuImageMimeType">
                 </div>
                 <div class="form-group">
                     <label>Dietary Information</label>
@@ -1282,6 +1406,53 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn-secondary" onclick="app.closeMenuModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Category Modal -->
+    <div id="categoryModal" class="modal">
+        <div class="modal-content" style="max-width:480px">
+            <div class="modal-header">📂 Category</div>
+            <form id="categoryForm">
+                <input type="hidden" id="catEditId">
+                <div class="form-group">
+                    <label>Category ID</label>
+                    <input type="text" id="catId" placeholder="e.g. kfood, sides, drinks" required>
+                </div>
+                <div class="form-group">
+                    <label>Name (English)</label>
+                    <input type="text" id="catNameEn" required>
+                </div>
+                <div class="form-group">
+                    <label>Name (Korean)</label>
+                    <input type="text" id="catNameKr" required>
+                </div>
+                <div class="form-group">
+                    <label>Icon (Emoji)</label>
+                    <input type="text" id="catIcon" placeholder="🍚" style="font-size:24px">
+                </div>
+                <div class="form-group">
+                    <label>Color</label>
+                    <div style="display:flex;gap:8px;align-items:center">
+                        <input type="color" id="catColor" value="#D97706" style="width:50px;height:36px;border:none;cursor:pointer">
+                        <input type="text" id="catColorText" value="#D97706" style="width:100px" oninput="document.getElementById('catColor').value=this.value">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Sort Order</label>
+                    <input type="number" id="catSortOrder" value="1" min="1">
+                </div>
+                <div class="form-group">
+                    <label style="display:flex;align-items:center;gap:8px">
+                        <input type="checkbox" id="catActive" checked>
+                        <span>Active</span>
+                    </label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="app.closeCategoryModal()">Cancel</button>
                     <button type="submit" class="btn-primary">Save</button>
                 </div>
             </form>
@@ -1435,21 +1606,18 @@
                     });
                 });
 
+                // Category form
+                document.getElementById('categoryForm').addEventListener('submit', (e) => {
+                    app.saveCategory(e);
+                });
+                document.getElementById('catColor').addEventListener('input', (e) => {
+                    document.getElementById('catColorText').value = e.target.value;
+                });
+
                 // Menu form
                 document.getElementById('menuForm').addEventListener('submit', (e) => {
                     e.preventDefault();
                     this.saveMenuItem();
-                });
-
-                document.getElementById('menuImageUrl').addEventListener('change', (e) => {
-                    const url = e.target.value;
-                    const preview = document.getElementById('menuImagePreview');
-                    if (url) {
-                        preview.src = url;
-                        preview.style.display = 'block';
-                    } else {
-                        preview.style.display = 'none';
-                    }
                 });
 
                 // Branch form
@@ -1465,21 +1633,96 @@
                 });
             },
 
+            // ─── WebSocket 연결 (서버 실시간 주문 수신) ───
+            ws: null,
+            wsReconnectTimer: null,
+            liveOrders: [],  // 서버에서 받은 주문 목록
+
             setupBroadcastChannel() {
+                // BroadcastChannel (같은 브라우저 탭 간)
                 try {
                     const channel = new BroadcastChannel('thebap_orders');
                     channel.addEventListener('message', (event) => {
-                        if (event.data.type === 'ORDER_UPDATE') {
-                            this.addOrder(event.data.order);
-                            this.updateDashboard();
+                        if (event.data.type === 'new_order' && event.data.order) {
+                            this.addLiveOrder(event.data.order);
                         }
                     });
+                } catch (e) {}
+
+                // WebSocket (서버 연결)
+                this.connectWebSocket();
+            },
+
+            connectWebSocket() {
+                try {
+                    const wsHost = window.location.host || 'localhost:8080';
+                    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                    const wsUrl = `${wsProtocol}//${wsHost}`;
+                    console.log(`[Admin WS] 연결: ${wsUrl}`);
+                    this.ws = new WebSocket(wsUrl);
+
+                    this.ws.onopen = () => {
+                        console.log('[Admin WS] ✅ 연결됨');
+                        this.ws.send(JSON.stringify({ type: 'register', clientType: 'admin', branchCode: '' }));
+                        document.getElementById('wsStatus').textContent = '🟢 Online';
+                        document.getElementById('wsStatus').style.color = '#34C759';
+                    };
+
+                    this.ws.onmessage = (event) => {
+                        try {
+                            const msg = JSON.parse(event.data);
+                            if (msg.type === 'new_order' && msg.order) {
+                                this.addLiveOrder(msg.order);
+                            } else if (msg.type === 'order_status') {
+                                this.updateLiveOrderStatus(msg.orderNumber, msg.status);
+                            } else if (msg.type === 'order_deleted') {
+                                this.liveOrders = this.liveOrders.filter(o => o.orderNumber !== msg.orderNumber);
+                                this.renderOrders();
+                                this.updateDashboard();
+                            } else if (msg.type === 'orders_cleared') {
+                                this.liveOrders = [];
+                                this.renderOrders();
+                                this.updateDashboard();
+                            }
+                        } catch (e) {}
+                    };
+
+                    this.ws.onclose = () => {
+                        console.log('[Admin WS] 연결 끊김');
+                        document.getElementById('wsStatus').textContent = '🔴 Offline';
+                        document.getElementById('wsStatus').style.color = '#EF4444';
+                        this.wsReconnectTimer = setTimeout(() => this.connectWebSocket(), 5000);
+                    };
+
+                    this.ws.onerror = () => {};
                 } catch (e) {
-                    console.log('BroadcastChannel not supported');
+                    setTimeout(() => this.connectWebSocket(), 5000);
                 }
             },
 
-            loadAllData() {
+            addLiveOrder(order) {
+                if (!order || !order.orderNumber) return;
+                // 중복 체크
+                if (this.liveOrders.find(o => o.orderNumber === order.orderNumber)) return;
+
+                this.liveOrders.push(order);
+                this.updateDashboard();
+                if (this.currentSection === 'orders') {
+                    this.renderOrders();
+                }
+                this.showToast(`📋 새 주문: ${order.orderNumber}`, 'success');
+            },
+
+            updateLiveOrderStatus(orderNumber, status) {
+                const order = this.liveOrders.find(o => o.orderNumber === orderNumber);
+                if (order) {
+                    order.status = status;
+                    if (this.currentSection === 'orders') this.renderOrders();
+                    this.updateDashboard();
+                }
+            },
+
+            async loadAllData() {
                 const pinStored = localStorage.getItem('tb_admin_pin');
                 if (pinStored) this.currentPin = pinStored;
 
@@ -1508,8 +1751,17 @@
                     this.initializeBranchPricing();
                 }
 
+                // Try to pull menu from server API (overrides localStorage defaults)
+                try {
+                    await this.pullMenuFromServer();
+                    console.log('[Admin] Menu loaded from server API');
+                } catch (e) {
+                    console.log('[Admin] Server not available, using localStorage defaults');
+                }
+
                 this.updateDashboard();
                 this.renderBranches();
+                this.renderCategories();
                 this.renderMenu();
                 this.renderSauces();
                 this.populateBranchSelectors();
@@ -1571,6 +1823,7 @@
                 const titles = {
                     dashboard: '홈 Dashboard',
                     branches: '지점관리 Branch Management',
+                    categories: '카테고리 Category Management',
                     menu: '메뉴관리 Menu Management',
                     branchMenu: '지점별메뉴 Branch Menu Settings',
                     sauces: '소스관리 Sauce Management',
@@ -1583,13 +1836,16 @@
 
                 document.getElementById('pageTitle').textContent = titles[section];
 
-                if (section === 'allergens') {
+                if (section === 'categories') {
+                    this.renderCategories();
+                } else if (section === 'allergens') {
                     this.renderAllergenMatrix();
                 } else if (section === 'nutrition') {
                     this.renderNutritionTable();
                 } else if (section === 'branchMenu') {
                     this.populateBranchMenuSelector();
                 } else if (section === 'orders') {
+                    this.loadOrderDates();
                     this.renderOrders();
                 }
             },
@@ -1601,11 +1857,11 @@
             },
 
             updateDashboard() {
-                const orders = JSON.parse(localStorage.getItem('tb_orders') || '[]');
+                const orders = this.liveOrders;
                 const branches = JSON.parse(localStorage.getItem('tb_branches') || '[]');
 
                 let totalOrders = orders.length;
-                let revenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+                let revenue = orders.reduce((sum, order) => sum + (order.total || order.subtotal || 0), 0);
                 let avgValue = totalOrders > 0 ? revenue / totalOrders : 0;
                 let activeKiosks = branches.filter(b => b.active).length;
 
@@ -1618,7 +1874,7 @@
             },
 
             renderRecentOrders() {
-                const orders = JSON.parse(localStorage.getItem('tb_orders') || '[]');
+                const orders = this.liveOrders;
                 const tbody = document.getElementById('recentOrdersTable');
                 const recent = orders.slice(-5).reverse();
 
@@ -1629,12 +1885,12 @@
 
                 tbody.innerHTML = recent.map(order => `
                     <tr>
-                        <td><strong>${order.id}</strong></td>
-                        <td>${order.branch}</td>
+                        <td><strong>${order.orderNumber || '-'}</strong></td>
+                        <td>${order.branchCode || '-'}</td>
                         <td>${order.items ? order.items.length : 0} items</td>
-                        <td>£${(order.total || 0).toFixed(2)}</td>
+                        <td>£${(order.total || order.subtotal || 0).toFixed(2)}</td>
                         <td><span class="order-status-badge order-status-${order.status}">${order.status || 'pending'}</span></td>
-                        <td>${order.timestamp ? new Date(order.timestamp).toLocaleTimeString('en-GB') : '-'}</td>
+                        <td>${order.createdAt ? new Date(order.createdAt).toLocaleTimeString('en-GB') : '-'}</td>
                     </tr>
                 `).join('');
             },
@@ -1764,8 +2020,8 @@
                 this.showToast('Branch saved successfully', 'success');
             },
 
-            deleteBranch(code) {
-                if (!confirm(`Delete branch ${code}?`)) return;
+            async deleteBranch(code) {
+                if (!await tbConfirm(`Delete branch ${code}?`, 'Delete Branch', '🏪')) return;
 
                 let branches = JSON.parse(localStorage.getItem('tb_branches') || '[]');
                 branches = branches.filter(b => b.code !== code);
@@ -1779,6 +2035,213 @@
             closeBranchModal() {
                 document.getElementById('branchModal').classList.remove('active');
                 document.getElementById('branchForm').reset();
+            },
+
+            // ═══════ CATEGORIES ═══════
+            async renderCategories() {
+                // Load categories from server menu.json first, then localStorage fallback
+                let cats = [];
+                try {
+                    const menuData = JSON.parse(localStorage.getItem('tb_server_menu') || '{}');
+                    cats = menuData.categories || [];
+                } catch (e) {}
+                if (!cats.length) {
+                    try {
+                        const resp = await fetch('/data/menu.json');
+                        if (resp.ok) {
+                            const data = await resp.json();
+                            cats = data.categories || [];
+                            localStorage.setItem('tb_server_menu', JSON.stringify(data));
+                        }
+                    } catch (e) {}
+                }
+                if (!cats.length) {
+                    cats = JSON.parse(localStorage.getItem('tb_categories') || '[]');
+                }
+                localStorage.setItem('tb_categories', JSON.stringify(cats));
+
+                const tbody = document.getElementById('categoriesTable');
+                if (!tbody) return;
+                tbody.innerHTML = cats.sort((a,b) => (a.sortOrder||0)-(b.sortOrder||0)).map((c, i) => `
+                    <tr>
+                        <td>${i+1}</td>
+                        <td><code style="font-size:12px;background:#f0f0f0;padding:2px 6px;border-radius:4px">${c.id}</code></td>
+                        <td style="font-size:24px">${c.icon || '🍱'}</td>
+                        <td><strong>${c.nameEn}</strong></td>
+                        <td>${c.nameKr || ''}</td>
+                        <td><span style="display:inline-block;width:28px;height:28px;border-radius:6px;background:${c.color||'#999'};vertical-align:middle"></span> <small>${c.color||''}</small></td>
+                        <td>${c.sortOrder || ''}</td>
+                        <td>${c.active !== false ? '✅' : '❌'}</td>
+                        <td>
+                            <button class="btn-secondary btn-small" onclick="app.editCategory('${c.id}')">Edit</button>
+                            <button class="btn-danger btn-small" onclick="app.deleteCategory('${c.id}')">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+
+                // Also update menu form category dropdown
+                const select = document.getElementById('menuCategory');
+                if (select) {
+                    select.innerHTML = cats.filter(c => c.active !== false).map(c =>
+                        `<option value="${c.id}">${c.nameEn} (${c.nameKr || c.id})</option>`
+                    ).join('');
+                }
+            },
+
+            openCategoryForm() {
+                document.getElementById('catEditId').value = '';
+                document.getElementById('categoryForm').reset();
+                document.getElementById('catActive').checked = true;
+                document.getElementById('catColor').value = '#D97706';
+                document.getElementById('catColorText').value = '#D97706';
+                document.getElementById('catId').disabled = false;
+                document.getElementById('categoryModal').classList.add('active');
+            },
+
+            editCategory(catId) {
+                const cats = JSON.parse(localStorage.getItem('tb_categories') || '[]');
+                const cat = cats.find(c => c.id === catId);
+                if (!cat) return;
+                document.getElementById('catEditId').value = cat.id;
+                document.getElementById('catId').value = cat.id;
+                document.getElementById('catId').disabled = true; // can't change ID when editing
+                document.getElementById('catNameEn').value = cat.nameEn || '';
+                document.getElementById('catNameKr').value = cat.nameKr || '';
+                document.getElementById('catIcon').value = cat.icon || '';
+                document.getElementById('catColor').value = cat.color || '#D97706';
+                document.getElementById('catColorText').value = cat.color || '#D97706';
+                document.getElementById('catSortOrder').value = cat.sortOrder || 1;
+                document.getElementById('catActive').checked = cat.active !== false;
+                document.getElementById('categoryModal').classList.add('active');
+            },
+
+            closeCategoryModal() {
+                document.getElementById('categoryModal').classList.remove('active');
+                document.getElementById('categoryForm').reset();
+                document.getElementById('catId').disabled = false;
+            },
+
+            saveCategory(e) {
+                e.preventDefault();
+                const editId = document.getElementById('catEditId').value;
+                const cat = {
+                    id: document.getElementById('catId').value.trim().toLowerCase().replace(/\s+/g, '_'),
+                    nameEn: document.getElementById('catNameEn').value.trim(),
+                    nameKr: document.getElementById('catNameKr').value.trim(),
+                    icon: document.getElementById('catIcon').value.trim(),
+                    color: document.getElementById('catColor').value,
+                    sortOrder: parseInt(document.getElementById('catSortOrder').value) || 1,
+                    active: document.getElementById('catActive').checked,
+                };
+
+                let cats = JSON.parse(localStorage.getItem('tb_categories') || '[]');
+
+                if (editId) {
+                    // Update existing
+                    cats = cats.map(c => c.id === editId ? { ...c, ...cat, id: editId } : c);
+                } else {
+                    // Check duplicate ID
+                    if (cats.some(c => c.id === cat.id)) {
+                        alert('Category ID already exists!');
+                        return;
+                    }
+                    cats.push(cat);
+                }
+
+                localStorage.setItem('tb_categories', JSON.stringify(cats));
+
+                // Also update server menu data
+                try {
+                    const menuData = JSON.parse(localStorage.getItem('tb_server_menu') || '{}');
+                    menuData.categories = cats;
+                    localStorage.setItem('tb_server_menu', JSON.stringify(menuData));
+                } catch (e) {}
+
+                this.closeCategoryModal();
+                this.renderCategories();
+                this.renderMenu();
+                this.autoSyncToServer();
+                this.showToast(editId ? 'Category updated' : 'Category added', 'success');
+            },
+
+            deleteCategory(catId) {
+                if (!confirm(`Delete category "${catId}"?\nAll menu items in this category will become uncategorized.`)) return;
+                let cats = JSON.parse(localStorage.getItem('tb_categories') || '[]');
+                cats = cats.filter(c => c.id !== catId);
+                localStorage.setItem('tb_categories', JSON.stringify(cats));
+
+                try {
+                    const menuData = JSON.parse(localStorage.getItem('tb_server_menu') || '{}');
+                    menuData.categories = cats;
+                    localStorage.setItem('tb_server_menu', JSON.stringify(menuData));
+                } catch (e) {}
+
+                this.renderCategories();
+                this.renderMenu();
+                this.autoSyncToServer();
+                this.showToast('Category deleted', 'success');
+            },
+
+            // ═══════ IMAGE UPLOAD ═══════
+            previewMenuImage(input) {
+                if (!input.files || !input.files[0]) return;
+                const file = input.files[0];
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    const preview = document.getElementById('menuImagePreview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    // Store base64 for upload
+                    const base64 = e.target.result.split(',')[1]; // remove data:image/...;base64, prefix
+                    document.getElementById('menuImageBase64').value = base64;
+                    document.getElementById('menuImageFileName').value = file.name;
+                    document.getElementById('menuImageMimeType').value = file.type;
+                    document.getElementById('menuImageUrl').value = '(uploading on save...)';
+                };
+                reader.readAsDataURL(file);
+            },
+
+            previewMenuImageUrl(url) {
+                if (!url || url.startsWith('(')) return;
+                const preview = document.getElementById('menuImagePreview');
+                preview.src = url;
+                preview.style.display = url ? 'block' : 'none';
+                // Clear file upload data
+                document.getElementById('menuImageBase64').value = '';
+                document.getElementById('menuImageFileName').value = '';
+                document.getElementById('menuImageMimeType').value = '';
+            },
+
+            async uploadImageToGoogle(itemId, base64, fileName, mimeType) {
+                // Upload to Google Drive via Apps Script
+                const apiUrl = localStorage.getItem('tb_google_api_url') || 'https://script.google.com/macros/s/AKfycbzU3Cv-XbKShKQNiu55PhgfxkyLYIbg41-1Wl5Cwlvhh-w1ropFzlVGw2fbd11a8fP87Q/exec';
+                if (!apiUrl) {
+                    this.showToast('Google API URL not set — go to Settings', 'error');
+                    return null;
+                }
+                try {
+                    const resp = await fetch(apiUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'uploadImage',
+                            itemId: itemId,
+                            fileName: fileName,
+                            mimeType: mimeType,
+                            base64: base64,
+                        }),
+                    });
+                    const result = await resp.json();
+                    if (result.success) {
+                        this.showToast('Image uploaded to Google Drive!', 'success');
+                        return result;
+                    } else {
+                        throw new Error(result.error || 'Upload failed');
+                    }
+                } catch (err) {
+                    this.showToast('Image upload error: ' + err.message, 'error');
+                    return null;
+                }
             },
 
             // MENU
@@ -1804,7 +2267,8 @@
                 const content = document.getElementById('menuContent');
                 content.innerHTML = filtered.map(item => `
                     <div class="menu-item-card">
-                        <img src="${item.imageUrl}" class="menu-item-image" onerror="this.src='https://via.placeholder.com/300x200?text=${encodeURIComponent(item.nameEn)}'">
+                        ${item.imageUrl ? `<img src="${item.imageUrl}" class="menu-item-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
+                        <div class="menu-item-placeholder" style="${item.imageUrl ? 'display:none;' : 'display:flex;'} width:100%; height:120px; background:#F5F5F5; border-radius:8px 8px 0 0; align-items:center; justify-content:center; font-size:48px;">🍱</div>
                         <div class="menu-item-body">
                             <div class="menu-item-name">${item.nameEn}</div>
                             <div class="menu-item-name-kr">${item.nameKr}</div>
@@ -1856,7 +2320,7 @@
                 document.getElementById('menuModal').classList.add('active');
             },
 
-            saveMenuItem() {
+            async saveMenuItem() {
                 const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
 
                 const dietary = [];
@@ -1865,14 +2329,35 @@
                 if (document.getElementById('menuGlutenFree').checked) dietary.push('glutenFree');
                 if (document.getElementById('menuSpicy').checked) dietary.push('spicy');
 
+                const itemId = this.editingMenuId || 'M' + Date.now();
+                let imageUrl = document.getElementById('menuImageUrl').value;
+                let thumbnailUrl = '';
+
+                // Handle image upload if a file was selected
+                const base64 = document.getElementById('menuImageBase64').value;
+                if (base64) {
+                    this.showToast('Uploading image to Google Drive...', 'info');
+                    const uploadResult = await this.uploadImageToGoogle(
+                        itemId,
+                        base64,
+                        document.getElementById('menuImageFileName').value,
+                        document.getElementById('menuImageMimeType').value
+                    );
+                    if (uploadResult) {
+                        imageUrl = uploadResult.imageUrl;
+                        thumbnailUrl = uploadResult.thumbnailUrl;
+                    }
+                }
+
                 const itemData = {
-                    id: this.editingMenuId || 'M' + Date.now(),
+                    id: itemId,
                     nameEn: document.getElementById('menuNameEn').value,
                     nameKr: document.getElementById('menuNameKr').value,
                     category: document.getElementById('menuCategory').value,
                     description: document.getElementById('menuDescription').value,
                     basePrice: parseFloat(document.getElementById('menuPrice').value),
-                    imageUrl: document.getElementById('menuImageUrl').value,
+                    imageUrl: imageUrl,
+                    thumbnailUrl: thumbnailUrl,
                     dietary: dietary,
                     isCombo: document.getElementById('menuCombo').checked,
                     hasTopping: document.getElementById('menuTopping').checked,
@@ -1881,7 +2366,13 @@
 
                 if (this.editingMenuId) {
                     const index = items.findIndex(i => i.id === this.editingMenuId);
-                    if (index >= 0) items[index] = itemData;
+                    if (index >= 0) {
+                        // Preserve existing image URLs if no new image
+                        if (!base64 && items[index].thumbnailUrl) {
+                            itemData.thumbnailUrl = items[index].thumbnailUrl;
+                        }
+                        items[index] = itemData;
+                    }
                 } else {
                     items.push(itemData);
                     this.initializeAllergens();
@@ -1889,13 +2380,21 @@
                 }
 
                 localStorage.setItem('tb_menu_items', JSON.stringify(items));
+
+                // Clear upload fields
+                document.getElementById('menuImageBase64').value = '';
+                document.getElementById('menuImageFileName').value = '';
+                document.getElementById('menuImageMimeType').value = '';
+
                 this.closeMenuModal();
                 this.renderMenu();
                 this.showToast('Menu item saved', 'success');
+                // Auto-sync to server so all clients update
+                this.autoSyncToServer();
             },
 
-            deleteMenuItem(id) {
-                if (!confirm('Delete this menu item?')) return;
+            async deleteMenuItem(id) {
+                if (!await tbConfirm('Delete this menu item?', 'Delete Menu Item', '🍱')) return;
 
                 let items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
                 items = items.filter(i => i.id !== id);
@@ -1911,6 +2410,8 @@
 
                 this.renderMenu();
                 this.showToast('Menu item deleted', 'success');
+                // Auto-sync to server so all clients update
+                this.autoSyncToServer();
             },
 
             closeMenuModal() {
@@ -2105,8 +2606,8 @@
                 this.showToast('Sauce saved', 'success');
             },
 
-            deleteSauce(id) {
-                if (!confirm('Delete this sauce?')) return;
+            async deleteSauce(id) {
+                if (!await tbConfirm('Delete this sauce?', 'Delete Sauce', '🫙')) return;
 
                 let sauces = JSON.parse(localStorage.getItem('tb_sauces') || '[]');
                 sauces = sauces.filter(s => s.id !== id);
@@ -2194,23 +2695,69 @@
                 this.showToast('Nutrition updated', 'success');
             },
 
-            // ORDERS
+            // ORDERS — 서버 liveOrders 기반 + 과거 히스토리
+            historyOrders: [],  // 과거 날짜 조회 시 사용
+            viewingDate: 'live', // 'live' = 실시간, 'YYYY-MM-DD' = 과거
+
             addOrder(order) {
-                const orders = JSON.parse(localStorage.getItem('tb_orders') || '[]');
-                orders.push({
-                    id: order.id || 'ORD' + Date.now(),
-                    branch: order.branch || 'Unknown',
-                    items: order.items || [],
-                    total: order.total || 0,
-                    status: order.status || 'pending',
-                    timestamp: order.timestamp || new Date().toISOString()
-                });
-                localStorage.setItem('tb_orders', JSON.stringify(orders));
+                this.addLiveOrder(order);
+            },
+
+            async loadOrderDates() {
+                try {
+                    const res = await fetch('/api/orders/dates');
+                    const data = await res.json();
+                    const sel = document.getElementById('orderDateFilter');
+                    sel.innerHTML = '<option value="live">🟢 Live (Today)</option>';
+                    (data.dates || []).forEach(d => {
+                        const label = d === new Date().toISOString().split('T')[0] ? `${d} (Today)` : d;
+                        sel.innerHTML += `<option value="${d}">📁 ${label}</option>`;
+                    });
+                } catch (e) {}
+            },
+
+            async loadOrdersByDate() {
+                const sel = document.getElementById('orderDateFilter');
+                this.viewingDate = sel.value;
+
+                if (this.viewingDate === 'live') {
+                    this.historyOrders = [];
+                    this.renderOrders();
+                    this.updateOrdersSummary(this.liveOrders);
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`/api/orders?date=${this.viewingDate}`);
+                    const data = await res.json();
+                    this.historyOrders = data.orders || [];
+                    this.renderOrders();
+                    this.updateOrdersSummary(this.historyOrders);
+                    this.showToast(`📁 ${this.viewingDate}: ${this.historyOrders.length}건`, 'info');
+                } catch (e) {
+                    this.showToast('Failed to load history', 'error');
+                }
+            },
+
+            getDisplayOrders() {
+                return this.viewingDate === 'live' ? this.liveOrders : this.historyOrders;
+            },
+
+            updateOrdersSummary(orders) {
+                const total = orders.length;
+                const revenue = orders.reduce((s, o) => s + (o.total || o.subtotal || 0), 0);
+                const eatIn = orders.filter(o => (o.orderType || o.type) === 'eat_in').length;
+                const takeaway = orders.filter(o => (o.orderType || o.type) === 'takeaway').length;
+                document.getElementById('summaryCount').textContent = total;
+                document.getElementById('summaryRevenue').textContent = '£' + revenue.toFixed(2);
+                document.getElementById('summaryEatIn').textContent = eatIn;
+                document.getElementById('summaryTakeaway').textContent = takeaway;
             },
 
             renderOrders() {
-                const orders = JSON.parse(localStorage.getItem('tb_orders') || '[]');
+                const orders = this.getDisplayOrders();
                 const tbody = document.getElementById('ordersTable');
+                const isLive = this.viewingDate === 'live';
 
                 const branchFilter = document.getElementById('orderBranchFilter').value;
                 const statusFilter = document.getElementById('orderStatusFilter').value;
@@ -2220,89 +2767,322 @@
                 branchFilterSelector.innerHTML = '<option value="">All Branches</option>' +
                     branches.map(b => `<option value="${b.code}">${b.name}</option>`).join('');
 
-                let filtered = orders;
-                if (branchFilter) filtered = filtered.filter(o => o.branch === branchFilter);
+                let filtered = [...orders];
+                if (branchFilter) filtered = filtered.filter(o => o.branchCode === branchFilter);
                 if (statusFilter) filtered = filtered.filter(o => o.status === statusFilter);
 
+                this.updateOrdersSummary(filtered);
+
                 if (filtered.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #999;">No orders found</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #999;">No orders found</td></tr>';
                     return;
                 }
 
-                tbody.innerHTML = filtered.reverse().map(order => `
+                tbody.innerHTML = filtered.reverse().map(order => {
+                    const itemsSummary = (order.items || []).map(i =>
+                        `${i.quantity || 1}× ${i.nameEn || i.name || 'item'}${i.sauce ? ' (' + (typeof i.sauce === 'object' ? i.sauce.name : i.sauce) + ')' : ''}`
+                    ).join(', ');
+
+                    const statusColors = {
+                        new: '#E85D75', pending: '#F59E0B', preparing: '#3B82F6', ready: '#34C759', completed: '#6B7280', done: '#6B7280'
+                    };
+                    const statusColor = statusColors[order.status] || '#999';
+
+                    const time = order.receivedAt || order.createdAt;
+                    const timeStr = time ? new Date(typeof time === 'number' ? time : time).toLocaleString('en-GB') : '-';
+
+                    // 과거 데이터는 읽기전용
+                    const statusCell = isLive
+                        ? `<select onchange="app.updateOrderStatus('${order.orderNumber}', this.value)"
+                                style="padding:6px;border-radius:4px;border:2px solid ${statusColor};color:${statusColor};font-weight:600;background:#fff;">
+                            <option value="new" ${order.status === 'new' ? 'selected' : ''}>🔴 New</option>
+                            <option value="preparing" ${order.status === 'preparing' ? 'selected' : ''}>🍳 Preparing</option>
+                            <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>✅ Ready</option>
+                            <option value="done" ${order.status === 'done' || order.status === 'completed' ? 'selected' : ''}>✓ Done</option>
+                          </select>`
+                        : `<span style="color:${statusColor};font-weight:600;">${(order.status || 'unknown').toUpperCase()}</span>`;
+
+                    const actionsCell = isLive
+                        ? `<button class="btn-danger btn-small" onclick="app.deleteOrder('${order.orderNumber}')">Delete</button>`
+                        : `<span style="color:#ccc;">-</span>`;
+
+                    return `
                     <tr>
-                        <td><strong>${order.id}</strong></td>
-                        <td>${order.branch}</td>
-                        <td>${order.items ? order.items.length : 0} items</td>
-                        <td>£${(order.total || 0).toFixed(2)}</td>
-                        <td>
-                            <select onchange="app.updateOrderStatus('${order.id}', this.value)" style="padding: 6px; border-radius: 4px; border: 1px solid #D0D0D0;">
-                                <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pending</option>
-                                <option value="preparing" ${order.status === 'preparing' ? 'selected' : ''}>Preparing</option>
-                                <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>Ready</option>
-                                <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Completed</option>
-                            </select>
-                        </td>
-                        <td>${order.timestamp ? new Date(order.timestamp).toLocaleString('en-GB') : '-'}</td>
-                        <td>
-                            <button class="btn-danger btn-small" onclick="app.deleteOrder('${order.id}')">Delete</button>
-                        </td>
-                    </tr>
-                `).join('');
+                        <td><strong>${order.orderNumber || '-'}</strong></td>
+                        <td>${order.customerName ? `<strong>${order.customerName}</strong>` : '<span style="color:#ccc;">-</span>'}</td>
+                        <td>${order.branchCode || '-'}</td>
+                        <td title="${itemsSummary}">${itemsSummary || '-'}</td>
+                        <td>£${(order.total || order.subtotal || 0).toFixed(2)}</td>
+                        <td>${statusCell}</td>
+                        <td>${timeStr}</td>
+                        <td>${actionsCell}</td>
+                    </tr>`;
+                }).join('');
             },
 
             filterOrders() {
                 this.renderOrders();
             },
 
-            updateOrderStatus(orderId, status) {
-                const orders = JSON.parse(localStorage.getItem('tb_orders') || '[]');
-                const order = orders.find(o => o.id === orderId);
+            updateOrderStatus(orderNumber, status) {
+                const order = this.liveOrders.find(o => o.orderNumber === orderNumber);
                 if (order) {
                     order.status = status;
-                    localStorage.setItem('tb_orders', JSON.stringify(orders));
-                    this.showToast('Order status updated', 'success');
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        this.ws.send(JSON.stringify({ type: 'order_status', orderNumber, status }));
+                    }
+                    this.renderOrders();
+                    this.updateDashboard();
+                    this.showToast(`${orderNumber} → ${status}`, 'success');
                 }
             },
 
-            deleteOrder(orderId) {
-                if (!confirm('Delete this order?')) return;
-
-                let orders = JSON.parse(localStorage.getItem('tb_orders') || '[]');
-                orders = orders.filter(o => o.id !== orderId);
-                localStorage.setItem('tb_orders', JSON.stringify(orders));
-
+            async deleteOrder(orderNumber) {
+                if (!await tbConfirm(`Delete order ${orderNumber}?`, 'Delete Order', '🗑️')) return;
+                this.liveOrders = this.liveOrders.filter(o => o.orderNumber !== orderNumber);
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify({ type: 'delete_order', orderNumber }));
+                }
                 this.renderOrders();
                 this.updateDashboard();
-                this.showToast('Order deleted', 'success');
+                this.showToast(`${orderNumber} deleted`, 'success');
+            },
+
+            async deleteAllOrders() {
+                if (this.viewingDate !== 'live') {
+                    this.showToast('과거 기록은 삭제할 수 없습니다', 'info');
+                    return;
+                }
+                if (!await tbConfirm('Delete ALL orders? This cannot be undone.', 'Delete All Orders', '⚠️')) return;
+                const count = this.liveOrders.length;
+                this.liveOrders = [];
+                if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                    this.ws.send(JSON.stringify({ type: 'clear_orders' }));
+                }
+                this.renderOrders();
+                this.updateDashboard();
+                this.showToast(`${count} orders deleted`, 'success');
             },
 
             exportOrders() {
-                const orders = JSON.parse(localStorage.getItem('tb_orders') || '[]');
-                let csv = 'Order ID,Branch,Items,Total,Status,Date/Time\n';
+                const orders = this.getDisplayOrders();
+                if (orders.length === 0) {
+                    this.showToast('No orders to export', 'info');
+                    return;
+                }
+                let csv = 'Order Number,Branch,Type,Items,Total,Status,Payment,Date/Time\n';
 
                 orders.forEach(order => {
-                    const timestamp = order.timestamp ? new Date(order.timestamp).toLocaleString('en-GB') : '-';
-                    csv += `${order.id},"${order.branch}",${order.items ? order.items.length : 0},${(order.total || 0).toFixed(2)},"${order.status}","${timestamp}"\n`;
+                    const time = (order.receivedAt || order.createdAt) ? new Date(order.receivedAt || order.createdAt).toLocaleString('en-GB') : '-';
+                    const itemsSummary = (order.items || []).map(i => `${i.quantity||1}x ${i.nameEn||i.name||'item'}`).join(' / ');
+                    csv += `${order.orderNumber},"${order.branchCode || ''}","${order.orderType || order.type || ''}","${itemsSummary}",${(order.total || 0).toFixed(2)},"${order.status}","${order.paymentMethod || ''}","${time}"\n`;
                 });
 
+                const dateLabel = this.viewingDate === 'live' ? new Date().toISOString().split('T')[0] : this.viewingDate;
                 const blob = new Blob([csv], { type: 'text/csv' });
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `orders_${new Date().toISOString().split('T')[0]}.csv`;
+                a.download = `thebap_orders_${dateLabel}.csv`;
                 a.click();
 
                 this.showToast('Orders exported', 'success');
             },
 
-            // SYNC
-            syncToSheets() {
-                this.showToast('Sync functionality requires Google Sheets API setup', 'info');
+            // ═══ SERVER & GOOGLE SHEETS SYNC ═══
+            showSyncStatus(msg, type) {
+                const el = document.getElementById('syncStatus');
+                if (el) {
+                    el.textContent = msg;
+                    el.style.display = 'block';
+                    el.style.background = type === 'error' ? '#fef2f2' : type === 'success' ? '#f0fdf4' : '#f0f9ff';
+                    el.style.color = type === 'error' ? '#dc2626' : type === 'success' ? '#16a34a' : '#1e40af';
+                    setTimeout(() => { el.style.display = 'none'; }, 5000);
+                }
             },
 
-            importFromSheets() {
-                this.showToast('Import functionality requires Google Sheets API setup', 'info');
+            // Convert Admin localStorage format → server menu.json format
+            buildMenuPayload() {
+                const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
+                const sauces = JSON.parse(localStorage.getItem('tb_sauces') || '[]');
+                const visibility = JSON.parse(localStorage.getItem('tb_branch_visibility') || '{}');
+                const pricing = JSON.parse(localStorage.getItem('tb_branch_pricing') || '{}');
+
+                // Map admin items → server format
+                const serverItems = items.map((item, idx) => ({
+                    id: item.id,
+                    catId: item.category || item.catId || 'kfood',
+                    nameEn: item.nameEn || '',
+                    nameKr: item.nameKr || '',
+                    desc: item.description || item.desc || '',
+                    price: item.basePrice || item.price || 0,
+                    image: item.imageUrl || item.image || '',
+                    dietary: item.dietary || [],
+                    isCombo: item.isCombo || false,
+                    comboCount: item.comboCount || 2,
+                    hasTopping: item.hasTopping || false,
+                    toppingCount: item.toppingCount || 1,
+                    btnColor: item.btnColor || '',
+                    active: item.active !== false,
+                    sortOrder: idx + 1
+                }));
+
+                return {
+                    categories: JSON.parse(localStorage.getItem('tb_categories') || 'null') || undefined,
+                    items: serverItems,
+                    sauces: sauces,
+                    branchPricing: pricing
+                };
+            },
+
+            // Push local menu to server
+            async pushMenuToServer() {
+                try {
+                    this.showSyncStatus('Pushing menu to server...', 'info');
+                    const payload = this.buildMenuPayload();
+                    const resp = await fetch('/api/menu', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'updateAll', menuData: payload })
+                    });
+                    if (!resp.ok) throw new Error('Server error: ' + resp.status);
+                    const result = await resp.json();
+                    this.showSyncStatus('Menu pushed to server successfully!', 'success');
+                    this.showToast('Menu pushed to server', 'success');
+                } catch (err) {
+                    this.showSyncStatus('Push failed: ' + err.message, 'error');
+                    this.showToast('Push failed: ' + err.message, 'error');
+                }
+            },
+
+            // Pull menu from server → update localStorage
+            async pullMenuFromServer() {
+                try {
+                    this.showSyncStatus('Pulling menu from server...', 'info');
+                    const resp = await fetch('/api/menu');
+                    if (!resp.ok) throw new Error('Server error: ' + resp.status);
+                    const data = await resp.json();
+
+                    // Convert server format → admin localStorage format
+                    if (data.items) {
+                        const adminItems = data.items.map(i => ({
+                            id: i.id,
+                            nameEn: i.nameEn,
+                            nameKr: i.nameKr,
+                            category: i.catId,
+                            catId: i.catId,
+                            description: i.desc || '',
+                            desc: i.desc || '',
+                            basePrice: i.price,
+                            price: i.price,
+                            imageUrl: i.image || '',
+                            image: i.image || '',
+                            dietary: i.dietary || [],
+                            isCombo: i.isCombo || false,
+                            comboCount: i.comboCount || 2,
+                            hasTopping: i.hasTopping || false,
+                            toppingCount: i.toppingCount || 1,
+                            btnColor: i.btnColor || '',
+                            active: i.active !== false
+                        }));
+                        localStorage.setItem('tb_menu_items', JSON.stringify(adminItems));
+                    }
+                    if (data.sauces) {
+                        localStorage.setItem('tb_sauces', JSON.stringify(data.sauces));
+                    }
+                    if (data.branchPricing) {
+                        localStorage.setItem('tb_branch_pricing', JSON.stringify(data.branchPricing));
+                    }
+                    if (data.categories) {
+                        localStorage.setItem('tb_categories', JSON.stringify(data.categories));
+                    }
+
+                    // Re-render
+                    this.renderMenu();
+                    this.renderSauces();
+                    this.showSyncStatus('Menu pulled from server!', 'success');
+                    this.showToast('Menu updated from server', 'success');
+                } catch (err) {
+                    this.showSyncStatus('Pull failed: ' + err.message, 'error');
+                    this.showToast('Pull failed: ' + err.message, 'error');
+                }
+            },
+
+            // Broadcast menu update to all clients via WebSocket
+            async broadcastMenuUpdate() {
+                try {
+                    // First push to server, then broadcast
+                    await this.pushMenuToServer();
+                    // The server will broadcast to all connected WebSocket clients
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        this.ws.send(JSON.stringify({ type: 'menu_update' }));
+                    }
+                    this.showToast('Menu broadcast to all clients', 'success');
+                } catch (err) {
+                    this.showToast('Broadcast failed: ' + err.message, 'error');
+                }
+            },
+
+            // Google Sheets sync via server
+            async syncToGoogle() {
+                try {
+                    this.showSyncStatus('Syncing to Google Sheets...', 'info');
+                    // Push local → server first
+                    await this.pushMenuToServer();
+                    // Then tell server to push to Google
+                    const resp = await fetch('/api/menu', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'syncToGoogle' })
+                    });
+                    if (!resp.ok) throw new Error('Server error: ' + resp.status);
+                    const result = await resp.json();
+                    if (result.error) throw new Error(result.error);
+                    this.showSyncStatus('Synced to Google Sheets!', 'success');
+                    this.showToast('Synced to Google Sheets', 'success');
+                } catch (err) {
+                    this.showSyncStatus('Google sync failed: ' + err.message, 'error');
+                    this.showToast('Google sync failed: ' + err.message, 'error');
+                }
+            },
+
+            async syncFromGoogle() {
+                try {
+                    this.showSyncStatus('Pulling from Google Sheets...', 'info');
+                    const resp = await fetch('/api/menu', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'syncFromGoogle' })
+                    });
+                    if (!resp.ok) throw new Error('Server error: ' + resp.status);
+                    const result = await resp.json();
+                    if (result.error) throw new Error(result.error);
+                    // Now pull the refreshed data from server
+                    await this.pullMenuFromServer();
+                    this.showSyncStatus('Pulled from Google Sheets!', 'success');
+                    this.showToast('Pulled from Google Sheets', 'success');
+                } catch (err) {
+                    this.showSyncStatus('Google pull failed: ' + err.message, 'error');
+                    this.showToast('Google pull failed: ' + err.message, 'error');
+                }
+            },
+
+            // Auto-sync to server after any menu change
+            async autoSyncToServer() {
+                try {
+                    const payload = this.buildMenuPayload();
+                    await fetch('/api/menu', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action: 'updateAll', menuData: payload })
+                    });
+                    // Broadcast to connected clients
+                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                        this.ws.send(JSON.stringify({ type: 'menu_update' }));
+                    }
+                } catch (err) {
+                    console.error('[Admin] Auto-sync failed:', err);
+                }
             },
 
             // SETTINGS

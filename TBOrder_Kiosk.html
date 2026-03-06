@@ -1,9 +1,11 @@
 <!DOCTYPE html>
+<!-- The Bap Order Kiosk v1.0 | 2026-03-06 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Bap Ordering Kiosk</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍚</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         * {
@@ -43,7 +45,8 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 40px 20px;
+            padding: 4vh 5vw;
+            overflow-y: auto;
         }
 
         .staff-boot-content {
@@ -56,36 +59,38 @@
 
         .staff-boot-title {
             color: #ffffff;
-            font-size: 32px;
+            font-size: clamp(24px, 4vw, 36px);
             font-weight: 700;
-            margin-bottom: 50px;
+            margin-bottom: 4vh;
             text-align: center;
         }
 
         .staff-boot-subtitle {
             color: #999;
-            font-size: 16px;
-            margin-bottom: 40px;
+            font-size: clamp(14px, 2vw, 18px);
+            margin-bottom: 3vh;
             text-align: center;
         }
 
         .branch-grid {
             display: grid;
             grid-template-columns: 1fr;
-            gap: 20px;
+            gap: clamp(12px, 2vh, 20px);
             width: 100%;
             max-width: 600px;
+        }
+        @media (min-width: 700px) {
+            .branch-grid { grid-template-columns: 1fr 1fr; }
         }
 
         .branch-card {
             background: #ffffff;
             border-radius: 16px;
-            padding: 30px 20px;
+            padding: clamp(20px, 3vh, 36px) 20px;
             cursor: pointer;
             transition: all 0.3s ease;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             text-align: center;
-            min-height: 100px;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -101,14 +106,14 @@
         }
 
         .branch-code {
-            font-size: 28px;
+            font-size: clamp(22px, 3.5vw, 32px);
             font-weight: 700;
             color: #E85D75;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .branch-name {
-            font-size: 18px;
+            font-size: clamp(14px, 2vw, 20px);
             font-weight: 600;
             color: #1A1A1A;
         }
@@ -217,15 +222,38 @@
             display: none;
         }
 
+        /* ========== FULLSCREEN BUTTON ========== */
+        .fullscreen-btn {
+            position: fixed; top: 10px; right: 10px; z-index: 9999;
+            background: rgba(0,0,0,.4); color: #fff; border: none;
+            border-radius: 50%; width: 40px; height: 40px;
+            font-size: 18px; cursor: pointer; display: flex;
+            align-items: center; justify-content: center;
+            backdrop-filter: blur(4px); transition: all .2s;
+            touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+        }
+        .fullscreen-btn:active { background: rgba(0,0,0,.7); transform: scale(.9); }
+
         /* ========== CUSTOMER WELCOME SCREEN ========== */
         #welcomeScreen {
-            background: #FAFAFA;
+            background: linear-gradient(180deg, #FFF5F6 0%, #FAFAFA 40%, #FFF 100%);
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between;
-            padding: 60px 20px;
-            overflow-y: auto;
+            justify-content: center;
+            padding: 3vh 5vw;
+            overflow: hidden;
+        }
+
+        .welcome-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 3vh;
+            width: 100%;
+            max-width: 600px;
+            height: 100%;
         }
 
         .welcome-header {
@@ -233,59 +261,61 @@
             flex-direction: column;
             align-items: center;
             text-align: center;
+            flex-shrink: 0;
         }
 
         .welcome-logo {
-            font-size: 72px;
-            font-weight: 800;
-            color: #E85D75;
-            margin-bottom: 10px;
-            letter-spacing: -2px;
+            margin-bottom: 0.5vh;
+            line-height: 1;
+        }
+        .welcome-logo img {
+            width: clamp(180px, 40vw, 420px);
+            height: auto;
+            object-fit: contain;
         }
 
         .welcome-tagline-kr {
-            font-size: 20px;
+            font-size: clamp(16px, 3vw, 26px);
             font-weight: 600;
             color: #1A1A1A;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
             font-family: 'Noto Sans KR', sans-serif;
         }
 
         .welcome-tagline-en {
-            font-size: 14px;
+            font-size: clamp(12px, 2vw, 16px);
             color: #6B7280;
-            margin-bottom: 20px;
+            margin-bottom: 1vh;
         }
 
         .welcome-branch {
-            font-size: 14px;
+            font-size: clamp(11px, 1.5vw, 14px);
             color: #999;
-            background: #F5F5F5;
-            padding: 8px 16px;
+            background: #F0F0F0;
+            padding: 6px 14px;
             border-radius: 20px;
-            margin-bottom: 60px;
         }
 
         .welcome-cta {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 30px;
+            gap: clamp(16px, 3vh, 36px);
             width: 100%;
-            max-width: 500px;
+            flex-shrink: 0;
         }
 
         .pulse-button {
-            width: 240px;
-            height: 240px;
+            width: clamp(160px, 28vh, 280px);
+            height: clamp(160px, 28vh, 280px);
             border-radius: 50%;
             background: linear-gradient(135deg, #E85D75 0%, #D94563 100%);
             color: #ffffff;
             border: none;
-            font-size: 28px;
+            font-size: clamp(20px, 3.5vh, 32px);
             font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 8px 24px rgba(232, 93, 117, 0.3);
+            box-shadow: 0 8px 32px rgba(232, 93, 117, 0.35);
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
@@ -295,6 +325,7 @@
             animation: pulse 2s infinite;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
+            flex-shrink: 0;
         }
 
         .pulse-button:active {
@@ -304,34 +335,34 @@
 
         @keyframes pulse {
             0%, 100% { box-shadow: 0 8px 24px rgba(232, 93, 117, 0.3); }
-            50% { box-shadow: 0 8px 40px rgba(232, 93, 117, 0.5); }
+            50% { box-shadow: 0 12px 48px rgba(232, 93, 117, 0.55); }
         }
 
         .order-type-buttons {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 20px;
+            gap: clamp(12px, 2vw, 24px);
             width: 100%;
+            padding: 0 2vw;
         }
 
         .order-type-button {
             background: #ffffff;
             border: 2px solid #E85D75;
-            border-radius: 16px;
-            padding: 24px 20px;
+            border-radius: clamp(12px, 2vw, 20px);
+            padding: clamp(16px, 2.5vh, 30px) 16px;
             cursor: pointer;
             transition: all 0.3s ease;
-            font-size: 20px;
+            font-size: clamp(16px, 2.5vw, 24px);
             font-weight: 600;
             color: #E85D75;
             box-shadow: 0 2px 8px rgba(0,0,0,0.06);
             text-align: center;
-            min-height: 120px;
             display: flex;
             align-items: center;
             justify-content: center;
             flex-direction: column;
-            gap: 10px;
+            gap: 8px;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
         }
@@ -339,33 +370,33 @@
         .order-type-button:active {
             background: #E85D75;
             color: #ffffff;
-            transform: scale(0.98);
+            transform: scale(0.97);
         }
 
         .order-type-icon {
-            font-size: 32px;
+            font-size: clamp(28px, 4vw, 42px);
         }
 
         .welcome-footer {
             position: absolute;
-            bottom: 20px;
+            bottom: 1.5vh;
             left: 20px;
             right: 20px;
-            font-size: 12px;
-            color: #999;
+            font-size: clamp(10px, 1.2vw, 13px);
+            color: #bbb;
             text-align: center;
             line-height: 1.4;
         }
 
         .change-branch-btn {
             position: absolute;
-            bottom: 80px;
-            right: 20px;
+            bottom: 5vh;
+            right: 3vw;
             background: transparent;
             border: 1px solid #DDD;
             border-radius: 8px;
-            padding: 8px 12px;
-            font-size: 12px;
+            padding: 6px 12px;
+            font-size: clamp(10px, 1.2vw, 13px);
             color: #6B7280;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -374,6 +405,23 @@
 
         .change-branch-btn:active {
             background: #F5F5F5;
+        }
+
+        /* ═══ Large screen (20"+) adjustments ═══ */
+        @media (min-height: 900px) {
+            .welcome-inner { gap: 4vh; }
+        }
+
+        /* ═══ Small tablet adjustments ═══ */
+        @media (max-height: 700px) {
+            .welcome-inner { gap: 2vh; }
+            .pulse-button { width: clamp(140px, 24vh, 200px); height: clamp(140px, 24vh, 200px); }
+        }
+        @media (max-height: 500px) {
+            .welcome-inner { gap: 1vh; flex-direction: row; flex-wrap: wrap; justify-content: center; }
+            .welcome-header { flex: 1; min-width: 200px; }
+            .welcome-cta { flex: 1; min-width: 250px; }
+            .pulse-button { width: 120px; height: 120px; font-size: 16px; }
         }
 
         /* ========== MENU SCREEN ========== */
@@ -387,17 +435,17 @@
         .menu-top-bar {
             background: #ffffff;
             border-bottom: 1px solid #EEE;
-            padding: 12px 20px;
+            padding: 6px clamp(12px, 3vw, 24px);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            height: 80px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+            height: clamp(44px, 6vh, 60px);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
             flex-shrink: 0;
         }
 
         .menu-logo {
-            font-size: 24px;
+            font-size: clamp(18px, 2.5vw, 24px);
             font-weight: 800;
             color: #E85D75;
             letter-spacing: -1px;
@@ -406,14 +454,14 @@
         .menu-top-right {
             display: flex;
             align-items: center;
-            gap: 20px;
+            gap: 12px;
         }
 
         .menu-order-badge {
             background: #F5F5F5;
-            padding: 6px 12px;
-            border-radius: 12px;
-            font-size: 12px;
+            padding: 4px 10px;
+            border-radius: 10px;
+            font-size: clamp(10px, 1.3vw, 13px);
             color: #6B7280;
             font-weight: 500;
         }
@@ -421,17 +469,14 @@
         .cart-icon-wrapper {
             position: relative;
             cursor: pointer;
-            padding: 8px;
+            padding: 6px;
             transition: all 0.2s ease;
             touch-action: manipulation;
-        }
-
-        .cart-icon-wrapper:active {
-            transform: scale(0.9);
+            display: none; /* hidden — bottom bar replaces this */
         }
 
         .cart-icon {
-            font-size: 28px;
+            font-size: 24px;
         }
 
         .cart-count {
@@ -441,19 +486,19 @@
             background: #E85D75;
             color: #ffffff;
             border-radius: 50%;
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            font-size: 11px;
             font-weight: 700;
         }
 
         .category-scroll {
             display: flex;
-            gap: 12px;
-            padding: 16px 20px;
+            gap: 8px;
+            padding: 8px 16px;
             overflow-x: auto;
             background: #ffffff;
             border-bottom: 1px solid #EEE;
@@ -462,30 +507,19 @@
             -webkit-overflow-scrolling: touch;
         }
 
-        .category-scroll::-webkit-scrollbar {
-            height: 4px;
-        }
-
-        .category-scroll::-webkit-scrollbar-track {
-            background: #F5F5F5;
-        }
-
-        .category-scroll::-webkit-scrollbar-thumb {
-            background: #DDD;
-            border-radius: 2px;
-        }
+        .category-scroll::-webkit-scrollbar { height: 0; display: none; }
 
         .category-pill {
-            padding: 10px 16px;
+            padding: clamp(6px, 1vh, 10px) clamp(10px, 1.5vw, 16px);
             border-radius: 20px;
             background: #F5F5F5;
             border: none;
             cursor: pointer;
-            font-size: 14px;
+            font-size: clamp(12px, 1.5vw, 15px);
             font-weight: 500;
             color: #6B7280;
             white-space: nowrap;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             flex-shrink: 0;
             touch-action: manipulation;
             -webkit-tap-highlight-color: transparent;
@@ -499,7 +533,8 @@
         .menu-grid-container {
             flex: 1;
             overflow-y: auto;
-            padding: 20px;
+            padding: clamp(8px, 1.5vw, 16px);
+            padding-bottom: clamp(8px, 1vw, 12px);
             display: flex;
             justify-content: center;
             -webkit-overflow-scrolling: touch;
@@ -508,36 +543,46 @@
         .menu-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 16px;
-            max-width: 1000px;
+            gap: clamp(8px, 1.2vw, 14px);
+            max-width: 1400px;
             width: 100%;
+            align-content: start;
+        }
+        @media (min-width: 700px) {
+            .menu-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        @media (min-width: 1100px) {
+            .menu-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+        @media (min-width: 1500px) {
+            .menu-grid { grid-template-columns: repeat(5, 1fr); }
         }
 
         .menu-item-card {
             background: #ffffff;
-            border-radius: 16px;
+            border-radius: clamp(10px, 1.5vw, 16px);
             overflow: hidden;
             cursor: pointer;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 6px rgba(0,0,0,0.06);
             display: flex;
             flex-direction: column;
             touch-action: manipulation;
         }
 
         .menu-item-card:active {
-            transform: translateY(-4px);
-            box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+            transform: scale(0.97);
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
         }
 
         .menu-item-image {
             width: 100%;
-            aspect-ratio: 1;
+            aspect-ratio: 4/3;
             background: linear-gradient(135deg, #F5F5F5 0%, #E8E8E8 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 48px;
+            font-size: clamp(32px, 5vw, 48px);
             overflow: hidden;
             position: relative;
         }
@@ -562,7 +607,7 @@
         }
 
         .menu-item-info {
-            padding: 12px;
+            padding: clamp(6px, 1vw, 12px);
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -570,35 +615,36 @@
         }
 
         .menu-item-name {
-            font-size: 16px;
+            font-size: clamp(12px, 1.6vw, 16px);
             font-weight: 600;
             color: #1A1A1A;
-            margin-bottom: 2px;
+            margin-bottom: 1px;
+            line-height: 1.2;
         }
 
         .menu-item-name-kr {
-            font-size: 12px;
+            font-size: clamp(10px, 1.2vw, 13px);
             color: #6B7280;
             font-family: 'Noto Sans KR', sans-serif;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
 
         .menu-item-dietary {
             display: flex;
-            gap: 6px;
-            margin-bottom: 8px;
+            gap: 4px;
+            margin-bottom: 4px;
             flex-wrap: wrap;
         }
 
         .dietary-badge {
             display: inline-flex;
             align-items: center;
-            gap: 3px;
+            gap: 2px;
             background: #E8F5E9;
             color: #2D8C4E;
-            padding: 3px 8px;
-            border-radius: 6px;
-            font-size: 11px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: clamp(9px, 1vw, 11px);
             font-weight: 500;
         }
 
@@ -608,10 +654,88 @@
         }
 
         .menu-item-price {
-            font-size: 18px;
+            font-size: clamp(14px, 1.8vw, 20px);
             font-weight: 700;
             color: #2D8C4E;
         }
+
+        /* ═══ BOTTOM CART BAR ═══ */
+        .bottom-cart-bar {
+            flex-shrink: 0;
+            background: #ffffff;
+            border-top: 1px solid #EEE;
+            padding: clamp(8px, 1.2vh, 14px) clamp(12px, 2vw, 20px);
+            display: flex;
+            align-items: center;
+            gap: clamp(10px, 1.5vw, 16px);
+            box-shadow: 0 -2px 12px rgba(0,0,0,0.06);
+            cursor: pointer;
+            touch-action: manipulation;
+            transition: all .2s;
+        }
+        .bottom-cart-bar:active { background: #F8F8F8; }
+        .bottom-cart-bar.empty { opacity: .5; pointer-events: none; }
+
+        .bottom-cart-items {
+            flex: 1;
+            display: flex;
+            gap: 6px;
+            overflow-x: auto;
+            align-items: center;
+            -webkit-overflow-scrolling: touch;
+        }
+        .bottom-cart-items::-webkit-scrollbar { display: none; }
+
+        .bottom-cart-chip {
+            background: #F0F0F0;
+            border-radius: 20px;
+            padding: 4px 10px;
+            font-size: clamp(11px, 1.3vw, 13px);
+            font-weight: 500;
+            color: #333;
+            white-space: nowrap;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .bottom-cart-chip .chip-qty {
+            background: #E85D75;
+            color: #fff;
+            border-radius: 50%;
+            width: 18px; height: 18px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 700;
+        }
+
+        .bottom-cart-empty {
+            font-size: clamp(12px, 1.4vw, 14px);
+            color: #999;
+            flex: 1;
+        }
+
+        .bottom-cart-total {
+            font-size: clamp(16px, 2.2vw, 22px);
+            font-weight: 800;
+            color: #2D8C4E;
+            white-space: nowrap;
+        }
+
+        .bottom-cart-btn {
+            background: linear-gradient(135deg, #2D8C4E 0%, #1F5C32 100%);
+            color: #fff;
+            border: none;
+            border-radius: clamp(10px, 1.5vw, 14px);
+            padding: clamp(10px, 1.5vh, 16px) clamp(16px, 2.5vw, 28px);
+            font-size: clamp(14px, 1.8vw, 18px);
+            font-weight: 700;
+            cursor: pointer;
+            transition: all .2s;
+            white-space: nowrap;
+            touch-action: manipulation;
+        }
+        .bottom-cart-btn:active { transform: scale(.96); }
+        .bottom-cart-btn:disabled { opacity: .4; pointer-events: none; }
 
         /* ========== ITEM DETAIL MODAL ========== */
         .item-detail-modal {
@@ -676,7 +800,7 @@
 
         .item-detail-image {
             width: 100%;
-            height: 300px;
+            height: clamp(200px, 35vh, 400px);
             background: linear-gradient(135deg, #F5F5F5 0%, #E8E8E8 100%);
             display: flex;
             align-items: center;
@@ -1268,7 +1392,7 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 40px 20px;
+            padding: 4vh 5vw;
             background: #FAFAFA;
         }
 
@@ -1277,13 +1401,14 @@
             flex-direction: column;
             align-items: center;
             max-width: 500px;
+            width: 100%;
             text-align: center;
         }
 
         .payment-title {
-            font-size: 28px;
+            font-size: clamp(22px, 4vw, 32px);
             font-weight: 700;
-            margin-bottom: 30px;
+            margin-bottom: 3vh;
             color: #1A1A1A;
         }
 
@@ -1352,8 +1477,9 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            padding: 40px 20px;
+            padding: 4vh 5vw;
             background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
+            overflow-y: auto;
         }
 
         .confirmation-container {
@@ -1361,19 +1487,21 @@
             flex-direction: column;
             align-items: center;
             text-align: center;
+            max-width: 500px;
+            width: 100%;
         }
 
         .checkmark {
-            width: 120px;
-            height: 120px;
+            width: clamp(80px, 14vh, 130px);
+            height: clamp(80px, 14vh, 130px);
             background: #2D8C4E;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 60px;
+            font-size: clamp(40px, 7vh, 65px);
             color: #ffffff;
-            margin-bottom: 30px;
+            margin-bottom: 2vh;
             animation: checkmarkBounce 0.6s ease;
         }
 
@@ -1384,37 +1512,37 @@
         }
 
         .confirmation-title {
-            font-size: 32px;
+            font-size: clamp(24px, 4vw, 36px);
             font-weight: 700;
             color: #1A1A1A;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
         }
 
         .confirmation-title-kr {
-            font-size: 24px;
+            font-size: clamp(18px, 3vw, 28px);
             font-weight: 700;
             color: #1A1A1A;
-            margin-bottom: 30px;
+            margin-bottom: 2vh;
             font-family: 'Noto Sans KR', sans-serif;
         }
 
         .confirmation-order-number {
             background: #ffffff;
-            padding: 16px 24px;
+            padding: clamp(12px, 2vh, 20px) 24px;
             border-radius: 12px;
-            margin-bottom: 30px;
+            margin-bottom: 2vh;
             width: 100%;
             max-width: 300px;
         }
 
         .confirmation-order-label {
-            font-size: 12px;
+            font-size: clamp(11px, 1.4vw, 14px);
             color: #6B7280;
             margin-bottom: 6px;
         }
 
         .confirmation-order-value {
-            font-size: 36px;
+            font-size: clamp(28px, 5vw, 42px);
             font-weight: 800;
             color: #2D8C4E;
             letter-spacing: 2px;
@@ -1457,11 +1585,7 @@
         }
 
         /* ========== RESPONSIVE ADJUSTMENTS ========== */
-        @media (min-width: 1200px) {
-            .menu-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
+        /* (handled by clamp() and individual media queries above) */
 
         /* ========== PRINT & DEBUG ========== */
         @media print {
@@ -1484,9 +1608,87 @@
             font-size: 16px;
             font-weight: 500;
         }
+
+        /* ═══ Custom Popup Modal ═══ */
+        .tb-popup-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,.55);
+            z-index: 99999; display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity .2s; pointer-events: none;
+        }
+        .tb-popup-overlay.active { opacity: 1; pointer-events: auto; }
+        .tb-popup {
+            background: #fff; border-radius: 24px; padding: 40px 32px 32px;
+            min-width: 340px; max-width: 480px; width: 85%;
+            box-shadow: 0 24px 80px rgba(0,0,0,.3);
+            transform: scale(.9) translateY(20px);
+            transition: transform .25s cubic-bezier(.22,1,.36,1);
+            text-align: center;
+        }
+        .tb-popup-overlay.active .tb-popup { transform: scale(1) translateY(0); }
+        .tb-popup-icon { font-size: 56px; margin-bottom: 16px; }
+        .tb-popup-title { font-size: 22px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; }
+        .tb-popup-msg { font-size: 16px; color: #555; line-height: 1.6; margin-bottom: 28px; white-space: pre-line; }
+        .tb-popup-btns { display: flex; gap: 12px; justify-content: center; }
+        .tb-popup-btns button {
+            padding: 16px 36px; border: none; border-radius: 16px;
+            font-size: 18px; font-weight: 700; cursor: pointer; transition: all .15s;
+            min-width: 120px;
+        }
+        .tb-popup-btns .tb-btn-ok {
+            background: linear-gradient(135deg, #3498db, #2980b9); color: #fff;
+        }
+        .tb-popup-btns .tb-btn-ok:hover { transform: scale(1.03); }
     </style>
 </head>
 <body>
+    <!-- ═══ Custom Popup Container ═══ -->
+    <div class="tb-popup-overlay" id="tbPopup">
+        <div class="tb-popup">
+            <div class="tb-popup-icon" id="tbPopupIcon">⚠️</div>
+            <div class="tb-popup-title" id="tbPopupTitle">Notice</div>
+            <div class="tb-popup-msg" id="tbPopupMsg"></div>
+            <div class="tb-popup-btns" id="tbPopupBtns"></div>
+        </div>
+    </div>
+    <script>
+    function tbAlert(msg, title, icon) {
+        return new Promise(resolve => {
+            const ov = document.getElementById('tbPopup');
+            document.getElementById('tbPopupIcon').textContent = icon || 'ℹ️';
+            document.getElementById('tbPopupTitle').textContent = title || 'Notice';
+            document.getElementById('tbPopupMsg').textContent = msg;
+            document.getElementById('tbPopupBtns').innerHTML =
+                '<button class="tb-btn-ok" id="tbPopupOk">OK</button>';
+            ov.classList.add('active');
+            document.getElementById('tbPopupOk').onclick = () => { ov.classList.remove('active'); resolve(true); };
+        });
+    }
+    </script>
+
+    <!-- ═══ Fullscreen Toggle Button ═══ -->
+    <button class="fullscreen-btn" id="fullscreenBtn" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
+    <script>
+    function toggleFullscreen() {
+        const btn = document.getElementById('fullscreenBtn');
+        if (!document.fullscreenElement && !document.webkitFullscreenElement) {
+            const el = document.documentElement;
+            if (el.requestFullscreen) el.requestFullscreen();
+            else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+            btn.textContent = '✕';
+        } else {
+            if (document.exitFullscreen) document.exitFullscreen();
+            else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+            btn.textContent = '⛶';
+        }
+    }
+    document.addEventListener('fullscreenchange', () => {
+        document.getElementById('fullscreenBtn').textContent = document.fullscreenElement ? '✕' : '⛶';
+    });
+    document.addEventListener('webkitfullscreenchange', () => {
+        document.getElementById('fullscreenBtn').textContent = document.webkitFullscreenElement ? '✕' : '⛶';
+    });
+    </script>
+
     <div id="app">
         <!-- Staff Boot Screen -->
         <div id="staffBootScreen" class="screen active">
@@ -1499,26 +1701,28 @@
 
         <!-- Welcome Screen -->
         <div id="welcomeScreen" class="screen">
-            <div class="welcome-header">
-                <div class="welcome-logo">The Bap</div>
-                <div class="welcome-tagline-kr">밥이보약</div>
-                <div class="welcome-tagline-en">K-Food on the Bap</div>
-                <div class="welcome-branch" id="welcomeBranch"></div>
-            </div>
+            <div class="welcome-inner">
+                <div class="welcome-header">
+                    <div class="welcome-logo"><img src="TBLOGO.png" alt="The Bap 밥"></div>
+                    <div class="welcome-tagline-kr">밥이보약</div>
+                    <div class="welcome-tagline-en">K-Food on the Bap</div>
+                    <div class="welcome-branch" id="welcomeBranch"></div>
+                </div>
 
-            <div class="welcome-cta">
-                <button class="pulse-button" id="touchToOrderBtn">
-                    Touch to Order
-                </button>
-                <div class="order-type-buttons">
-                    <button class="order-type-button" id="eatInBtn">
-                        <div class="order-type-icon">🍽️</div>
-                        <div>Eat In</div>
+                <div class="welcome-cta">
+                    <button class="pulse-button" id="touchToOrderBtn">
+                        Touch to Order
                     </button>
-                    <button class="order-type-button" id="takeAwayBtn">
-                        <div class="order-type-icon">📦</div>
-                        <div>Take Away</div>
-                    </button>
+                    <div class="order-type-buttons">
+                        <button class="order-type-button" id="eatInBtn">
+                            <div class="order-type-icon">🍽️</div>
+                            <div>Eat In</div>
+                        </button>
+                        <button class="order-type-button" id="takeAwayBtn">
+                            <div class="order-type-icon">📦</div>
+                            <div>Take Away</div>
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -1543,6 +1747,15 @@
 
             <div class="menu-grid-container">
                 <div class="menu-grid" id="menuGrid"></div>
+            </div>
+
+            <!-- Bottom Cart Bar -->
+            <div class="bottom-cart-bar empty" id="bottomCartBar">
+                <div class="bottom-cart-items" id="bottomCartItems">
+                    <div class="bottom-cart-empty">🛒 Your cart is empty</div>
+                </div>
+                <div class="bottom-cart-total" id="bottomCartTotal">£0.00</div>
+                <button class="bottom-cart-btn" id="bottomCartBtn" disabled>View Order ▸</button>
             </div>
         </div>
 
@@ -1659,15 +1872,52 @@
             </div>
         </div>
 
+        <!-- Customer Name Screen -->
+        <div id="nameScreen" class="screen">
+            <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:3vh 5vw;background:#F5F5F7;overflow-y:auto;">
+                <div style="font-size:clamp(24px,4vw,36px);font-weight:700;color:#333;margin-bottom:6px;">Your Name / 이름</div>
+                <div style="font-size:clamp(13px,2vw,17px);color:#999;margin-bottom:2vh;">We'll call your name when your order is ready</div>
+                <div style="font-size:clamp(12px,1.8vw,15px);color:#999;margin-bottom:2vh;">주문이 준비되면 이름을 불러드립니다</div>
+
+                <input type="text" id="customerNameInput" placeholder="Enter your name..."
+                    autocomplete="off" maxlength="20"
+                    style="width:85%;max-width:500px;padding:clamp(16px,2.5vh,28px);font-size:clamp(24px,4vw,36px);font-weight:600;
+                    text-align:center;border:3px solid #DDD;border-radius:16px;outline:none;
+                    background:#FFF;color:#333;margin-bottom:2vh;"
+                    onfocus="this.style.borderColor='#E85D75'" onblur="this.style.borderColor='#DDD'">
+
+                <div id="nameKeyboard" style="display:grid;grid-template-columns:repeat(10,1fr);gap:clamp(4px,0.6vw,8px);width:92%;max-width:650px;margin-bottom:2vh;">
+                </div>
+
+                <div style="display:flex;gap:clamp(10px,2vw,18px);width:85%;max-width:500px;">
+                    <button id="nameBackBtn" style="flex:1;padding:clamp(14px,2vh,22px);font-size:clamp(14px,2vw,18px);font-weight:600;
+                        border:2px solid #DDD;border-radius:12px;background:#FFF;color:#666;cursor:pointer;touch-action:manipulation;">
+                        ← Back
+                    </button>
+                    <button id="nameSkipBtn" style="flex:1;padding:clamp(14px,2vh,22px);font-size:clamp(14px,2vw,18px);font-weight:600;
+                        border:2px solid #DDD;border-radius:12px;background:#FFF;color:#999;cursor:pointer;touch-action:manipulation;">
+                        Skip
+                    </button>
+                    <button id="nameNextBtn" style="flex:2;padding:clamp(14px,2vh,22px);font-size:clamp(16px,2.5vw,24px);font-weight:700;
+                        border:none;border-radius:12px;background:linear-gradient(135deg,#E85D75,#FF6B8A);
+                        color:#FFF;cursor:pointer;box-shadow:0 4px 12px rgba(232,93,117,0.3);touch-action:manipulation;">
+                        Next →
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Payment Screen -->
         <div id="paymentScreen" class="screen">
             <div class="payment-container">
-                <div class="payment-title">Processing Payment</div>
-                <div class="card-reader-illustration"></div>
-                <div class="payment-status" id="paymentStatus">Tap your card...</div>
+                <div class="payment-title" id="paymentTitle">Payment</div>
+                <div class="payment-amount" style="font-size:clamp(32px,6vw,52px); font-weight:800; color:#E85D75; margin-bottom:2vh;" id="paymentAmount">£0.00</div>
+                <div class="card-reader-illustration" id="cardReaderAnim"></div>
+                <div class="payment-status" id="paymentStatus">Tap your card on the reader</div>
                 <div class="payment-options">
-                    <button class="payment-option-btn" id="payWithCardBtn">Tap Card</button>
-                    <button class="payment-option-btn" id="payAtCounterBtn">Pay at Counter</button>
+                    <button class="payment-option-btn" id="payWithCardBtn" style="background:#E85D75; color:#fff; font-size:22px; padding:24px;">💳 Tap Card to Pay</button>
+                    <button class="payment-option-btn" id="payAtCounterBtn" style="font-size:14px; border-color:#ccc; color:#999;">Pay at Counter</button>
+                    <button class="payment-option-btn hidden" id="cancelPaymentBtn" style="font-size:14px; border-color:#EF4444; color:#EF4444;">Cancel</button>
                 </div>
             </div>
         </div>
@@ -1684,12 +1934,45 @@
                     <div class="confirmation-order-value" id="confirmationOrderNumber">TB-000</div>
                 </div>
 
+                <div id="confirmationName" style="font-size:28px;font-weight:700;color:#333;margin:8px 0;display:none;"></div>
+
                 <div class="confirmation-order-type" id="confirmationOrderType">Eat In</div>
 
                 <div class="confirmation-status">Preparing your order...</div>
 
-                <div class="confirmation-timer">
-                    <span>Returning to menu in </span>
+                <div id="counterMessage" style="
+                    margin-top:20px;padding:20px 32px;
+                    background:linear-gradient(135deg,#FFF3CD,#FFEEBA);
+                    border:2px solid #FFD93D;border-radius:12px;
+                    text-align:center;max-width:500px;width:80%;
+                ">
+                    <div style="font-size:22px;margin-bottom:6px;">🥤🍫 Drinks & Snacks</div>
+                    <div style="font-size:16px;color:#856404;font-weight:600;">
+                        Please choose at the counter!
+                    </div>
+                    <div style="font-size:14px;color:#856404;margin-top:4px;">
+                        음료와 스낵은 카운터에서 선택해주세요
+                    </div>
+                </div>
+
+                <button id="backToMainBtn" style="
+                    margin-top: 32px;
+                    width: 80%;
+                    max-width: 500px;
+                    padding: 28px 40px;
+                    font-size: 28px;
+                    font-weight: 700;
+                    border: none;
+                    border-radius: 16px;
+                    background: linear-gradient(135deg, #E85D75, #FF6B8A);
+                    color: #FFF;
+                    cursor: pointer;
+                    box-shadow: 0 6px 20px rgba(232, 93, 117, 0.4);
+                    transition: all 0.2s ease;
+                ">🏠 New Order / 새 주문</button>
+
+                <div class="confirmation-timer" style="margin-top:16px;">
+                    <span>Auto return in </span>
                     <span id="confirmationTimer">15</span>
                     <span>s...</span>
                 </div>
@@ -1785,50 +2068,57 @@
             }
         ];
 
-        const CATEGORIES = [
-            { id: 'kfood', name: 'K-Food', nameKr: 'K-푸드', icon: '🍚' },
-            { id: 'kchicken', name: 'K-Chicken', nameKr: 'K-치킨', icon: '🍗' },
-            { id: 'bbq', name: 'BBQ', nameKr: '불고기', icon: '🔥' },
-            { id: 'bibimbap', name: 'Bibim Bap', nameKr: '비빔밥', icon: '🥗' },
-            { id: 'noodle', name: 'Noodle', nameKr: '국수', icon: '🍜' },
-            { id: 'sides', name: 'Sides', nameKr: '사이드', icon: '🥟' },
-            { id: 'chickenbox', name: 'Chicken Box', nameKr: '치킨박스', icon: '📦' }
-        ];
+        // ═══ Menu data loaded from server API ═══
+        let CATEGORIES = [];
+        let MENU_ITEMS = [];
+        let SAUCES = [];
+        let MENU_BRANCH_PRICING = {};
 
-        const MENU_ITEMS = [
-            { id: 0, catId: 'kfood', nameEn: 'Combo Bap', nameKr: '콤보밥', desc: 'Two different choices of topping', price: 9.55, dietary: [], isCombo: true, comboCount: 2, image: '' },
-            { id: 1, catId: 'kfood', nameEn: 'Tofu Bap', nameKr: '두부밥', desc: 'Fried Tofu', price: 7.45, dietary: ['V'], image: '' },
-            { id: 2, catId: 'kfood', nameEn: 'Man Du Bap', nameKr: '만두밥', desc: 'Fried Chicken Dumpling 4pcs', price: 7.45, dietary: [], image: '' },
-            { id: 3, catId: 'kfood', nameEn: 'Jap Che Bap', nameKr: '잡채밥', desc: 'Sweet Potato Noodles', price: 6.95, dietary: ['V'], image: '' },
-            { id: 4, catId: 'kchicken', nameEn: 'KFC Bap', nameKr: '양념치킨밥', desc: 'Korean Fried Chicken', price: 8.25, dietary: [], image: '' },
-            { id: 5, catId: 'kchicken', nameEn: 'Katsu Bap', nameKr: '카츠밥', desc: 'Chicken Katsu with Curry Sauce', price: 8.25, dietary: [], image: '' },
-            { id: 6, catId: 'kchicken', nameEn: 'Kang Jung Bap', nameKr: '강정밥', desc: 'Sweet & Sour Fried Chicken', price: 8.25, dietary: [], image: '' },
-            { id: 7, catId: 'kchicken', nameEn: 'Sweet Soy Bap', nameKr: '간장치킨밥', desc: 'Sweet Soy Fried Chicken', price: 8.25, dietary: [], image: '' },
-            { id: 8, catId: 'bbq', nameEn: 'Beef Bap', nameKr: '소불고기밥', desc: 'Korean Beef Bulgogi BBQ', price: 8.75, dietary: [], image: '' },
-            { id: 9, catId: 'bbq', nameEn: 'Pork Bap', nameKr: '돼지불고기밥', desc: 'Korean Spicy Pork Bulgogi', price: 8.75, dietary: ['spicy'], image: '' },
-            { id: 10, catId: 'bbq', nameEn: 'Chicken Bap', nameKr: '닭불고기밥', desc: 'Korean Chicken Bulgogi BBQ', price: 8.75, dietary: [], image: '' },
-            { id: 11, catId: 'bibimbap', nameEn: 'Vegetable Bibim Bap', nameKr: '야채비빔밥', desc: 'Seasoned Vegetables + Gochujang', price: 8.45, dietary: ['VG'], image: '' },
-            { id: 12, catId: 'bibimbap', nameEn: 'Bibim Bap with Topping', nameKr: '비빔밥+토핑', desc: 'Bibim Bap + Choice of 1 Topping', price: 9.95, dietary: [], hasTopping: true, toppingCount: 1, image: '' },
-            { id: 13, catId: 'noodle', nameEn: 'Katsu Guk Su', nameKr: '카츠국수', desc: 'Noodle Soup + Katsu', price: 8.00, dietary: [], image: '' },
-            { id: 14, catId: 'noodle', nameEn: 'Man Du Guk Su', nameKr: '만두국수', desc: 'Noodle Soup + Dumplings', price: 8.00, dietary: [], image: '' },
-            { id: 15, catId: 'noodle', nameEn: 'Tofu Guk Su', nameKr: '두부국수', desc: 'Noodle Soup + Fried Tofu', price: 7.95, dietary: [], image: '' },
-            { id: 16, catId: 'sides', nameEn: 'Man Du Set', nameKr: '만두세트', desc: 'Chicken Dumpling 4pcs + Sauce', price: 2.95, dietary: [], image: '' },
-            { id: 17, catId: 'sides', nameEn: 'Kim Mari Set', nameKr: '김말이세트', desc: 'Seaweed Noodle Roll 4pcs', price: 3.25, dietary: ['V'], image: '' },
-            { id: 18, catId: 'sides', nameEn: 'Ttok-Bok-Ki', nameKr: '떡볶이', desc: 'Spicy Rice Cake', price: 4.45, dietary: ['V'], image: '' },
-            { id: 19, catId: 'sides', nameEn: 'Kim Chi', nameKr: '김치', desc: 'Korean Kimchi', price: 2.95, dietary: ['VG'], image: '' },
-            { id: 20, catId: 'chickenbox', nameEn: 'Korean Chicken Box', nameKr: '치킨박스', desc: 'KFC + Kang Jung + Sweet Soy', price: 17.95, dietary: [], image: '' }
-        ];
+        async function loadMenuFromAPI() {
+            try {
+                const resp = await fetch('/api/menu');
+                if (!resp.ok) throw new Error('Menu API error: ' + resp.status);
+                const data = await resp.json();
+                // Map categories: server uses nameEn, kiosk uses name
+                CATEGORIES = (data.categories || [])
+                    .filter(c => c.active !== false)
+                    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                    .map(c => ({ id: c.id, name: c.nameEn, nameKr: c.nameKr, icon: c.icon || '🍱', color: c.color }));
+                // Map items: server uses string IDs like 'M001', keep as-is
+                MENU_ITEMS = (data.items || [])
+                    .filter(i => i.active !== false)
+                    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                    .map(i => ({
+                        id: i.id, catId: i.catId, nameEn: i.nameEn, nameKr: i.nameKr,
+                        desc: i.desc || '', price: i.price, dietary: i.dietary || [],
+                        image: i.image || '', isCombo: i.isCombo || false, comboCount: i.comboCount || 0,
+                        hasTopping: i.hasTopping || false, toppingCount: i.toppingCount || 0
+                    }));
+                // Sauces
+                SAUCES = (data.sauces || []).map(s => ({
+                    id: s.id, name: s.nameEn, nameKr: s.nameKr,
+                    spice: s.spiceLevel || 0, desc: '', allergens: {},
+                    price: s.price || 0
+                }));
+                // Branch pricing
+                MENU_BRANCH_PRICING = data.branchPricing || {};
+                console.log('[Kiosk] Menu loaded:', CATEGORIES.length, 'categories,', MENU_ITEMS.length, 'items,', SAUCES.length, 'sauces');
+                return data;
+            } catch (err) {
+                console.error('[Kiosk] Menu load failed:', err);
+                // Keep existing data (empty arrays) so app doesn't crash
+                return null;
+            }
+        }
 
-        const SAUCES = [
-            { id: 1, name: 'White', nameKr: '화이트', spice: 0, desc: 'Sweet & tangy creamy sauce with citrus', allergens: { eggs: 'contains', mustard: 'contains' } },
-            { id: 2, name: 'Bulgogi', nameKr: '불고기', spice: 0, desc: 'Savoury soy-based with gentle sweetness', allergens: { gluten: 'contains', sesame: 'contains' } },
-            { id: 3, name: 'Baby Hot', nameKr: '베이비핫', spice: 1, desc: 'Creamy chili mayo, mildest spicy', allergens: { eggs: 'contains', mustard: 'contains' } },
-            { id: 4, name: 'Bibim Bap', nameKr: '비빔밥', spice: 2, desc: 'Sweet, tangy, spicy Korean classic', allergens: { gluten: 'contains', sesame: 'contains', soya: 'contains' } },
-            { id: 5, name: 'Spicy', nameKr: '스파이시', spice: 3, desc: 'Velvety spicy with bold finish', allergens: { gluten: 'contains', eggs: 'contains', mustard: 'contains', sesame: 'contains', soya: 'contains' } },
-            { id: 6, name: 'Extra Spicy', nameKr: '엑스트라', spice: 4, desc: 'Sharp, tangy with fiery edge', allergens: {} },
-            { id: 7, name: 'Hot', nameKr: '핫', spice: 4, desc: 'Bold, vibrant, strong tangy spice', allergens: { gluten: 'contains', sesame: 'contains', soya: 'contains' } },
-            { id: 8, name: 'Crazy Hot', nameKr: '크레이지핫', spice: 5, desc: 'Hottest — a few drops only!', allergens: {} }
-        ];
+        // Get branch-adjusted price for an item
+        function getBranchPrice(item) {
+            const branch = AppState.currentBranch;
+            if (branch && MENU_BRANCH_PRICING[branch] && MENU_BRANCH_PRICING[branch][item.id] !== undefined) {
+                return MENU_BRANCH_PRICING[branch][item.id];
+            }
+            return item.price;
+        }
 
         const ALLERGENS_DATA = {
             0: { gluten: 'contains', soya: 'contains' },
@@ -1880,6 +2170,7 @@
         const AppState = {
             currentBranch: localStorage.getItem('tb_current_branch') || null,
             currentOrderType: null,
+            customerName: '',
             cart: JSON.parse(localStorage.getItem('tb_cart') || '[]'),
             selectedItem: null,
             selectedSauce: null,
@@ -1889,7 +2180,7 @@
             orderChannel: null,
             ws: null,
 
-            init() {
+            async init() {
                 try {
                     this.orderChannel = new BroadcastChannel('thebap_orders');
                     this.orderChannel.onmessage = (event) => {
@@ -1900,6 +2191,9 @@
                 } catch (e) {
                     console.log('BroadcastChannel not available');
                 }
+
+                // Load menu from server API
+                await loadMenuFromAPI();
 
                 this.connectWebSocket();
 
@@ -1922,10 +2216,18 @@
                         // currentBranch는 문자열 코드 ('PAB', 'TBS' 등) — .code 접근 불필요
                         this.ws.send(JSON.stringify({ type: 'register', clientType: 'order', branchCode: this.currentBranch || '' }));
                     };
-                    this.ws.onmessage = (event) => {
+                    this.ws.onmessage = async (event) => {
                         const data = JSON.parse(event.data);
                         if (data.type === 'new_order') {
                             console.log('Order received via WebSocket:', data.order);
+                        } else if (data.type === 'menu_update') {
+                            // Reload menu when admin updates it
+                            console.log('[Kiosk] Menu update received, reloading...');
+                            await loadMenuFromAPI();
+                            if (AppState.currentScreen === 'menu') {
+                                const firstCat = CATEGORIES.length > 0 ? CATEGORIES[0].id : 'kfood';
+                                updateMenuScreen(firstCat);
+                            }
                         }
                     };
                     this.ws.onerror = () => { console.log('WebSocket error'); };
@@ -1947,12 +2249,16 @@
                 if (screenName === 'staffBoot') screenEl = document.getElementById('staffBootScreen');
                 else if (screenName === 'welcome') screenEl = document.getElementById('welcomeScreen');
                 else if (screenName === 'menu') screenEl = document.getElementById('menuScreen');
+                else if (screenName === 'name') screenEl = document.getElementById('nameScreen');
                 else if (screenName === 'payment') screenEl = document.getElementById('paymentScreen');
                 else if (screenName === 'confirmation') screenEl = document.getElementById('confirmationScreen');
 
                 if (screenEl) {
                     screenEl.classList.add('active');
                     this.currentScreen = screenName;
+                    if (screenName === 'menu' && typeof updateBottomCartBar === 'function') {
+                        updateBottomCartBar();
+                    }
                 }
             },
 
@@ -2101,21 +2407,21 @@
         document.getElementById('touchToOrderBtn').addEventListener('click', () => {
             playTapSound();
             const branch = AppState.getCurrentBranch();
-            updateMenuScreen('kfood');
+            updateMenuScreen();
             AppState.goToScreen('menu');
         });
 
         document.getElementById('eatInBtn').addEventListener('click', () => {
             playTapSound();
             AppState.currentOrderType = 'eat_in';
-            updateMenuScreen('kfood');
+            updateMenuScreen();
             AppState.goToScreen('menu');
         });
 
         document.getElementById('takeAwayBtn').addEventListener('click', () => {
             playTapSound();
             AppState.currentOrderType = 'take_away';
-            updateMenuScreen('kfood');
+            updateMenuScreen();
             AppState.goToScreen('menu');
         });
 
@@ -2128,7 +2434,8 @@
         });
 
         // ========== MENU SCREEN LOGIC ==========
-        function updateMenuScreen(categoryId = 'kfood') {
+        function updateMenuScreen(categoryId) {
+            if (!categoryId) categoryId = CATEGORIES.length > 0 ? CATEGORIES[0].id : 'kfood';
             const orderTypeText = AppState.currentOrderType === 'eat_in' ? 'Eat In' : 'Take Away';
             document.getElementById('menuOrderBadge').textContent = orderTypeText;
 
@@ -2216,10 +2523,7 @@
             document.getElementById('itemDetailName').textContent = item.nameEn;
             document.getElementById('itemDetailNameKr').textContent = item.nameKr;
 
-            const branch = AppState.getCurrentBranch();
-            const branchPricing = JSON.parse(localStorage.getItem('tb_branch_pricing') || '{}');
-            const branchOverride = branchPricing[branch.code] || {};
-            const displayPrice = branchOverride[item.id] || item.price;
+            const displayPrice = getBranchPrice(item);
 
             document.getElementById('itemDetailPrice').textContent = formatPrice(displayPrice);
             document.getElementById('itemDetailDesc').textContent = item.desc;
@@ -2354,7 +2658,7 @@
             playTapSound();
             const item = AppState.selectedItem;
             if (!AppState.selectedSauce) {
-                alert('Please select a sauce');
+                tbAlert('Please select a sauce\n소스를 선택해주세요', 'Select Sauce', '🫙');
                 return;
             }
 
@@ -2379,7 +2683,50 @@
         function updateCartCount() {
             const count = AppState.cart.reduce((sum, item) => sum + item.quantity, 0);
             document.getElementById('cartCount').textContent = count > 0 ? count : '0';
+            updateBottomCartBar();
         }
+
+        function updateBottomCartBar() {
+            const bar = document.getElementById('bottomCartBar');
+            const itemsEl = document.getElementById('bottomCartItems');
+            const totalEl = document.getElementById('bottomCartTotal');
+            const btn = document.getElementById('bottomCartBtn');
+
+            if (AppState.cart.length === 0) {
+                bar.classList.add('empty');
+                itemsEl.innerHTML = '<div class="bottom-cart-empty">🛒 Your cart is empty</div>';
+                totalEl.textContent = '£0.00';
+                btn.disabled = true;
+                return;
+            }
+
+            bar.classList.remove('empty');
+            btn.disabled = false;
+
+            let chips = '';
+            AppState.cart.forEach(item => {
+                chips += `<div class="bottom-cart-chip"><span class="chip-qty">${item.quantity}</span>${item.nameEn}</div>`;
+            });
+            itemsEl.innerHTML = chips;
+
+            const subtotal = AppState.cart.reduce((sum, item) => sum + item.totalPrice, 0);
+            totalEl.textContent = formatPrice(subtotal);
+        }
+
+        // Bottom cart bar → open full cart panel
+        document.getElementById('bottomCartBar').addEventListener('click', (e) => {
+            if (e.target.closest('.bottom-cart-btn')) return; // handled separately
+            if (AppState.cart.length === 0) return;
+            playTapSound();
+            updateCartPanel();
+            document.getElementById('cartPanel').classList.add('active');
+        });
+
+        document.getElementById('bottomCartBtn').addEventListener('click', () => {
+            playTapSound();
+            updateCartPanel();
+            document.getElementById('cartPanel').classList.add('active');
+        });
 
         document.getElementById('cartIconWrapper').addEventListener('click', () => {
             playTapSound();
@@ -2484,32 +2831,255 @@
         document.getElementById('placeOrderBtn').addEventListener('click', () => {
             playTapSound();
             document.getElementById('cartPanel').classList.remove('active');
-            AppState.goToScreen('payment');
-            document.getElementById('paymentStatus').textContent = 'Tap your card...';
+            // 이름 입력 화면으로
+            document.getElementById('customerNameInput').value = '';
+            AppState.customerName = '';
+            AppState.goToScreen('name');
         });
+
+        // ========== CUSTOMER NAME SCREEN ==========
+        // 터치 키보드 생성
+        (function buildNameKeyboard() {
+            const keys = [
+                'Q','W','E','R','T','Y','U','I','O','P',
+                'A','S','D','F','G','H','J','K','L','⌫',
+                'Z','X','C','V','B','N','M',' ','✓',''
+            ];
+            const kb = document.getElementById('nameKeyboard');
+            keys.forEach(key => {
+                if (key === '') return;
+                const btn = document.createElement('button');
+                btn.textContent = key === ' ' ? '␣' : key;
+                btn.style.cssText = 'padding:14px 4px;font-size:18px;font-weight:600;border:2px solid #DDD;border-radius:10px;background:#FFF;color:#333;cursor:pointer;';
+                if (key === '⌫') { btn.style.background = '#FFE0E6'; btn.style.color = '#E85D75'; }
+                if (key === '✓') { btn.style.background = '#E85D75'; btn.style.color = '#FFF'; btn.style.gridColumn = 'span 2'; }
+                if (key === ' ') { btn.style.gridColumn = 'span 2'; }
+                btn.addEventListener('click', () => {
+                    const input = document.getElementById('customerNameInput');
+                    if (key === '⌫') {
+                        input.value = input.value.slice(0, -1);
+                    } else if (key === '✓') {
+                        goToPaymentFromName();
+                    } else {
+                        if (input.value.length < 20) input.value += key;
+                    }
+                });
+                kb.appendChild(btn);
+            });
+        })();
+
+        function goToPaymentFromName() {
+            AppState.customerName = document.getElementById('customerNameInput').value.trim();
+            const subtotal = AppState.cart.reduce((sum, item) => sum + item.totalPrice, 0);
+            document.getElementById('paymentAmount').textContent = formatPrice(subtotal);
+            document.getElementById('paymentStatus').textContent = 'Tap your card on the reader';
+            document.getElementById('payWithCardBtn').disabled = false;
+            document.getElementById('payWithCardBtn').classList.remove('hidden');
+            document.getElementById('payAtCounterBtn').classList.remove('hidden');
+            document.getElementById('cancelPaymentBtn').classList.add('hidden');
+            AppState.goToScreen('payment');
+        }
+
+        document.getElementById('nameBackBtn').addEventListener('click', () => {
+            playTapSound();
+            AppState.goToScreen('menu');
+            document.getElementById('cartPanel').classList.add('active');
+        });
+
+        document.getElementById('nameSkipBtn').addEventListener('click', () => {
+            playTapSound();
+            AppState.customerName = '';
+            goToPaymentFromName();
+        });
+
+        document.getElementById('nameNextBtn').addEventListener('click', () => {
+            playTapSound();
+            goToPaymentFromName();
+        });
+
+        // Enter 키로도 다음으로
+        document.getElementById('customerNameInput').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') goToPaymentFromName();
+        });
+
+        // ========== STRIPE TERMINAL ==========
+        let stripeTerminal = null;
+        let stripeEnabled = false;
+
+        // Stripe Terminal JS SDK 로드 + 초기화
+        async function initStripeTerminal() {
+            try {
+                // 서버에 Stripe 설정 확인
+                const statusRes = await fetch('/api/stripe/status');
+                const statusData = await statusRes.json();
+                if (!statusData.enabled) {
+                    console.log('[Stripe] 서버에 Stripe 미설정 — 데모 모드');
+                    stripeEnabled = false;
+                    return;
+                }
+
+                // Stripe Terminal JS SDK 동적 로드
+                if (!window.StripeTerminal) {
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = 'https://js.stripe.com/terminal/v1/';
+                        script.onload = resolve;
+                        script.onerror = reject;
+                        document.head.appendChild(script);
+                    });
+                }
+
+                stripeTerminal = window.StripeTerminal.create({
+                    onFetchConnectionToken: async () => {
+                        const res = await fetch('/api/stripe/connection-token', { method: 'POST' });
+                        const data = await res.json();
+                        return data.secret;
+                    },
+                    onUnexpectedReaderDisconnect: () => {
+                        console.log('[Stripe] ⚠️ 리더 연결 끊김');
+                        document.getElementById('paymentStatus').textContent = 'Card reader disconnected. Reconnecting...';
+                        discoverAndConnect();
+                    }
+                });
+
+                stripeEnabled = true;
+                console.log('[Stripe] ✅ Terminal SDK 초기화 완료');
+                discoverAndConnect();
+
+            } catch (e) {
+                console.log('[Stripe] SDK 초기화 실패:', e.message);
+                stripeEnabled = false;
+            }
+        }
+
+        // 리더 자동 검색 + 연결
+        async function discoverAndConnect() {
+            if (!stripeTerminal) return;
+            try {
+                const config = { simulated: false };
+                const result = await stripeTerminal.discoverReaders(config);
+                if (result.error) {
+                    console.log('[Stripe] 리더 검색 오류:', result.error.message);
+                    return;
+                }
+                if (result.discoveredReaders.length === 0) {
+                    console.log('[Stripe] 리더 발견 안됨');
+                    return;
+                }
+                // 첫 번째 리더에 연결
+                const reader = result.discoveredReaders[0];
+                const connectResult = await stripeTerminal.connectReader(reader);
+                if (connectResult.error) {
+                    console.log('[Stripe] 리더 연결 실패:', connectResult.error.message);
+                } else {
+                    console.log(`[Stripe] ✅ 리더 연결: ${reader.label || reader.id}`);
+                }
+            } catch (e) {
+                console.log('[Stripe] 리더 연결 오류:', e.message);
+            }
+        }
 
         // ========== PAYMENT LOGIC ==========
-        document.getElementById('payWithCardBtn').addEventListener('click', () => {
+        document.getElementById('payWithCardBtn').addEventListener('click', async () => {
             playTapSound();
-            document.getElementById('paymentStatus').textContent = 'Card detected...';
-            setTimeout(() => {
-                completePayment();
-            }, 2000);
-        });
+            const btn = document.getElementById('payWithCardBtn');
+            const statusEl = document.getElementById('paymentStatus');
+            btn.disabled = true;
 
-        document.getElementById('payAtCounterBtn').addEventListener('click', () => {
-            playTapSound();
-            completePayment();
-        });
+            const subtotal = AppState.cart.reduce((sum, item) => sum + item.totalPrice, 0);
+            const amountPence = Math.round(subtotal * 100); // £ → pence
 
-        function completePayment() {
             const branch = AppState.getCurrentBranch();
             const today = new Date().toISOString().split('T')[0];
             let orderCounter = parseInt(localStorage.getItem(`tb_order_counter_${today}`) || '0') + 1;
             localStorage.setItem(`tb_order_counter_${today}`, orderCounter);
-
             const orderNumber = `TB-${String(orderCounter).padStart(3, '0')}`;
 
+            if (stripeEnabled && stripeTerminal) {
+                // ── 실제 Stripe Terminal 결제 ──
+                try {
+                    statusEl.textContent = 'Preparing payment...';
+                    document.getElementById('payAtCounterBtn').classList.add('hidden');
+                    document.getElementById('cancelPaymentBtn').classList.remove('hidden');
+
+                    // 1. 서버에서 PaymentIntent 생성
+                    const piRes = await fetch('/api/stripe/create-payment-intent', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ amount: amountPence, orderNumber, branchCode: branch.code })
+                    });
+                    const piData = await piRes.json();
+                    if (piData.error) throw new Error(piData.error);
+
+                    // 2. 리더에 결제 수집 요청
+                    statusEl.textContent = '💳 Tap, insert, or swipe your card...';
+                    const collectResult = await stripeTerminal.collectPaymentMethod(piData.clientSecret);
+                    if (collectResult.error) {
+                        throw new Error(collectResult.error.message);
+                    }
+
+                    // 3. 결제 처리
+                    statusEl.textContent = 'Processing payment...';
+                    const processResult = await stripeTerminal.processPayment(collectResult.paymentIntent);
+                    if (processResult.error) {
+                        throw new Error(processResult.error.message);
+                    }
+
+                    if (processResult.paymentIntent.status === 'succeeded') {
+                        statusEl.textContent = '✅ Payment successful!';
+                        console.log(`[Stripe] ✅ 결제 완료: ${orderNumber} (£${subtotal.toFixed(2)})`);
+                        completeOrder(orderNumber, branch, 'card_stripe');
+                    } else {
+                        throw new Error('Payment not completed: ' + processResult.paymentIntent.status);
+                    }
+
+                } catch (e) {
+                    console.error('[Stripe] 결제 오류:', e.message);
+                    statusEl.textContent = '❌ ' + e.message;
+                    btn.disabled = false;
+                    btn.textContent = '🔄 Try Again';
+                    document.getElementById('payAtCounterBtn').classList.remove('hidden');
+                    document.getElementById('cancelPaymentBtn').classList.add('hidden');
+                    // 주문번호 롤백
+                    localStorage.setItem(`tb_order_counter_${today}`, orderCounter - 1);
+                }
+
+            } else {
+                // ── 데모 모드 (Stripe 미설정) — 기존 시뮬레이션 ──
+                statusEl.textContent = '💳 Reading card...';
+                await new Promise(r => setTimeout(r, 1500));
+                statusEl.textContent = '✅ Payment approved!';
+                await new Promise(r => setTimeout(r, 500));
+                console.log(`[결제] 데모 모드: ${orderNumber} (£${subtotal.toFixed(2)})`);
+                completeOrder(orderNumber, branch, 'card_demo');
+            }
+        });
+
+        // Cancel payment (Stripe)
+        document.getElementById('cancelPaymentBtn').addEventListener('click', async () => {
+            if (stripeTerminal) {
+                try { await stripeTerminal.cancelCollectPaymentMethod(); } catch (e) {}
+            }
+            document.getElementById('paymentStatus').textContent = 'Payment cancelled.';
+            document.getElementById('payWithCardBtn').disabled = false;
+            document.getElementById('payWithCardBtn').textContent = '💳 Tap Card to Pay';
+            document.getElementById('payAtCounterBtn').classList.remove('hidden');
+            document.getElementById('cancelPaymentBtn').classList.add('hidden');
+        });
+
+        // Pay at counter — 카드 결제 없이 주문
+        document.getElementById('payAtCounterBtn').addEventListener('click', () => {
+            playTapSound();
+            const branch = AppState.getCurrentBranch();
+            const today = new Date().toISOString().split('T')[0];
+            let orderCounter = parseInt(localStorage.getItem(`tb_order_counter_${today}`) || '0') + 1;
+            localStorage.setItem(`tb_order_counter_${today}`, orderCounter);
+            const orderNumber = `TB-${String(orderCounter).padStart(3, '0')}`;
+            completeOrder(orderNumber, branch, 'pay_at_counter');
+        });
+
+        // 주문 완료 공통 함수
+        function completeOrder(orderNumber, branch, paymentMethod) {
             const subtotal = AppState.cart.reduce((sum, item) => sum + item.totalPrice, 0);
             const vat = subtotal * 0.2;
 
@@ -2518,10 +3088,12 @@
                 branchCode: branch.code,
                 branchName: branch.name,
                 orderType: AppState.currentOrderType,
+                customerName: AppState.customerName || '',
                 items: AppState.cart,
                 subtotal,
                 vat,
                 total: subtotal,
+                paymentMethod,
                 status: 'pending',
                 createdAt: new Date().toISOString()
             };
@@ -2532,7 +3104,20 @@
             const orderTypeText = AppState.currentOrderType === 'eat_in' ? 'Eat In' : 'Take Away';
             document.getElementById('confirmationOrderType').textContent = orderTypeText;
 
+            // 이름 표시
+            const nameEl = document.getElementById('confirmationName');
+            if (AppState.customerName) {
+                nameEl.textContent = `👋 ${AppState.customerName}`;
+                nameEl.style.display = 'block';
+            } else {
+                nameEl.style.display = 'none';
+            }
+
             AppState.goToScreen('confirmation');
+
+            // 결제 버튼 원상복구
+            document.getElementById('payWithCardBtn').disabled = false;
+            document.getElementById('payWithCardBtn').textContent = '💳 Tap Card to Pay';
 
             let timer = 15;
             const interval = setInterval(() => {
@@ -2540,12 +3125,23 @@
                 document.getElementById('confirmationTimer').textContent = timer;
                 if (timer <= 0) {
                     clearInterval(interval);
-                    AppState.cart = [];
-                    localStorage.removeItem('tb_cart');
-                    updateCartCount();
-                    AppState.goToScreen('welcome');
+                    goToMainFromConfirmation();
                 }
             }, 1000);
+
+            // 큰 버튼 클릭 시 즉시 메인으로
+            document.getElementById('backToMainBtn').onclick = () => {
+                clearInterval(interval);
+                goToMainFromConfirmation();
+            };
+        }
+
+        function goToMainFromConfirmation() {
+            AppState.cart = [];
+            AppState.customerName = '';
+            localStorage.removeItem('tb_cart');
+            updateCartCount();
+            AppState.goToScreen('welcome');
         }
 
         function sendOrder(order) {
@@ -2594,6 +3190,8 @@
             AppState.init();
             initStaffBoot();
             updateCartCount();
+            // Stripe Terminal SDK 초기화 (백그라운드)
+            initStripeTerminal();
         });
 
         // ========== TOUCH OPTIMIZATION ==========

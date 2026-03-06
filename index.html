@@ -56,6 +56,12 @@ body{font-family:'Inter',system-ui,sans-serif;background:#0D0D0D;color:#fff;min-
       <p>Kitchen Display<br>주문 접수 화면</p>
       <span class="tag tag-kitchen">가로 화면</span>
     </a>
+    <a class="card" href="/pos" id="linkPos">
+      <div class="icon">💰</div>
+      <h2>POS 시스템</h2>
+      <p>Point of Sale<br>결제·캐시·리포트</p>
+      <span class="tag tag-admin">태블릿/데스크탑</span>
+    </a>
     <a class="card" href="/admin" id="linkAdmin">
       <div class="icon">⚙️</div>
       <h2>관리자 패널</h2>
@@ -68,6 +74,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:#0D0D0D;color:#fff;min-
     <h3>접속 URL (같은 WiFi에서)</h3>
     <div class="url-row"><span class="url-label">주문</span><span class="url-val" id="urlOrder">-</span></div>
     <div class="url-row"><span class="url-label">주방</span><span class="url-val" id="urlKitchen">-</span></div>
+    <div class="url-row"><span class="url-label">POS</span><span class="url-val" id="urlPos">-</span></div>
     <div class="url-row"><span class="url-label">관리</span><span class="url-val" id="urlAdmin">-</span></div>
   </div>
 
@@ -87,10 +94,11 @@ function checkServer() {
     const base = 'http://' + d.ip + ':' + d.port;
     document.getElementById('urlOrder').textContent = base + '/order';
     document.getElementById('urlKitchen').textContent = base + '/kitchen';
+    document.getElementById('urlPos').textContent = base + '/pos';
     document.getElementById('urlAdmin').textContent = base + '/admin';
     document.getElementById('statusDot').className = 'dot on';
     document.getElementById('statusText').textContent =
-      `서버 실행중 | 주문:${d.clients.order} 주방:${d.clients.kitchen} 관리:${d.clients.admin} | 오늘 ${d.dailyOrders}건`;
+      `서버 실행중 | 주문:${d.clients.order} 주방:${d.clients.kitchen} POS:${d.clients.pos} 관리:${d.clients.admin} | 오늘 ${d.dailyOrders}건`;
   }).catch(() => {
     document.getElementById('statusDot').className = 'dot';
     document.getElementById('statusText').textContent = '서버 연결 안됨';

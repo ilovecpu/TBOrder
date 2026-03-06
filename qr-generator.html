@@ -97,9 +97,48 @@
             .branch-grid { grid-template-columns: 1fr 1fr; }
             .branch-qr { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
         }
+        /* ═══ Custom Popup ═══ */
+        .tb-popup-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,.5);
+            z-index: 99999; display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity .2s; pointer-events: none;
+        }
+        .tb-popup-overlay.active { opacity: 1; pointer-events: auto; }
+        .tb-popup {
+            background: #fff; border-radius: 16px; padding: 28px 24px 20px;
+            min-width: 300px; max-width: 400px; width: 85%;
+            box-shadow: 0 20px 60px rgba(0,0,0,.25);
+            transform: scale(.9); transition: transform .2s; text-align: center;
+        }
+        .tb-popup-overlay.active .tb-popup { transform: scale(1); }
+        .tb-popup-icon { font-size: 40px; margin-bottom: 10px; }
+        .tb-popup-title { font-size: 17px; font-weight: 700; margin-bottom: 6px; }
+        .tb-popup-msg { font-size: 14px; color: #555; margin-bottom: 20px; }
+        .tb-popup-btns button {
+            padding: 10px 28px; border: none; border-radius: 10px;
+            font-size: 14px; font-weight: 600; cursor: pointer;
+            background: #E85D75; color: #fff;
+        }
     </style>
 </head>
 <body>
+    <div class="tb-popup-overlay" id="tbPopup">
+        <div class="tb-popup">
+            <div class="tb-popup-icon" id="tbPopupIcon">⚠️</div>
+            <div class="tb-popup-title" id="tbPopupTitle">Notice</div>
+            <div class="tb-popup-msg" id="tbPopupMsg"></div>
+            <div class="tb-popup-btns"><button onclick="document.getElementById('tbPopup').classList.remove('active')">OK</button></div>
+        </div>
+    </div>
+    <script>
+    function tbAlert(msg, title, icon) {
+        document.getElementById('tbPopupIcon').textContent = icon || '⚠️';
+        document.getElementById('tbPopupTitle').textContent = title || 'Notice';
+        document.getElementById('tbPopupMsg').textContent = msg;
+        document.getElementById('tbPopup').classList.add('active');
+    }
+    </script>
+
 <div class="container">
     <h1>🍚 The Bap — QR Code Generator</h1>
     <p class="subtitle">각 지점별 QR코드를 생성합니다. 인쇄해서 매장에 비치하세요.</p>
@@ -154,7 +193,7 @@ const BRANCHES = [
 
 function generateAllQR() {
     const baseUrl = document.getElementById('baseUrl').value.trim();
-    if (!baseUrl) { alert('URL을 입력하세요'); return; }
+    if (!baseUrl) { tbAlert('URL을 입력하세요', 'Input Required', '📝'); return; }
 
     const grid = document.getElementById('branchGrid');
     grid.innerHTML = '';
@@ -188,7 +227,7 @@ function generateAllQR() {
 function downloadQR(code) {
     const container = document.getElementById(`qr-${code}`);
     const canvas = container.querySelector('canvas');
-    if (!canvas) { alert('먼저 QR을 생성하세요'); return; }
+    if (!canvas) { tbAlert('먼저 QR을 생성하세요', 'Generate First', '📱'); return; }
 
     const link = document.createElement('a');
     link.download = `TheBap_QR_${code}.png`;

@@ -1,9 +1,11 @@
 <!DOCTYPE html>
+<!-- The Bap Kitchen Display v1.0 | 2026-03-06 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>The Bap - Kitchen Kiosk</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍳</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         * {
@@ -439,6 +441,150 @@
             transform: scale(0.95);
         }
 
+        /* History Modal */
+        .history-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.85);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        .history-overlay.active {
+            display: flex;
+        }
+        .history-modal {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 16px;
+            width: 90vw;
+            max-width: 900px;
+            height: 80vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid #333;
+            background: #222;
+        }
+        .history-header h2 {
+            font-size: 22px;
+            color: #E85D75;
+        }
+        .history-close {
+            width: 40px; height: 40px;
+            border: none; background: #444;
+            color: #fff; font-size: 20px;
+            border-radius: 8px; cursor: pointer;
+        }
+        .history-close:hover { background: #555; }
+        .history-stats {
+            display: flex;
+            gap: 24px;
+            padding: 16px 24px;
+            border-bottom: 1px solid #333;
+            background: #1e1e1e;
+            flex-wrap: wrap;
+        }
+        .history-stat {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+        }
+        .history-stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #FFF;
+        }
+        .history-stat-label {
+            font-size: 12px;
+            color: #999;
+        }
+        .history-list {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+        }
+        .history-list::-webkit-scrollbar { width: 6px; }
+        .history-list::-webkit-scrollbar-track { background: #1a1a1a; }
+        .history-list::-webkit-scrollbar-thumb { background: #444; border-radius: 3px; }
+
+        .history-order {
+            background: #252525;
+            border-radius: 10px;
+            padding: 14px 18px;
+            margin-bottom: 10px;
+            border-left: 4px solid #666;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+        }
+        .history-order.status-new { border-left-color: #E85D75; }
+        .history-order.status-preparing { border-left-color: #FF9500; }
+        .history-order.status-ready { border-left-color: #34C759; }
+        .history-order.status-completed,
+        .history-order.status-done { border-left-color: #666; }
+
+        .history-order-left {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .history-order-number {
+            font-size: 18px;
+            font-weight: 700;
+            color: #FFF;
+        }
+        .history-order-items {
+            font-size: 13px;
+            color: #BBB;
+            line-height: 1.5;
+        }
+        .history-order-right {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            min-width: 100px;
+        }
+        .history-order-total {
+            font-size: 18px;
+            font-weight: 700;
+            color: #34C759;
+        }
+        .history-order-time {
+            font-size: 12px;
+            color: #888;
+        }
+        .history-order-status {
+            font-size: 11px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 10px;
+            display: inline-block;
+            align-self: flex-end;
+        }
+        .history-order-status.new { background: rgba(232,93,117,0.2); color: #E85D75; }
+        .history-order-status.preparing { background: rgba(255,149,0,0.2); color: #FF9500; }
+        .history-order-status.ready { background: rgba(52,199,89,0.2); color: #34C759; }
+        .history-order-status.completed,
+        .history-order-status.done { background: rgba(102,102,102,0.3); color: #999; }
+        .history-empty {
+            text-align: center;
+            color: #666;
+            padding: 60px 0;
+            font-size: 16px;
+        }
+
         /* Scrollbar */
         .main-content::-webkit-scrollbar {
             width: 8px;
@@ -536,7 +682,7 @@
                 <span class="count" id="count-ready">(0)</span>
             </button>
         </div>
-        <button class="clear-done-btn" id="clear-done-btn">Clear Done</button>
+        <button class="clear-done-btn" id="history-btn" style="background:#E85D75;">📋 History</button>
     </div>
 
     <!-- Main Content -->
@@ -544,6 +690,20 @@
         <div class="orders-grid" id="orders-grid">
             <div class="empty-state">
                 <div>⏳ Waiting for orders...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- History Modal -->
+    <div class="history-overlay" id="history-overlay">
+        <div class="history-modal">
+            <div class="history-header">
+                <h2>📋 Order History (오늘)</h2>
+                <button class="history-close" id="history-close">✕</button>
+            </div>
+            <div class="history-stats" id="history-stats"></div>
+            <div class="history-list" id="history-list">
+                <div class="history-empty">Loading...</div>
             </div>
         </div>
     </div>
@@ -583,7 +743,7 @@
             connectionIndicator: document.getElementById('connection-indicator'),
             fullscreenToggle: document.getElementById('fullscreen-toggle'),
             filterTabs: document.querySelectorAll('.filter-tab'),
-            clearDoneBtn: document.getElementById('clear-done-btn'),
+            // clearDoneBtn 제거됨 — done 주문은 즉시 사라짐
             ordersGrid: document.getElementById('orders-grid'),
             testButton: document.getElementById('test-button'),
         };
@@ -698,6 +858,8 @@
                                 }
                             });
                         }
+                        // 읽은 후 비우기 — 서버 재시작해도 유령 주문 안 뜨게
+                        localStorage.removeItem('tb_pending_orders');
                     }
                 } catch (error) {
                     console.warn('localStorage polling error:', error);
@@ -717,6 +879,8 @@
                                     }
                                 });
                             }
+                            // 읽은 후 비우기
+                            localStorage.removeItem('tb_pending_orders');
                         } catch (error) {
                             console.warn('storage event parsing error:', error);
                         }
@@ -803,6 +967,7 @@
                 orderNumber: order.orderNumber,
                 status: (order.status === 'pending' ? 'new' : order.status) || 'new',
                 type: order.orderType || order.type || 'take_away',
+                customerName: order.customerName || '',
                 items: order.items || [],
                 createdAt: createdAtMs,
                 total: order.total || order.subtotal || 0,
@@ -820,8 +985,6 @@
             if (order) {
                 order.status = newStatus;
                 renderOrders();
-
-                // Auto-hide done cards after 5 seconds
                 if (newStatus === 'done') {
                     setTimeout(() => {
                         removeOrder(orderNumber);
@@ -861,10 +1024,10 @@
                 order.status = 'done';
                 broadcastOrderStatus(orderNumber, 'done');
                 sendWebSocketStatus(orderNumber, 'done');
+                renderOrders();
                 setTimeout(() => {
                     removeOrder(orderNumber);
                 }, 5000);
-                renderOrders();
             }
         }
 
@@ -961,12 +1124,17 @@
                 return itemHtml;
             }).join('');
 
+            const nameBadge = order.customerName
+                ? `<div style="font-size:18px;font-weight:700;color:#FFD93D;background:#333;padding:6px 14px;border-radius:8px;margin-bottom:4px;">👤 ${escapeHtml(order.customerName)}</div>`
+                : '';
+
             return `
                 <div class="order-card ${order.status}" data-order="${order.orderNumber}">
                     <div class="card-header">
                         <div class="order-number">${escapeHtml(order.orderNumber)}</div>
                         <div class="order-type-badge ${typeBadgeClass}">${typeLabel}</div>${mobileBadge}
                     </div>
+                    ${nameBadge}
                     <div class="card-time ${timeClass}">${statusTime}</div>
                     <div class="card-items">
                         ${itemsHtml}
@@ -1091,15 +1259,7 @@
             });
         });
 
-        elements.clearDoneBtn.addEventListener('click', () => {
-            const doneOrders = Array.from(state.orders.entries())
-                .filter(([_, order]) => order.status === 'done')
-                .map(([key, _]) => key);
-
-            doneOrders.forEach(orderNumber => {
-                removeOrder(orderNumber);
-            });
-        });
+        // Clear Done 불필요 — done 주문은 즉시 메인에서 제거됨 (History에서만 확인)
 
         // ============================================
         // SOUND
@@ -1151,6 +1311,123 @@
 
         setInterval(updateClock, 1000);
         updateClock();
+
+        // ============================================
+        // ORDER HISTORY
+        // ============================================
+        document.getElementById('history-btn').addEventListener('click', openHistory);
+        document.getElementById('history-close').addEventListener('click', closeHistory);
+        document.getElementById('history-overlay').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('history-overlay')) closeHistory();
+        });
+
+        function closeHistory() {
+            document.getElementById('history-overlay').classList.remove('active');
+        }
+
+        async function openHistory() {
+            document.getElementById('history-overlay').classList.add('active');
+            document.getElementById('history-list').innerHTML = '<div class="history-empty">Loading...</div>';
+            document.getElementById('history-stats').innerHTML = '';
+
+            try {
+                const res = await fetch('/api/orders');
+                const data = await res.json();
+                const orders = data.orders || [];
+
+                if (orders.length === 0) {
+                    document.getElementById('history-list').innerHTML = '<div class="history-empty">📭 오늘 주문이 없습니다</div>';
+                    document.getElementById('history-stats').innerHTML = '';
+                    return;
+                }
+
+                // 통계 계산
+                const totalOrders = orders.length;
+                const totalRevenue = orders.reduce((sum, o) => sum + (o.total || o.subtotal || 0), 0);
+                const eatInCount = orders.filter(o => o.orderType === 'eat_in' || o.type === 'eat_in').length;
+                const takeawayCount = orders.filter(o => o.orderType === 'takeaway' || o.type === 'takeaway').length;
+                const statusCounts = {};
+                orders.forEach(o => {
+                    const s = o.status || 'unknown';
+                    statusCounts[s] = (statusCounts[s] || 0) + 1;
+                });
+
+                document.getElementById('history-stats').innerHTML = `
+                    <div class="history-stat">
+                        <div class="history-stat-value">${totalOrders}</div>
+                        <div class="history-stat-label">Total Orders</div>
+                    </div>
+                    <div class="history-stat">
+                        <div class="history-stat-value" style="color:#34C759;">£${totalRevenue.toFixed(2)}</div>
+                        <div class="history-stat-label">Revenue</div>
+                    </div>
+                    <div class="history-stat">
+                        <div class="history-stat-value">${eatInCount}</div>
+                        <div class="history-stat-label">Eat In</div>
+                    </div>
+                    <div class="history-stat">
+                        <div class="history-stat-value">${takeawayCount}</div>
+                        <div class="history-stat-label">Takeaway</div>
+                    </div>
+                    <div class="history-stat">
+                        <div class="history-stat-value" style="color:#E85D75;">${statusCounts['new'] || 0}</div>
+                        <div class="history-stat-label">New</div>
+                    </div>
+                    <div class="history-stat">
+                        <div class="history-stat-value" style="color:#FF9500;">${statusCounts['preparing'] || 0}</div>
+                        <div class="history-stat-label">Preparing</div>
+                    </div>
+                    <div class="history-stat">
+                        <div class="history-stat-value" style="color:#34C759;">${statusCounts['ready'] || 0}</div>
+                        <div class="history-stat-label">Ready</div>
+                    </div>
+                `;
+
+                // 주문 목록 (최신순)
+                const sorted = [...orders].reverse();
+                document.getElementById('history-list').innerHTML = sorted.map(order => {
+                    const status = order.status || 'new';
+                    const items = order.items || [];
+                    const itemSummary = items.map(it => {
+                        const qty = it.quantity || 1;
+                        const name = it.nameEn || it.name || 'Item';
+                        return `${qty}x ${escapeHtml(name)}`;
+                    }).join(', ');
+
+                    const total = order.total || order.subtotal || 0;
+                    const orderType = order.orderType || order.type || '';
+                    const typeLabel = orderType === 'eat_in' ? '🍽 Eat In' : orderType === 'takeaway' ? '🥡 Takeaway' : '';
+
+                    // 시간 표시
+                    let timeStr = '';
+                    const receivedAt = order.receivedAt || order.createdAt;
+                    if (receivedAt) {
+                        const d = new Date(typeof receivedAt === 'number' ? receivedAt : receivedAt);
+                        if (!isNaN(d.getTime())) {
+                            timeStr = d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+                        }
+                    }
+
+                    return `
+                        <div class="history-order status-${status}">
+                            <div class="history-order-left">
+                                <div class="history-order-number">${escapeHtml(order.orderNumber || '?')} <span style="font-size:12px;color:#888;font-weight:400;">${typeLabel}</span></div>
+                                <div class="history-order-items">${itemSummary || 'No items'}</div>
+                            </div>
+                            <div class="history-order-right">
+                                <div class="history-order-total">£${total.toFixed(2)}</div>
+                                <div class="history-order-time">${timeStr}</div>
+                                <span class="history-order-status ${status}">${status.toUpperCase()}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                console.error('History fetch error:', err);
+                document.getElementById('history-list').innerHTML = '<div class="history-empty">❌ 서버 연결 실패</div>';
+            }
+        }
 
         // ============================================
         // TEST MODE

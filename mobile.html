@@ -308,9 +308,51 @@
             box-shadow: 0 4px 16px rgba(232,93,117,0.4);
         }
         .floating-cart.hidden { display: none !important; }
+
+        /* ═══ Custom Popup Modal ═══ */
+        .tb-popup-overlay {
+            position: fixed; inset: 0; background: rgba(0,0,0,.55);
+            z-index: 99999; display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: opacity .2s; pointer-events: none;
+        }
+        .tb-popup-overlay.active { opacity: 1; pointer-events: auto; }
+        .tb-popup {
+            background: #fff; border-radius: 20px; padding: 32px 24px 24px;
+            min-width: 280px; max-width: 360px; width: 90%;
+            box-shadow: 0 24px 80px rgba(0,0,0,.3);
+            transform: scale(.9) translateY(20px);
+            transition: transform .25s cubic-bezier(.22,1,.36,1);
+            text-align: center;
+        }
+        .tb-popup-overlay.active .tb-popup { transform: scale(1) translateY(0); }
+        .tb-popup-icon { font-size: 48px; margin-bottom: 12px; }
+        .tb-popup-title { font-size: 18px; font-weight: 700; color: #1a1a2e; margin-bottom: 8px; }
+        .tb-popup-msg { font-size: 14px; color: #555; line-height: 1.6; margin-bottom: 24px; white-space: pre-line; }
+        .tb-popup-btns button {
+            padding: 14px 32px; border: none; border-radius: 14px;
+            font-size: 16px; font-weight: 700; cursor: pointer;
+            background: linear-gradient(135deg, #E85D75, #d44058); color: #fff;
+        }
     </style>
 </head>
 <body>
+    <!-- Custom Popup -->
+    <div class="tb-popup-overlay" id="tbPopup">
+        <div class="tb-popup">
+            <div class="tb-popup-icon" id="tbPopupIcon">❌</div>
+            <div class="tb-popup-title" id="tbPopupTitle">Error</div>
+            <div class="tb-popup-msg" id="tbPopupMsg"></div>
+            <div class="tb-popup-btns"><button id="tbPopupOk" onclick="document.getElementById('tbPopup').classList.remove('active')">OK</button></div>
+        </div>
+    </div>
+    <script>
+    function tbAlert(msg, title, icon) {
+        document.getElementById('tbPopupIcon').textContent = icon || '❌';
+        document.getElementById('tbPopupTitle').textContent = title || 'Error';
+        document.getElementById('tbPopupMsg').textContent = msg;
+        document.getElementById('tbPopup').classList.add('active');
+    }
+    </script>
 
 <!-- ══════════ 1. Branch Selection ══════════ -->
 <div id="branchScreen" class="screen active branch-screen">
@@ -835,7 +877,7 @@ async function placeOrder() {
     } catch (error) {
         document.getElementById('sendingOverlay').classList.remove('active');
         btn.disabled = false;
-        alert('Order failed: ' + error.message + '\nPlease try again or order at the counter.');
+        tbAlert('Order failed: ' + error.message + '\nPlease try again or order at the counter.', 'Order Failed', '❌');
     }
 }
 
