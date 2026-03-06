@@ -1,0 +1,2378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Bap Admin Panel</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+            background-color: #F5F5F7;
+            color: #333;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* SIDEBAR */
+        .sidebar {
+            width: 260px;
+            background-color: #0D0D0D;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #222;
+            padding: 24px 16px;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 32px;
+            padding: 12px;
+            border-radius: 8px;
+            background: linear-gradient(135deg, #E85D75, #FF6B8A);
+            text-align: center;
+        }
+
+        .nav-menu {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .nav-item {
+            padding: 12px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            font-size: 14px;
+            color: #999;
+        }
+
+        .nav-item:hover {
+            background-color: #222;
+            color: #fff;
+        }
+
+        .nav-item.active {
+            background-color: #E85D75;
+            color: white;
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .sidebar-footer {
+            padding-top: 16px;
+            border-top: 1px solid #222;
+            font-size: 12px;
+            color: #666;
+        }
+
+        /* TOP BAR */
+        .topbar {
+            height: 60px;
+            background-color: white;
+            border-bottom: 1px solid #E0E0E0;
+            display: flex;
+            align-items: center;
+            padding: 0 24px;
+            justify-content: space-between;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .page-title {
+            font-size: 22px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .topbar-right {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .clock {
+            font-size: 14px;
+            color: #666;
+            font-family: 'Courier New', monospace;
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 13px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: #34C759;
+        }
+
+        /* MAIN CONTENT */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .content-area {
+            flex: 1;
+            overflow-y: auto;
+            padding: 24px;
+        }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        /* CARDS */
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            margin-bottom: 16px;
+        }
+
+        /* DASHBOARD STATS */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border-left: 4px solid #E85D75;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #999;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: #333;
+        }
+
+        /* BUTTONS */
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background-color: #E85D75;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #D04A63;
+        }
+
+        .btn-secondary {
+            background-color: #F5F5F7;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background-color: #E8E8E8;
+        }
+
+        .btn-success {
+            background-color: #34C759;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background-color: #28A745;
+        }
+
+        .btn-danger {
+            background-color: #FF3B30;
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background-color: #E63028;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        /* TABLES */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background-color: #F5F5F7;
+        }
+
+        th {
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 13px;
+            color: #666;
+            border-bottom: 1px solid #E0E0E0;
+        }
+
+        td {
+            padding: 12px;
+            border-bottom: 1px solid #F0F0F0;
+            font-size: 14px;
+        }
+
+        tr:hover {
+            background-color: #FAFAFA;
+        }
+
+        /* FORMS */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: #333;
+        }
+
+        input[type="text"],
+        input[type="email"],
+        input[type="number"],
+        input[type="password"],
+        textarea,
+        select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #D0D0D0;
+            border-radius: 6px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        input:focus,
+        textarea:focus,
+        select:focus {
+            outline: none;
+            border-color: #E85D75;
+            box-shadow: 0 0 0 3px rgba(232, 93, 117, 0.1);
+        }
+
+        .checkbox-group {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #E85D75;
+        }
+
+        /* MODALS */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            font-size: 20px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: #333;
+        }
+
+        .modal-footer {
+            margin-top: 24px;
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        /* TOAST */
+        .toast {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            background: white;
+            padding: 16px 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 2000;
+            animation: slideIn 0.3s ease;
+            font-size: 14px;
+        }
+
+        .toast.success {
+            border-left: 4px solid #34C759;
+        }
+
+        .toast.error {
+            border-left: 4px solid #FF3B30;
+        }
+
+        .toast.info {
+            border-left: 4px solid #007AFF;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* PIN LOCK */
+        .pin-lock-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, #E85D75, #FF6B8A);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pin-lock-panel {
+            background: white;
+            border-radius: 16px;
+            padding: 40px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            width: 320px;
+        }
+
+        .pin-lock-logo {
+            font-size: 32px;
+            font-weight: 700;
+            color: #E85D75;
+            margin-bottom: 24px;
+        }
+
+        .pin-lock-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 24px;
+            color: #333;
+        }
+
+        .pin-input {
+            font-size: 32px;
+            text-align: center;
+            letter-spacing: 8px;
+            margin-bottom: 24px;
+        }
+
+        .pin-keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .pin-btn {
+            padding: 16px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        /* BRANCH CARDS */
+        .branch-card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+            border: 1px solid #E0E0E0;
+        }
+
+        .branch-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 16px;
+        }
+
+        .branch-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .branch-code {
+            background: #F0F0F0;
+            color: #666;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .branch-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            font-size: 13px;
+            margin-bottom: 16px;
+        }
+
+        .branch-detail {
+            color: #666;
+        }
+
+        .branch-detail-label {
+            font-weight: 500;
+            color: #999;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .branch-detail-value {
+            margin-top: 4px;
+            color: #333;
+        }
+
+        .branch-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* TABS */
+        .tabs {
+            display: flex;
+            gap: 0;
+            border-bottom: 1px solid #E0E0E0;
+            margin-bottom: 24px;
+        }
+
+        .tab-btn {
+            padding: 12px 20px;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-size: 14px;
+            color: #666;
+            border-bottom: 2px solid transparent;
+            transition: all 0.2s;
+        }
+
+        .tab-btn:hover {
+            color: #333;
+        }
+
+        .tab-btn.active {
+            color: #E85D75;
+            border-bottom-color: #E85D75;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        /* IMAGE PREVIEW */
+        .image-preview {
+            width: 100px;
+            height: 100px;
+            border-radius: 6px;
+            object-fit: cover;
+            background: #F5F5F7;
+            margin-top: 8px;
+        }
+
+        /* ALLERGEN MATRIX */
+        .allergen-matrix {
+            display: grid;
+            grid-template-columns: auto repeat(14, 1fr);
+            gap: 8px;
+            font-size: 12px;
+            margin-top: 16px;
+        }
+
+        .allergen-cell {
+            padding: 8px;
+            text-align: center;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #F5F5F7;
+            transition: background 0.2s;
+        }
+
+        .allergen-cell:hover {
+            background: #E8E8E8;
+        }
+
+        .allergen-cell.contains {
+            background: #FFE8E8;
+            color: #D04A63;
+            font-weight: 600;
+        }
+
+        .allergen-cell.may {
+            background: #FFF4E8;
+            color: #FF9500;
+            font-weight: 600;
+        }
+
+        .allergen-cell.free {
+            background: #E8F5E9;
+            color: #34C759;
+            font-weight: 600;
+        }
+
+        /* TOGGLE SWITCH */
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 28px;
+            display: inline-block;
+        }
+
+        .toggle-switch input {
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            margin: 0;
+            padding: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: #D0D0D0;
+            border-radius: 14px;
+            transition: 0.3s;
+        }
+
+        .toggle-slider:before {
+            content: '';
+            position: absolute;
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+
+        .toggle-switch input:checked + .toggle-slider {
+            background: #34C759;
+        }
+
+        .toggle-switch input:checked + .toggle-slider:before {
+            transform: translateX(22px);
+        }
+
+        /* GRID LAYOUTS */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        /* MENU GRID */
+        .menu-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 16px;
+            margin-top: 16px;
+        }
+
+        .menu-item-card {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+            border: 1px solid #E0E0E0;
+        }
+
+        .menu-item-image {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            background: #F5F5F7;
+        }
+
+        .menu-item-body {
+            padding: 16px;
+        }
+
+        .menu-item-name {
+            font-weight: 600;
+            font-size: 15px;
+            margin-bottom: 4px;
+            color: #333;
+        }
+
+        .menu-item-name-kr {
+            font-family: 'Noto Sans KR';
+            font-size: 13px;
+            color: #999;
+            margin-bottom: 8px;
+        }
+
+        .menu-item-price {
+            font-size: 16px;
+            font-weight: 700;
+            color: #E85D75;
+            margin-bottom: 8px;
+        }
+
+        .menu-item-dietary {
+            font-size: 11px;
+            color: #999;
+            margin-bottom: 12px;
+        }
+
+        .menu-item-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* ORDERS TABLE */
+        .order-status-badge {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .order-status-pending {
+            background: #FFF4E8;
+            color: #FF9500;
+        }
+
+        .order-status-preparing {
+            background: #E8F0FF;
+            color: #007AFF;
+        }
+
+        .order-status-ready {
+            background: #E8F5E9;
+            color: #34C759;
+        }
+
+        .order-status-completed {
+            background: #F0F0F0;
+            color: #666;
+        }
+
+        /* SCROLLBAR */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #D0D0D0;
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #999;
+        }
+
+        /* FLAME ICON */
+        .flame {
+            display: inline-block;
+            font-size: 14px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* SECTOR TAB */
+        .sector-controls {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .sector-controls label {
+            margin-bottom: 0;
+        }
+
+        .sector-controls select {
+            max-width: 300px;
+        }
+    </style>
+</head>
+<body>
+    <!-- PIN LOCK OVERLAY -->
+    <div id="pinLockOverlay" class="pin-lock-overlay">
+        <div class="pin-lock-panel">
+            <div class="pin-lock-logo">The Bap</div>
+            <div class="pin-lock-title">Admin Access</div>
+            <input type="password" id="pinInput" class="pin-input" maxlength="4" placeholder="••••" autocomplete="off">
+            <div class="pin-keypad">
+                <button class="pin-btn btn-secondary">1</button>
+                <button class="pin-btn btn-secondary">2</button>
+                <button class="pin-btn btn-secondary">3</button>
+                <button class="pin-btn btn-secondary">4</button>
+                <button class="pin-btn btn-secondary">5</button>
+                <button class="pin-btn btn-secondary">6</button>
+                <button class="pin-btn btn-secondary">7</button>
+                <button class="pin-btn btn-secondary">8</button>
+                <button class="pin-btn btn-secondary">9</button>
+                <button class="pin-btn btn-secondary" style="grid-column: 2;">0</button>
+            </div>
+            <button id="pinClearBtn" class="btn-secondary" style="width: 100%; margin-bottom: 8px;">Clear</button>
+            <button id="pinEnterBtn" class="btn-primary" style="width: 100%;">Enter</button>
+        </div>
+    </div>
+
+    <!-- MAIN CONTAINER -->
+    <div class="container" id="mainContainer" style="display: none;">
+        <!-- SIDEBAR -->
+        <div class="sidebar">
+            <div class="logo">The Bap Admin</div>
+            <div class="nav-menu">
+                <div class="nav-item active" data-section="dashboard">
+                    <div class="nav-icon">📊</div>
+                    <span>홈 Dashboard</span>
+                </div>
+                <div class="nav-item" data-section="branches">
+                    <div class="nav-icon">🏢</div>
+                    <span>지점관리 Branches</span>
+                </div>
+                <div class="nav-item" data-section="menu">
+                    <div class="nav-icon">🍜</div>
+                    <span>메뉴관리 Menu</span>
+                </div>
+                <div class="nav-item" data-section="branchMenu">
+                    <div class="nav-icon">📍</div>
+                    <span>지점별메뉴 Menu Settings</span>
+                </div>
+                <div class="nav-item" data-section="sauces">
+                    <div class="nav-icon">🔥</div>
+                    <span>소스관리 Sauces</span>
+                </div>
+                <div class="nav-item" data-section="allergens">
+                    <div class="nav-icon">⚠️</div>
+                    <span>알레르겐 Allergens</span>
+                </div>
+                <div class="nav-item" data-section="nutrition">
+                    <div class="nav-icon">📊</div>
+                    <span>영양정보 Nutrition</span>
+                </div>
+                <div class="nav-item" data-section="orders">
+                    <div class="nav-icon">📦</div>
+                    <span>주문현황 Orders</span>
+                </div>
+                <div class="nav-item" data-section="sync">
+                    <div class="nav-icon">☁️</div>
+                    <span>데이터동기화 Sync</span>
+                </div>
+                <div class="nav-item" data-section="settings">
+                    <div class="nav-icon">⚙️</div>
+                    <span>설정 Settings</span>
+                </div>
+            </div>
+            <div class="sidebar-footer">v1.0 | The Bap Group</div>
+        </div>
+
+        <!-- MAIN CONTENT -->
+        <div class="main-content">
+            <!-- TOP BAR -->
+            <div class="topbar">
+                <div class="page-title" id="pageTitle">홈 Dashboard</div>
+                <div class="topbar-right">
+                    <div class="clock" id="clock">00:00:00</div>
+                    <div class="status-indicator">
+                        <div class="status-dot"></div>
+                        <span>Online</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- CONTENT AREA -->
+            <div class="content-area">
+                <!-- DASHBOARD SECTION -->
+                <div class="content-section active" id="section-dashboard">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-label">Total Orders</div>
+                            <div class="stat-value" id="statOrders">0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Revenue Today</div>
+                            <div class="stat-value" id="statRevenue">£0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Avg Order Value</div>
+                            <div class="stat-value" id="statAvg">£0</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-label">Active Kiosks</div>
+                            <div class="stat-value" id="statKiosks">0</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div style="margin-bottom: 16px;">
+                            <h3>Recent Orders</h3>
+                            <p style="color: #999; font-size: 13px; margin-top: 4px;">All branches</p>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Branch</th>
+                                    <th>Items</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentOrdersTable">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; color: #999;">No orders yet</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- BRANCHES SECTION -->
+                <div class="content-section" id="section-branches">
+                    <div style="margin-bottom: 20px;">
+                        <button class="btn-primary" onclick="app.openBranchForm()">+ Add Branch</button>
+                    </div>
+                    <div id="branchesContainer"></div>
+                </div>
+
+                <!-- MENU SECTION -->
+                <div class="content-section" id="section-menu">
+                    <div style="margin-bottom: 20px;">
+                        <button class="btn-primary" onclick="app.openMenuForm()">+ Add Menu Item</button>
+                    </div>
+                    <div class="tabs" id="categoryTabs"></div>
+                    <div id="menuContent" class="menu-grid"></div>
+                </div>
+
+                <!-- BRANCH MENU SECTION -->
+                <div class="content-section" id="section-branchMenu">
+                    <div class="sector-controls">
+                        <label>Select Branch:</label>
+                        <select id="branchMenuSelector" onchange="app.loadBranchMenuSettings()">
+                            <option value="">Choose a branch...</option>
+                        </select>
+                    </div>
+                    <div id="branchMenuTable"></div>
+                </div>
+
+                <!-- SAUCES SECTION -->
+                <div class="content-section" id="section-sauces">
+                    <div style="margin-bottom: 20px;">
+                        <button class="btn-primary" onclick="app.openSauceForm()">+ Add Sauce</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>한글</th>
+                                <th>Spice Level</th>
+                                <th>Description</th>
+                                <th>Allergens</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="saucesTable"></tbody>
+                    </table>
+                </div>
+
+                <!-- ALLERGENS SECTION -->
+                <div class="content-section" id="section-allergens">
+                    <div id="allergenMatrix"></div>
+                </div>
+
+                <!-- NUTRITION SECTION -->
+                <div class="content-section" id="section-nutrition">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Calories</th>
+                                <th>Carbs (g)</th>
+                                <th>Protein (g)</th>
+                                <th>Fat (g)</th>
+                                <th>Sugar (g)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="nutritionTable"></tbody>
+                    </table>
+                </div>
+
+                <!-- ORDERS SECTION -->
+                <div class="content-section" id="section-orders">
+                    <div class="sector-controls">
+                        <label>Branch:</label>
+                        <select id="orderBranchFilter" onchange="app.filterOrders()">
+                            <option value="">All Branches</option>
+                        </select>
+                        <label>Status:</label>
+                        <select id="orderStatusFilter" onchange="app.filterOrders()">
+                            <option value="">All Status</option>
+                            <option value="pending">Pending</option>
+                            <option value="preparing">Preparing</option>
+                            <option value="ready">Ready</option>
+                            <option value="completed">Completed</option>
+                        </select>
+                        <button class="btn-secondary" onclick="app.exportOrders()">Export CSV</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Order ID</th>
+                                <th>Branch</th>
+                                <th>Items</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                                <th>Date/Time</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ordersTable"></tbody>
+                    </table>
+                </div>
+
+                <!-- SYNC SECTION -->
+                <div class="content-section" id="section-sync">
+                    <div class="grid-2">
+                        <div class="card">
+                            <div style="margin-bottom: 16px;">
+                                <h3>Google Sheets Sync</h3>
+                            </div>
+                            <div class="form-group">
+                                <label>Spreadsheet ID</label>
+                                <input type="text" id="spreadsheetId" placeholder="1a2b3c4d5e6f...">
+                            </div>
+                            <div class="form-group">
+                                <label>API Key</label>
+                                <input type="text" id="apiKey" placeholder="AIza...">
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn-primary" onclick="app.syncToSheets()">Sync</button>
+                                <button class="btn-secondary" onclick="app.importFromSheets()">Import</button>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div style="margin-bottom: 16px;">
+                                <h3>Recommended Structure</h3>
+                            </div>
+                            <div style="font-size: 13px; color: #666; line-height: 1.8;">
+                                <strong>Sheet Tabs:</strong><br>
+                                • Branches<br>
+                                • Categories<br>
+                                • MenuItems<br>
+                                • BranchMenu<br>
+                                • BranchPricing<br>
+                                • Sauces<br>
+                                • Allergens<br>
+                                • Nutrition<br>
+                                • Orders<br>
+                                • DailySummary
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SETTINGS SECTION -->
+                <div class="content-section" id="section-settings">
+                    <div class="grid-2">
+                        <div class="card">
+                            <div style="margin-bottom: 16px;">
+                                <h3>Change PIN</h3>
+                            </div>
+                            <div class="form-group">
+                                <label>Current PIN</label>
+                                <input type="password" id="currentPin" maxlength="4">
+                            </div>
+                            <div class="form-group">
+                                <label>New PIN</label>
+                                <input type="password" id="newPin" maxlength="4">
+                            </div>
+                            <div class="form-group">
+                                <label>Confirm PIN</label>
+                                <input type="password" id="confirmPin" maxlength="4">
+                            </div>
+                            <button class="btn-primary" onclick="app.changePIN()">Update PIN</button>
+                        </div>
+                        <div class="card">
+                            <div style="margin-bottom: 16px;">
+                                <h3>Server Configuration</h3>
+                            </div>
+                            <div class="form-group">
+                                <label>Server IP</label>
+                                <input type="text" id="serverIp" value="localhost">
+                            </div>
+                            <div class="form-group">
+                                <label>Server Port</label>
+                                <input type="number" id="serverPort" value="8080">
+                            </div>
+                            <button class="btn-primary" onclick="app.saveServerConfig()">Save</button>
+                            <div style="margin-top: 24px; padding-top: 16px; border-top: 1px solid #E0E0E0;">
+                                <div style="margin-bottom: 16px;">
+                                    <h4>About</h4>
+                                </div>
+                                <div style="font-size: 13px; color: #666; line-height: 1.8;">
+                                    <strong>The Bap Admin Panel</strong><br>
+                                    Version 1.0<br>
+                                    Built for The Bap Korean Restaurant Group<br>
+                                    Managing 5 Locations UK-wide<br>
+                                    <br>
+                                    © 2026 The Bap Group. All rights reserved.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODALS -->
+    <div id="branchModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Branch Details</div>
+            <form id="branchForm">
+                <div class="form-group">
+                    <label>Branch Code</label>
+                    <input type="text" id="branchCode" maxlength="3" required>
+                </div>
+                <div class="form-group">
+                    <label>Branch Name</label>
+                    <input type="text" id="branchName" required>
+                </div>
+                <div class="form-group">
+                    <label>Company Name</label>
+                    <input type="text" id="branchCompany" required>
+                </div>
+                <div class="form-group">
+                    <label>Company Number</label>
+                    <input type="text" id="branchCompanyNo" required>
+                </div>
+                <div class="form-group">
+                    <label>VAT Number</label>
+                    <input type="text" id="branchVatNo" required>
+                </div>
+                <div class="form-group">
+                    <label>VAT Quarter (A/B/C/D)</label>
+                    <input type="text" id="branchVatQuarter" maxlength="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Address</label>
+                    <textarea id="branchAddress" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="text" id="branchPhone">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="branchEmail">
+                </div>
+                <div class="form-group">
+                    <label>Manager</label>
+                    <input type="text" id="branchManager">
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="branchActive">
+                        <span>Active</span>
+                    </label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="app.closeBranchModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="menuModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Menu Item</div>
+            <form id="menuForm">
+                <div class="form-group">
+                    <label>Name (English)</label>
+                    <input type="text" id="menuNameEn" required>
+                </div>
+                <div class="form-group">
+                    <label>Name (Korean)</label>
+                    <input type="text" id="menuNameKr" required>
+                </div>
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="menuCategory" required>
+                        <option value="Baps">Baps</option>
+                        <option value="Sides">Sides</option>
+                        <option value="Drinks">Drinks</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="menuDescription" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Base Price (£)</label>
+                    <input type="number" id="menuPrice" step="0.01" required>
+                </div>
+                <div class="form-group">
+                    <label>Image URL (Google Drive or HTTP)</label>
+                    <input type="text" id="menuImageUrl" placeholder="https://...">
+                    <img id="menuImagePreview" class="image-preview" style="display: none;">
+                </div>
+                <div class="form-group">
+                    <label>Dietary Information</label>
+                    <div class="checkbox-group">
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="menuVegan" value="vegan">
+                            <label for="menuVegan" style="margin: 0;">Vegan</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="menuVegetarian" value="vegetarian">
+                            <label for="menuVegetarian" style="margin: 0;">Vegetarian</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="menuGlutenFree" value="glutenFree">
+                            <label for="menuGlutenFree" style="margin: 0;">Gluten Free</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="menuSpicy" value="spicy">
+                            <label for="menuSpicy" style="margin: 0;">Spicy</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="menuCombo">
+                        <span>Is Combo</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="menuTopping">
+                        <span>Has Topping Options</span>
+                    </label>
+                </div>
+                <div class="form-group">
+                    <label style="display: flex; align-items: center; gap: 8px;">
+                        <input type="checkbox" id="menuActive" checked>
+                        <span>Active</span>
+                    </label>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="app.closeMenuModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="sauceModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">Sauce</div>
+            <form id="sauceForm">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" id="sauceName" required>
+                </div>
+                <div class="form-group">
+                    <label>한글 Name</label>
+                    <input type="text" id="sauceNameKr" required>
+                </div>
+                <div class="form-group">
+                    <label>Spice Level (0-5)</label>
+                    <input type="number" id="sauceSpice" min="0" max="5" required>
+                </div>
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="sauceDescription" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Allergens (comma-separated)</label>
+                    <input type="text" id="sauceAllergens" placeholder="e.g. Sesame, Soy">
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-secondary" onclick="app.closeSauceModal()">Cancel</button>
+                    <button type="submit" class="btn-primary">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // DEFAULT DATA
+        const DEFAULT_BRANCHES = [
+            { code: 'PAB', name: 'Pick A Bap', company: 'Pick A Bap Ltd', companyNo: '11737355', vatNo: '322 1464 42', vatQuarter: 'A', address: 'Unit 24, The Meads Shopping Center, Farnborough, Hampshire, GU14 7SJ', phone: '0125 293 8822', email: 'pickabap@gmail.com', manager: 'Thir, Jems', active: true },
+            { code: 'TBS', name: 'The Bap Swindon', company: 'The Bap Swindon Ltd', companyNo: '13523669', vatNo: '403 8392 06', vatQuarter: 'C', address: '12 Havelock Square, Swindon SN1 1LE', phone: '0179 343 2237', email: 'thebap2020@gmail.com', manager: 'Sunny, Niraj', active: true },
+            { code: 'TBR', name: 'The Bap Reading', company: 'The Bap Reading Ltd', companyNo: '14762878', vatNo: '446081987', vatQuarter: 'C', address: '23-24 Market Place, Reading, RG1 2DE', phone: '0118 909 0071', email: 'thebapReading@gmail.com', manager: 'Ashok', active: true },
+            { code: 'TBB', name: 'The Bap Bristol', company: 'The Bap Bristol Ltd', companyNo: '16273308', vatNo: '491116990', vatQuarter: 'B', address: '21 Queens Road, Clifton, Bristol, BS8 1QE', phone: '0117 363 7784', email: 'thebapBristol@gmail.com', manager: 'Mukesh', active: true },
+            { code: 'TBO', name: 'The Bap Oxford', company: 'Thebap Oxford Ltd', companyNo: '12341234', vatNo: '12341234', vatQuarter: 'A', address: '', phone: '', email: '', manager: '', active: false }
+        ];
+
+        const DEFAULT_MENU = [
+            { id: 'M001', nameEn: 'Spicy Beef Bap', nameKr: '매운 쇠고기 밥', category: 'Baps', description: 'Tender beef with gochujang sauce', basePrice: 5.99, imageUrl: 'https://via.placeholder.com/300x200?text=Spicy+Beef', dietary: ['spicy'], isCombo: false, hasTopping: true, active: true },
+            { id: 'M002', nameEn: 'Chicken Bulgogi Bap', nameKr: '닭 불고기 밥', category: 'Baps', description: 'Korean marinated chicken', basePrice: 5.99, imageUrl: 'https://via.placeholder.com/300x200?text=Chicken+Bulgogi', dietary: [], isCombo: false, hasTopping: true, active: true },
+            { id: 'M003', nameEn: 'Vegetarian Bap', nameKr: '채식 밥', category: 'Baps', description: 'Mixed vegetables and tofu', basePrice: 4.99, imageUrl: 'https://via.placeholder.com/300x200?text=Vegetarian', dietary: ['vegetarian', 'vegan'], isCombo: false, hasTopping: true, active: true },
+            { id: 'M004', nameEn: 'Kimchi Pork Bap', nameKr: '김치 돼지고기 밥', category: 'Baps', description: 'Pork with kimchi', basePrice: 6.49, imageUrl: 'https://via.placeholder.com/300x200?text=Kimchi+Pork', dietary: ['spicy'], isCombo: false, hasTopping: true, active: true },
+            { id: 'M005', nameEn: 'Soft Shell Crab Bap', nameKr: '소프트 셸 크랩 밥', category: 'Baps', description: 'Crispy soft shell crab', basePrice: 7.99, imageUrl: 'https://via.placeholder.com/300x200?text=Crab', dietary: [], isCombo: false, hasTopping: false, active: true },
+            { id: 'M006', nameEn: 'Seafood Combo Bap', nameKr: '해산물 콤보 밥', category: 'Baps', description: 'Shrimp, squid, fish', basePrice: 8.49, imageUrl: 'https://via.placeholder.com/300x200?text=Seafood', dietary: [], isCombo: true, hasTopping: true, active: true },
+            { id: 'M007', nameEn: 'Tteokbokki Bap', nameKr: '떡볶이 밥', category: 'Baps', description: 'Spicy rice cake bap', basePrice: 5.49, imageUrl: 'https://via.placeholder.com/300x200?text=Tteokbokki', dietary: ['spicy', 'vegetarian'], isCombo: false, hasTopping: true, active: true },
+            { id: 'M008', nameEn: 'Korean Fried Chicken Bap', nameKr: '한국 튀김 닭 밥', category: 'Baps', description: 'Double fried chicken', basePrice: 6.99, imageUrl: 'https://via.placeholder.com/300x200?text=Fried+Chicken', dietary: ['spicy'], isCombo: false, hasTopping: true, active: true },
+            { id: 'M009', nameEn: 'Bibimbap', nameKr: '비빔밥', category: 'Baps', description: 'Mixed vegetables, egg, beef', basePrice: 6.49, imageUrl: 'https://via.placeholder.com/300x200?text=Bibimbap', dietary: ['vegetarian'], isCombo: false, hasTopping: true, active: true },
+            { id: 'S001', nameEn: 'Kimchi Fried Rice', nameKr: '김치 볶음밥', category: 'Sides', description: 'Spicy fried rice', basePrice: 3.99, imageUrl: 'https://via.placeholder.com/300x200?text=Kimchi+Rice', dietary: ['spicy', 'vegetarian'], isCombo: false, hasTopping: false, active: true },
+            { id: 'S002', nameEn: 'Edamame', nameKr: '에다마메', category: 'Sides', description: 'Steamed soybeans', basePrice: 2.99, imageUrl: 'https://via.placeholder.com/300x200?text=Edamame', dietary: ['vegan', 'vegetarian'], isCombo: false, hasTopping: false, active: true },
+            { id: 'S003', nameEn: 'Gyeran Mari', nameKr: '계란 마리', category: 'Sides', description: 'Rolled egg omelette', basePrice: 3.49, imageUrl: 'https://via.placeholder.com/300x200?text=Egg+Roll', dietary: ['vegetarian'], isCombo: false, hasTopping: false, active: true },
+            { id: 'S004', nameEn: 'Tempura Vegetables', nameKr: '튀김 야채', category: 'Sides', description: 'Crispy battered veg', basePrice: 3.99, imageUrl: 'https://via.placeholder.com/300x200?text=Tempura', dietary: ['vegetarian'], isCombo: false, hasTopping: false, active: true },
+            { id: 'S005', nameEn: 'Korean Corn Cheese', nameKr: '한국 옥수수 치즈', category: 'Sides', description: 'Sweet corn with cheese', basePrice: 4.49, imageUrl: 'https://via.placeholder.com/300x200?text=Corn+Cheese', dietary: ['vegetarian'], isCombo: false, hasTopping: false, active: true },
+            { id: 'D001', nameEn: 'Mango Lassi', nameKr: '망고 라씨', category: 'Drinks', description: 'Smooth mango yogurt drink', basePrice: 3.49, imageUrl: 'https://via.placeholder.com/300x200?text=Lassi', dietary: ['vegetarian'], isCombo: false, hasTopping: false, active: true },
+            { id: 'D002', nameEn: 'Yuzu Lemonade', nameKr: '유자 레모네이드', category: 'Drinks', description: 'Citrus refresher', basePrice: 2.99, imageUrl: 'https://via.placeholder.com/300x200?text=Yuzu', dietary: ['vegan', 'vegetarian'], isCombo: false, hasTopping: false, active: true },
+            { id: 'D003', nameEn: 'Korean Iced Tea', nameKr: '한국 아이스 티', category: 'Drinks', description: 'Traditional chilled tea', basePrice: 2.49, imageUrl: 'https://via.placeholder.com/300x200?text=Ice+Tea', dietary: ['vegan', 'vegetarian'], isCombo: false, hasTopping: false, active: true },
+            { id: 'D004', nameEn: 'Bubble Tea', nameKr: '버블 티', category: 'Drinks', description: 'With tapioca pearls', basePrice: 3.99, imageUrl: 'https://via.placeholder.com/300x200?text=Bubble+Tea', dietary: ['vegan', 'vegetarian'], isCombo: false, hasTopping: true, active: true },
+            { id: 'D005', nameEn: 'Horchata', nameKr: '오르차타', category: 'Drinks', description: 'Sweet rice milk drink', basePrice: 3.49, imageUrl: 'https://via.placeholder.com/300x200?text=Horchata', dietary: ['vegan', 'vegetarian'], isCombo: false, hasTopping: false, active: true },
+            { id: 'D006', nameEn: 'Ginger Shot', nameKr: '생강 샷', category: 'Drinks', description: 'Energizing ginger juice', basePrice: 2.99, imageUrl: 'https://via.placeholder.com/300x200?text=Ginger', dietary: ['vegan', 'vegetarian'], isCombo: false, hasTopping: false, active: true },
+            { id: 'D007', nameEn: 'Korean Coffee', nameKr: '한국 커피', category: 'Drinks', description: 'Rich Korean blend', basePrice: 3.49, imageUrl: 'https://via.placeholder.com/300x200?text=Coffee', dietary: ['vegan', 'vegetarian'], isCombo: false, hasTopping: false, active: true }
+        ];
+
+        const DEFAULT_SAUCES = [
+            { id: 'SA001', name: 'Gochujang Hot', nameKr: '고추장 핫', spice: 4, description: 'Traditional Korean chili paste', allergens: 'Soy, Gluten' },
+            { id: 'SA002', name: 'Soy Ginger', nameKr: '간장 생강', spice: 1, description: 'Light soy and ginger blend', allergens: 'Soy' },
+            { id: 'SA003', name: 'Sriracha Mayo', nameKr: '스리라차 마요', spice: 3, description: 'Spicy mayonnaise', allergens: 'Egg' },
+            { id: 'SA004', name: 'Sesame Garlic', nameKr: '참깨 마늘', spice: 2, description: 'Nutty sesame flavor', allergens: 'Sesame' },
+            { id: 'SA005', name: 'Kimchi Base', nameKr: '김치 베이스', spice: 3, description: 'Fermented kimchi sauce', allergens: 'Fish, Soy' },
+            { id: 'SA006', name: 'Sweet Chili', nameKr: '달콤한 칠리', spice: 2, description: 'Sweet and spicy balance', allergens: 'None' },
+            { id: 'SA007', name: 'Wasabi Crunch', nameKr: '와사비 크런치', spice: 5, description: 'Extreme heat with peanut crunch', allergens: 'Peanuts' },
+            { id: 'SA008', name: 'Yuzu Ponzu', nameKr: '유자 퐁즈', spice: 1, description: 'Citrus Japanese sauce', allergens: 'Soy, Fish' }
+        ];
+
+        const ALLERGENS_LIST = ['Sesame', 'Soy', 'Egg', 'Peanuts', 'Tree Nuts', 'Milk', 'Gluten', 'Fish', 'Shellfish', 'Mustard', 'Celery', 'Lupin', 'Molluscs', 'Sulphites'];
+
+        // APP STATE
+        const app = {
+            currentSection: 'dashboard',
+            currentPin: '1234',
+            editingBranchId: null,
+            editingMenuId: null,
+            editingSauceId: null,
+            branchMenuBranch: null,
+
+            init() {
+                this.setupPinLock();
+                this.setupEventListeners();
+                this.loadAllData();
+                this.updateClock();
+                setInterval(() => this.updateClock(), 1000);
+                this.setupBroadcastChannel();
+            },
+
+            setupPinLock() {
+                const pinOverlay = document.getElementById('pinLockOverlay');
+                const pinInput = document.getElementById('pinInput');
+                const pinBtns = document.querySelectorAll('.pin-keypad .pin-btn');
+                const clearBtn = document.getElementById('pinClearBtn');
+                const enterBtn = document.getElementById('pinEnterBtn');
+
+                pinBtns.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        const num = btn.textContent.trim();
+                        if (pinInput.value.length < 4) {
+                            pinInput.value += num;
+                        }
+                    });
+                });
+
+                clearBtn.addEventListener('click', () => {
+                    pinInput.value = '';
+                    pinInput.focus();
+                });
+
+                enterBtn.addEventListener('click', () => {
+                    if (pinInput.value === this.currentPin) {
+                        pinOverlay.style.display = 'none';
+                        document.getElementById('mainContainer').style.display = 'flex';
+                    } else {
+                        this.showToast('Invalid PIN', 'error');
+                        pinInput.value = '';
+                        pinInput.focus();
+                    }
+                });
+
+                pinInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') {
+                        enterBtn.click();
+                    }
+                });
+
+                // Auto-focus pin input
+                pinInput.focus();
+            },
+
+            setupEventListeners() {
+                document.querySelectorAll('.nav-item').forEach(item => {
+                    item.addEventListener('click', (e) => {
+                        const section = item.dataset.section;
+                        this.switchSection(section);
+                    });
+                });
+
+                // Menu form
+                document.getElementById('menuForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveMenuItem();
+                });
+
+                document.getElementById('menuImageUrl').addEventListener('change', (e) => {
+                    const url = e.target.value;
+                    const preview = document.getElementById('menuImagePreview');
+                    if (url) {
+                        preview.src = url;
+                        preview.style.display = 'block';
+                    } else {
+                        preview.style.display = 'none';
+                    }
+                });
+
+                // Branch form
+                document.getElementById('branchForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveBranch();
+                });
+
+                // Sauce form
+                document.getElementById('sauceForm').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.saveSauce();
+                });
+            },
+
+            setupBroadcastChannel() {
+                try {
+                    const channel = new BroadcastChannel('thebap_orders');
+                    channel.addEventListener('message', (event) => {
+                        if (event.data.type === 'ORDER_UPDATE') {
+                            this.addOrder(event.data.order);
+                            this.updateDashboard();
+                        }
+                    });
+                } catch (e) {
+                    console.log('BroadcastChannel not supported');
+                }
+            },
+
+            loadAllData() {
+                const pinStored = localStorage.getItem('tb_admin_pin');
+                if (pinStored) this.currentPin = pinStored;
+
+                if (!localStorage.getItem('tb_branches')) {
+                    localStorage.setItem('tb_branches', JSON.stringify(DEFAULT_BRANCHES));
+                }
+                if (!localStorage.getItem('tb_menu_items')) {
+                    localStorage.setItem('tb_menu_items', JSON.stringify(DEFAULT_MENU));
+                }
+                if (!localStorage.getItem('tb_sauces')) {
+                    localStorage.setItem('tb_sauces', JSON.stringify(DEFAULT_SAUCES));
+                }
+                if (!localStorage.getItem('tb_orders')) {
+                    localStorage.setItem('tb_orders', JSON.stringify([]));
+                }
+                if (!localStorage.getItem('tb_allergens')) {
+                    this.initializeAllergens();
+                }
+                if (!localStorage.getItem('tb_nutrition')) {
+                    this.initializeNutrition();
+                }
+                if (!localStorage.getItem('tb_branch_visibility')) {
+                    this.initializeBranchVisibility();
+                }
+                if (!localStorage.getItem('tb_branch_pricing')) {
+                    this.initializeBranchPricing();
+                }
+
+                this.updateDashboard();
+                this.renderBranches();
+                this.renderMenu();
+                this.renderSauces();
+                this.populateBranchSelectors();
+            },
+
+            initializeAllergens() {
+                const allergens = {};
+                DEFAULT_MENU.forEach(item => {
+                    allergens[item.id] = {};
+                    ALLERGENS_LIST.forEach(allergen => {
+                        allergens[item.id][allergen] = 'free';
+                    });
+                });
+                localStorage.setItem('tb_allergens', JSON.stringify(allergens));
+            },
+
+            initializeNutrition() {
+                const nutrition = {};
+                DEFAULT_MENU.forEach(item => {
+                    nutrition[item.id] = {
+                        calories: 0,
+                        carbs: 0,
+                        protein: 0,
+                        fat: 0,
+                        sugar: 0
+                    };
+                });
+                localStorage.setItem('tb_nutrition', JSON.stringify(nutrition));
+            },
+
+            initializeBranchVisibility() {
+                const visibility = {};
+                DEFAULT_BRANCHES.forEach(branch => {
+                    visibility[branch.code] = {};
+                    DEFAULT_MENU.forEach(item => {
+                        visibility[branch.code][item.id] = true;
+                    });
+                });
+                localStorage.setItem('tb_branch_visibility', JSON.stringify(visibility));
+            },
+
+            initializeBranchPricing() {
+                const pricing = {};
+                DEFAULT_BRANCHES.forEach(branch => {
+                    pricing[branch.code] = {};
+                });
+                localStorage.setItem('tb_branch_pricing', JSON.stringify(pricing));
+            },
+
+            switchSection(section) {
+                document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+                document.querySelector(`[data-section="${section}"]`).classList.add('active');
+
+                document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
+                document.getElementById(`section-${section}`).classList.add('active');
+
+                this.currentSection = section;
+
+                const titles = {
+                    dashboard: '홈 Dashboard',
+                    branches: '지점관리 Branch Management',
+                    menu: '메뉴관리 Menu Management',
+                    branchMenu: '지점별메뉴 Branch Menu Settings',
+                    sauces: '소스관리 Sauce Management',
+                    allergens: '알레르겐 Allergen Management',
+                    nutrition: '영양정보 Nutrition Management',
+                    orders: '주문현황 Order Monitor',
+                    sync: '데이터동기화 Google Sheets Sync',
+                    settings: '설정 Settings'
+                };
+
+                document.getElementById('pageTitle').textContent = titles[section];
+
+                if (section === 'allergens') {
+                    this.renderAllergenMatrix();
+                } else if (section === 'nutrition') {
+                    this.renderNutritionTable();
+                } else if (section === 'branchMenu') {
+                    this.populateBranchMenuSelector();
+                } else if (section === 'orders') {
+                    this.renderOrders();
+                }
+            },
+
+            updateClock() {
+                const now = new Date();
+                const time = now.toLocaleTimeString('en-GB', { hour12: false });
+                document.getElementById('clock').textContent = time;
+            },
+
+            updateDashboard() {
+                const orders = JSON.parse(localStorage.getItem('tb_orders') || '[]');
+                const branches = JSON.parse(localStorage.getItem('tb_branches') || '[]');
+
+                let totalOrders = orders.length;
+                let revenue = orders.reduce((sum, order) => sum + (order.total || 0), 0);
+                let avgValue = totalOrders > 0 ? revenue / totalOrders : 0;
+                let activeKiosks = branches.filter(b => b.active).length;
+
+                document.getElementById('statOrders').textContent = totalOrders;
+                document.getElementById('statRevenue').textContent = '£' + revenue.toFixed(2);
+                document.getElementById('statAvg').textContent = '£' + avgValue.toFixed(2);
+                document.getElementById('statKiosks').textContent = activeKiosks;
+
+                this.renderRecentOrders();
+            },
+
+            renderRecentOrders() {
+                const orders = JSON.parse(localStorage.getItem('tb_orders') || '[]');
+                const tbody = document.getElementById('recentOrdersTable');
+                const recent = orders.slice(-5).reverse();
+
+                if (recent.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999;">No orders yet</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = recent.map(order => `
+                    <tr>
+                        <td><strong>${order.id}</strong></td>
+                        <td>${order.branch}</td>
+                        <td>${order.items ? order.items.length : 0} items</td>
+                        <td>£${(order.total || 0).toFixed(2)}</td>
+                        <td><span class="order-status-badge order-status-${order.status}">${order.status || 'pending'}</span></td>
+                        <td>${order.timestamp ? new Date(order.timestamp).toLocaleTimeString('en-GB') : '-'}</td>
+                    </tr>
+                `).join('');
+            },
+
+            // BRANCHES
+            renderBranches() {
+                const branches = JSON.parse(localStorage.getItem('tb_branches') || '[]');
+                const container = document.getElementById('branchesContainer');
+
+                container.innerHTML = branches.map(branch => `
+                    <div class="branch-card">
+                        <div class="branch-header">
+                            <div>
+                                <div class="branch-name">${branch.name}</div>
+                                <div class="branch-code">${branch.code}</div>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn-secondary btn-small" onclick="app.editBranch('${branch.code}')">Edit</button>
+                                <button class="btn-danger btn-small" onclick="app.deleteBranch('${branch.code}')">Delete</button>
+                            </div>
+                        </div>
+                        <div class="branch-grid">
+                            <div class="branch-detail">
+                                <div class="branch-detail-label">Company</div>
+                                <div class="branch-detail-value">${branch.company}</div>
+                            </div>
+                            <div class="branch-detail">
+                                <div class="branch-detail-label">Company No</div>
+                                <div class="branch-detail-value">${branch.companyNo}</div>
+                            </div>
+                            <div class="branch-detail">
+                                <div class="branch-detail-label">VAT Number</div>
+                                <div class="branch-detail-value">${branch.vatNo}</div>
+                            </div>
+                            <div class="branch-detail">
+                                <div class="branch-detail-label">VAT Quarter</div>
+                                <div class="branch-detail-value">${branch.vatQuarter}</div>
+                            </div>
+                            <div class="branch-detail full-width">
+                                <div class="branch-detail-label">Address</div>
+                                <div class="branch-detail-value">${branch.address}</div>
+                            </div>
+                            <div class="branch-detail">
+                                <div class="branch-detail-label">Phone</div>
+                                <div class="branch-detail-value">${branch.phone}</div>
+                            </div>
+                            <div class="branch-detail">
+                                <div class="branch-detail-label">Email</div>
+                                <div class="branch-detail-value">${branch.email}</div>
+                            </div>
+                            <div class="branch-detail">
+                                <div class="branch-detail-label">Manager</div>
+                                <div class="branch-detail-value">${branch.manager}</div>
+                            </div>
+                            <div class="branch-detail">
+                                <div class="branch-detail-label">Status</div>
+                                <div class="branch-detail-value">${branch.active ? 'Active' : 'Inactive'}</div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            },
+
+            openBranchForm() {
+                this.editingBranchId = null;
+                document.getElementById('branchForm').reset();
+                document.getElementById('branchActive').checked = true;
+                document.getElementById('branchModal').classList.add('active');
+            },
+
+            editBranch(code) {
+                const branches = JSON.parse(localStorage.getItem('tb_branches') || '[]');
+                const branch = branches.find(b => b.code === code);
+                if (!branch) return;
+
+                this.editingBranchId = code;
+                document.getElementById('branchCode').value = branch.code;
+                document.getElementById('branchName').value = branch.name;
+                document.getElementById('branchCompany').value = branch.company;
+                document.getElementById('branchCompanyNo').value = branch.companyNo;
+                document.getElementById('branchVatNo').value = branch.vatNo;
+                document.getElementById('branchVatQuarter').value = branch.vatQuarter;
+                document.getElementById('branchAddress').value = branch.address;
+                document.getElementById('branchPhone').value = branch.phone;
+                document.getElementById('branchEmail').value = branch.email;
+                document.getElementById('branchManager').value = branch.manager;
+                document.getElementById('branchActive').checked = branch.active;
+
+                document.getElementById('branchModal').classList.add('active');
+            },
+
+            saveBranch() {
+                const branches = JSON.parse(localStorage.getItem('tb_branches') || '[]');
+                const code = document.getElementById('branchCode').value;
+
+                const branchData = {
+                    code: code,
+                    name: document.getElementById('branchName').value,
+                    company: document.getElementById('branchCompany').value,
+                    companyNo: document.getElementById('branchCompanyNo').value,
+                    vatNo: document.getElementById('branchVatNo').value,
+                    vatQuarter: document.getElementById('branchVatQuarter').value,
+                    address: document.getElementById('branchAddress').value,
+                    phone: document.getElementById('branchPhone').value,
+                    email: document.getElementById('branchEmail').value,
+                    manager: document.getElementById('branchManager').value,
+                    active: document.getElementById('branchActive').checked
+                };
+
+                if (this.editingBranchId) {
+                    const index = branches.findIndex(b => b.code === this.editingBranchId);
+                    if (index >= 0) branches[index] = branchData;
+                } else {
+                    if (branches.find(b => b.code === code)) {
+                        this.showToast('Branch code already exists', 'error');
+                        return;
+                    }
+                    branches.push(branchData);
+                    this.initializeBranchVisibility();
+                    this.initializeBranchPricing();
+                }
+
+                localStorage.setItem('tb_branches', JSON.stringify(branches));
+                this.closeBranchModal();
+                this.renderBranches();
+                this.populateBranchSelectors();
+                this.showToast('Branch saved successfully', 'success');
+            },
+
+            deleteBranch(code) {
+                if (!confirm(`Delete branch ${code}?`)) return;
+
+                let branches = JSON.parse(localStorage.getItem('tb_branches') || '[]');
+                branches = branches.filter(b => b.code !== code);
+                localStorage.setItem('tb_branches', JSON.stringify(branches));
+
+                this.renderBranches();
+                this.populateBranchSelectors();
+                this.showToast('Branch deleted', 'success');
+            },
+
+            closeBranchModal() {
+                document.getElementById('branchModal').classList.remove('active');
+                document.getElementById('branchForm').reset();
+            },
+
+            // MENU
+            renderMenu() {
+                const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
+                const categories = [...new Set(items.map(i => i.category))];
+
+                const tabsContainer = document.getElementById('categoryTabs');
+                tabsContainer.innerHTML = categories.map((cat, idx) => `
+                    <button class="tab-btn ${idx === 0 ? 'active' : ''}" onclick="app.filterMenuByCategory('${cat}')">${cat}</button>
+                `).join('');
+
+                this.filterMenuByCategory(categories[0] || 'Baps');
+            },
+
+            filterMenuByCategory(category) {
+                const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
+                const filtered = items.filter(i => i.category === category);
+
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelector(`[onclick="app.filterMenuByCategory('${category}')"]`).classList.add('active');
+
+                const content = document.getElementById('menuContent');
+                content.innerHTML = filtered.map(item => `
+                    <div class="menu-item-card">
+                        <img src="${item.imageUrl}" class="menu-item-image" onerror="this.src='https://via.placeholder.com/300x200?text=${encodeURIComponent(item.nameEn)}'">
+                        <div class="menu-item-body">
+                            <div class="menu-item-name">${item.nameEn}</div>
+                            <div class="menu-item-name-kr">${item.nameKr}</div>
+                            <div class="menu-item-price">£${item.basePrice.toFixed(2)}</div>
+                            <div class="menu-item-dietary">${item.dietary.map(d => `<span style="background: #F0F0F0; padding: 2px 6px; border-radius: 3px; font-size: 11px; margin-right: 4px;">${d}</span>`).join('')}</div>
+                            <div class="menu-item-actions">
+                                <button class="btn-secondary btn-small" onclick="app.editMenuItem('${item.id}')">Edit</button>
+                                <button class="btn-danger btn-small" onclick="app.deleteMenuItem('${item.id}')">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            },
+
+            openMenuForm() {
+                this.editingMenuId = null;
+                document.getElementById('menuForm').reset();
+                document.getElementById('menuActive').checked = true;
+                document.getElementById('menuImagePreview').style.display = 'none';
+                document.getElementById('menuModal').classList.add('active');
+            },
+
+            editMenuItem(id) {
+                const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
+                const item = items.find(i => i.id === id);
+                if (!item) return;
+
+                this.editingMenuId = id;
+                document.getElementById('menuNameEn').value = item.nameEn;
+                document.getElementById('menuNameKr').value = item.nameKr;
+                document.getElementById('menuCategory').value = item.category;
+                document.getElementById('menuDescription').value = item.description || '';
+                document.getElementById('menuPrice').value = item.basePrice;
+                document.getElementById('menuImageUrl').value = item.imageUrl;
+
+                if (item.imageUrl) {
+                    document.getElementById('menuImagePreview').src = item.imageUrl;
+                    document.getElementById('menuImagePreview').style.display = 'block';
+                }
+
+                document.getElementById('menuVegan').checked = item.dietary.includes('vegan');
+                document.getElementById('menuVegetarian').checked = item.dietary.includes('vegetarian');
+                document.getElementById('menuGlutenFree').checked = item.dietary.includes('glutenFree');
+                document.getElementById('menuSpicy').checked = item.dietary.includes('spicy');
+                document.getElementById('menuCombo').checked = item.isCombo;
+                document.getElementById('menuTopping').checked = item.hasTopping;
+                document.getElementById('menuActive').checked = item.active;
+
+                document.getElementById('menuModal').classList.add('active');
+            },
+
+            saveMenuItem() {
+                const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
+
+                const dietary = [];
+                if (document.getElementById('menuVegan').checked) dietary.push('vegan');
+                if (document.getElementById('menuVegetarian').checked) dietary.push('vegetarian');
+                if (document.getElementById('menuGlutenFree').checked) dietary.push('glutenFree');
+                if (document.getElementById('menuSpicy').checked) dietary.push('spicy');
+
+                const itemData = {
+                    id: this.editingMenuId || 'M' + Date.now(),
+                    nameEn: document.getElementById('menuNameEn').value,
+                    nameKr: document.getElementById('menuNameKr').value,
+                    category: document.getElementById('menuCategory').value,
+                    description: document.getElementById('menuDescription').value,
+                    basePrice: parseFloat(document.getElementById('menuPrice').value),
+                    imageUrl: document.getElementById('menuImageUrl').value,
+                    dietary: dietary,
+                    isCombo: document.getElementById('menuCombo').checked,
+                    hasTopping: document.getElementById('menuTopping').checked,
+                    active: document.getElementById('menuActive').checked
+                };
+
+                if (this.editingMenuId) {
+                    const index = items.findIndex(i => i.id === this.editingMenuId);
+                    if (index >= 0) items[index] = itemData;
+                } else {
+                    items.push(itemData);
+                    this.initializeAllergens();
+                    this.initializeNutrition();
+                }
+
+                localStorage.setItem('tb_menu_items', JSON.stringify(items));
+                this.closeMenuModal();
+                this.renderMenu();
+                this.showToast('Menu item saved', 'success');
+            },
+
+            deleteMenuItem(id) {
+                if (!confirm('Delete this menu item?')) return;
+
+                let items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
+                items = items.filter(i => i.id !== id);
+                localStorage.setItem('tb_menu_items', JSON.stringify(items));
+
+                let allergens = JSON.parse(localStorage.getItem('tb_allergens') || '{}');
+                delete allergens[id];
+                localStorage.setItem('tb_allergens', JSON.stringify(allergens));
+
+                let nutrition = JSON.parse(localStorage.getItem('tb_nutrition') || '{}');
+                delete nutrition[id];
+                localStorage.setItem('tb_nutrition', JSON.stringify(nutrition));
+
+                this.renderMenu();
+                this.showToast('Menu item deleted', 'success');
+            },
+
+            closeMenuModal() {
+                document.getElementById('menuModal').classList.remove('active');
+                document.getElementById('menuForm').reset();
+            },
+
+            // BRANCH MENU SETTINGS
+            populateBranchMenuSelector() {
+                const branches = JSON.parse(localStorage.getItem('tb_branches') || '[]');
+                const selector = document.getElementById('branchMenuSelector');
+
+                selector.innerHTML = '<option value="">Choose a branch...</option>' +
+                    branches.map(b => `<option value="${b.code}">${b.name}</option>`).join('');
+            },
+
+            loadBranchMenuSettings() {
+                const branchCode = document.getElementById('branchMenuSelector').value;
+                if (!branchCode) {
+                    document.getElementById('branchMenuTable').innerHTML = '<p style="color: #999;">Select a branch to view menu settings</p>';
+                    return;
+                }
+
+                this.branchMenuBranch = branchCode;
+                const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
+                const visibility = JSON.parse(localStorage.getItem('tb_branch_visibility') || '{}');
+                const pricing = JSON.parse(localStorage.getItem('tb_branch_pricing') || '{}');
+                const branches = JSON.parse(localStorage.getItem('tb_branches') || '[]');
+
+                const branchVisibility = visibility[branchCode] || {};
+                const branchPricing = pricing[branchCode] || {};
+
+                let html = `
+                    <div style="margin-bottom: 16px;">
+                        <button class="btn-secondary" onclick="app.copyBranchMenu()">Copy from Another Branch</button>
+                    </div>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Item Name</th>
+                                <th>Base Price</th>
+                                <th>Visible</th>
+                                <th>Price Override</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+
+                items.forEach(item => {
+                    const isVisible = branchVisibility[item.id] !== false;
+                    const priceOverride = branchPricing[item.id] || '';
+
+                    html += `
+                        <tr>
+                            <td>${item.nameEn}</td>
+                            <td>£${item.basePrice.toFixed(2)}</td>
+                            <td style="text-align: center;">
+                                <label class="toggle-switch">
+                                    <input type="checkbox" ${isVisible ? 'checked' : ''} onchange="app.updateBranchMenuVisibility('${branchCode}', '${item.id}', this.checked)">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </td>
+                            <td>
+                                <input type="number" step="0.01" placeholder="£" value="${priceOverride}" onchange="app.updateBranchMenuPrice('${branchCode}', '${item.id}', this.value)" style="width: 100px;">
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                html += `</tbody></table>`;
+                document.getElementById('branchMenuTable').innerHTML = html;
+            },
+
+            updateBranchMenuVisibility(branchCode, itemId, visible) {
+                const visibility = JSON.parse(localStorage.getItem('tb_branch_visibility') || '{}');
+                if (!visibility[branchCode]) visibility[branchCode] = {};
+                visibility[branchCode][itemId] = visible;
+                localStorage.setItem('tb_branch_visibility', JSON.stringify(visibility));
+                this.showToast('Visibility updated', 'success');
+            },
+
+            updateBranchMenuPrice(branchCode, itemId, price) {
+                const pricing = JSON.parse(localStorage.getItem('tb_branch_pricing') || '{}');
+                if (!pricing[branchCode]) pricing[branchCode] = {};
+
+                if (price === '') {
+                    delete pricing[branchCode][itemId];
+                } else {
+                    pricing[branchCode][itemId] = parseFloat(price);
+                }
+
+                localStorage.setItem('tb_branch_pricing', JSON.stringify(pricing));
+                this.showToast('Price updated', 'success');
+            },
+
+            copyBranchMenu() {
+                const branchCode = document.getElementById('branchMenuSelector').value;
+                const branches = JSON.parse(localStorage.getItem('tb_branches') || '[]').filter(b => b.code !== branchCode);
+
+                if (branches.length === 0) {
+                    this.showToast('No other branches to copy from', 'error');
+                    return;
+                }
+
+                let fromBranch = prompt('Enter the branch code to copy from (e.g. TBS, TBR, TBB, PAB, TBO):');
+                if (!fromBranch) return;
+
+                const visibility = JSON.parse(localStorage.getItem('tb_branch_visibility') || '{}');
+                const pricing = JSON.parse(localStorage.getItem('tb_branch_pricing') || '{}');
+
+                if (!visibility[fromBranch]) {
+                    this.showToast('Source branch not found', 'error');
+                    return;
+                }
+
+                visibility[branchCode] = JSON.parse(JSON.stringify(visibility[fromBranch]));
+                pricing[branchCode] = JSON.parse(JSON.stringify(pricing[fromBranch] || {}));
+
+                localStorage.setItem('tb_branch_visibility', JSON.stringify(visibility));
+                localStorage.setItem('tb_branch_pricing', JSON.stringify(pricing));
+
+                this.loadBranchMenuSettings();
+                this.showToast('Menu copied successfully', 'success');
+            },
+
+            // SAUCES
+            renderSauces() {
+                const sauces = JSON.parse(localStorage.getItem('tb_sauces') || '[]');
+                const tbody = document.getElementById('saucesTable');
+
+                tbody.innerHTML = sauces.map(sauce => {
+                    const flames = '🔥'.repeat(sauce.spice) + '❄️'.repeat(5 - sauce.spice);
+                    return `
+                        <tr>
+                            <td><strong>${sauce.name}</strong></td>
+                            <td>${sauce.nameKr}</td>
+                            <td><span class="flame">${flames}</span></td>
+                            <td>${sauce.description}</td>
+                            <td style="font-size: 12px; color: #666;">${sauce.allergens}</td>
+                            <td>
+                                <button class="btn-secondary btn-small" onclick="app.editSauce('${sauce.id}')">Edit</button>
+                                <button class="btn-danger btn-small" onclick="app.deleteSauce('${sauce.id}')">Delete</button>
+                            </td>
+                        </tr>
+                    `;
+                }).join('');
+            },
+
+            openSauceForm() {
+                this.editingSauceId = null;
+                document.getElementById('sauceForm').reset();
+                document.getElementById('sauceModal').classList.add('active');
+            },
+
+            editSauce(id) {
+                const sauces = JSON.parse(localStorage.getItem('tb_sauces') || '[]');
+                const sauce = sauces.find(s => s.id === id);
+                if (!sauce) return;
+
+                this.editingSauceId = id;
+                document.getElementById('sauceName').value = sauce.name;
+                document.getElementById('sauceNameKr').value = sauce.nameKr;
+                document.getElementById('sauceSpice').value = sauce.spice;
+                document.getElementById('sauceDescription').value = sauce.description;
+                document.getElementById('sauceAllergens').value = sauce.allergens;
+
+                document.getElementById('sauceModal').classList.add('active');
+            },
+
+            saveSauce() {
+                const sauces = JSON.parse(localStorage.getItem('tb_sauces') || '[]');
+
+                const sauceData = {
+                    id: this.editingSauceId || 'SA' + Date.now(),
+                    name: document.getElementById('sauceName').value,
+                    nameKr: document.getElementById('sauceNameKr').value,
+                    spice: parseInt(document.getElementById('sauceSpice').value),
+                    description: document.getElementById('sauceDescription').value,
+                    allergens: document.getElementById('sauceAllergens').value
+                };
+
+                if (this.editingSauceId) {
+                    const index = sauces.findIndex(s => s.id === this.editingSauceId);
+                    if (index >= 0) sauces[index] = sauceData;
+                } else {
+                    sauces.push(sauceData);
+                }
+
+                localStorage.setItem('tb_sauces', JSON.stringify(sauces));
+                this.closeSauceModal();
+                this.renderSauces();
+                this.showToast('Sauce saved', 'success');
+            },
+
+            deleteSauce(id) {
+                if (!confirm('Delete this sauce?')) return;
+
+                let sauces = JSON.parse(localStorage.getItem('tb_sauces') || '[]');
+                sauces = sauces.filter(s => s.id !== id);
+                localStorage.setItem('tb_sauces', JSON.stringify(sauces));
+
+                this.renderSauces();
+                this.showToast('Sauce deleted', 'success');
+            },
+
+            closeSauceModal() {
+                document.getElementById('sauceModal').classList.remove('active');
+                document.getElementById('sauceForm').reset();
+            },
+
+            // ALLERGENS
+            renderAllergenMatrix() {
+                const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
+                const allergens = JSON.parse(localStorage.getItem('tb_allergens') || '{}');
+
+                let html = '<div class="allergen-matrix">';
+
+                // Header row
+                html += '<div style="font-weight: 600; padding: 8px;"></div>';
+                ALLERGENS_LIST.forEach(allergen => {
+                    html += `<div style="font-weight: 600; padding: 8px; text-align: center; font-size: 11px;">${allergen}</div>`;
+                });
+
+                // Data rows
+                items.forEach(item => {
+                    html += `<div style="font-weight: 500; padding: 8px; font-size: 13px;">${item.nameEn}</div>`;
+
+                    ALLERGENS_LIST.forEach(allergen => {
+                        const state = allergens[item.id] ? allergens[item.id][allergen] : 'free';
+                        const states = { 'free': '-', 'contains': 'O', 'may': 'MC' };
+                        const stateClass = state;
+
+                        html += `<div class="allergen-cell ${stateClass}" onclick="app.cycleAllergenState('${item.id}', '${allergen}')">${states[state]}</div>`;
+                    });
+                });
+
+                html += '</div>';
+                document.getElementById('allergenMatrix').innerHTML = html;
+            },
+
+            cycleAllergenState(itemId, allergen) {
+                const allergens = JSON.parse(localStorage.getItem('tb_allergens') || '{}');
+                if (!allergens[itemId]) allergens[itemId] = {};
+
+                const current = allergens[itemId][allergen] || 'free';
+                const cycle = { 'free': 'contains', 'contains': 'may', 'may': 'free' };
+                allergens[itemId][allergen] = cycle[current];
+
+                localStorage.setItem('tb_allergens', JSON.stringify(allergens));
+                this.renderAllergenMatrix();
+            },
+
+            // NUTRITION
+            renderNutritionTable() {
+                const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
+                const nutrition = JSON.parse(localStorage.getItem('tb_nutrition') || '{}');
+
+                const tbody = document.getElementById('nutritionTable');
+
+                tbody.innerHTML = items.map(item => {
+                    const nut = nutrition[item.id] || { calories: 0, carbs: 0, protein: 0, fat: 0, sugar: 0 };
+
+                    return `
+                        <tr>
+                            <td><strong>${item.nameEn}</strong></td>
+                            <td><input type="number" value="${nut.calories}" onchange="app.updateNutrition('${item.id}', 'calories', this.value)" style="width: 80px;"></td>
+                            <td><input type="number" step="0.1" value="${nut.carbs}" onchange="app.updateNutrition('${item.id}', 'carbs', this.value)" style="width: 80px;"></td>
+                            <td><input type="number" step="0.1" value="${nut.protein}" onchange="app.updateNutrition('${item.id}', 'protein', this.value)" style="width: 80px;"></td>
+                            <td><input type="number" step="0.1" value="${nut.fat}" onchange="app.updateNutrition('${item.id}', 'fat', this.value)" style="width: 80px;"></td>
+                            <td><input type="number" step="0.1" value="${nut.sugar}" onchange="app.updateNutrition('${item.id}', 'sugar', this.value)" style="width: 80px;"></td>
+                        </tr>
+                    `;
+                }).join('');
+            },
+
+            updateNutrition(itemId, field, value) {
+                const nutrition = JSON.parse(localStorage.getItem('tb_nutrition') || '{}');
+                if (!nutrition[itemId]) nutrition[itemId] = { calories: 0, carbs: 0, protein: 0, fat: 0, sugar: 0 };
+                nutrition[itemId][field] = parseFloat(value) || 0;
+                localStorage.setItem('tb_nutrition', JSON.stringify(nutrition));
+                this.showToast('Nutrition updated', 'success');
+            },
+
+            // ORDERS
+            addOrder(order) {
+                const orders = JSON.parse(localStorage.getItem('tb_orders') || '[]');
+                orders.push({
+                    id: order.id || 'ORD' + Date.now(),
+                    branch: order.branch || 'Unknown',
+                    items: order.items || [],
+                    total: order.total || 0,
+                    status: order.status || 'pending',
+                    timestamp: order.timestamp || new Date().toISOString()
+                });
+                localStorage.setItem('tb_orders', JSON.stringify(orders));
+            },
+
+            renderOrders() {
+                const orders = JSON.parse(localStorage.getItem('tb_orders') || '[]');
+                const tbody = document.getElementById('ordersTable');
+
+                const branchFilter = document.getElementById('orderBranchFilter').value;
+                const statusFilter = document.getElementById('orderStatusFilter').value;
+
+                const branches = JSON.parse(localStorage.getItem('tb_branches') || '[]');
+                const branchFilterSelector = document.getElementById('orderBranchFilter');
+                branchFilterSelector.innerHTML = '<option value="">All Branches</option>' +
+                    branches.map(b => `<option value="${b.code}">${b.name}</option>`).join('');
+
+                let filtered = orders;
+                if (branchFilter) filtered = filtered.filter(o => o.branch === branchFilter);
+                if (statusFilter) filtered = filtered.filter(o => o.status === statusFilter);
+
+                if (filtered.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: #999;">No orders found</td></tr>';
+                    return;
+                }
+
+                tbody.innerHTML = filtered.reverse().map(order => `
+                    <tr>
+                        <td><strong>${order.id}</strong></td>
+                        <td>${order.branch}</td>
+                        <td>${order.items ? order.items.length : 0} items</td>
+                        <td>£${(order.total || 0).toFixed(2)}</td>
+                        <td>
+                            <select onchange="app.updateOrderStatus('${order.id}', this.value)" style="padding: 6px; border-radius: 4px; border: 1px solid #D0D0D0;">
+                                <option value="pending" ${order.status === 'pending' ? 'selected' : ''}>Pending</option>
+                                <option value="preparing" ${order.status === 'preparing' ? 'selected' : ''}>Preparing</option>
+                                <option value="ready" ${order.status === 'ready' ? 'selected' : ''}>Ready</option>
+                                <option value="completed" ${order.status === 'completed' ? 'selected' : ''}>Completed</option>
+                            </select>
+                        </td>
+                        <td>${order.timestamp ? new Date(order.timestamp).toLocaleString('en-GB') : '-'}</td>
+                        <td>
+                            <button class="btn-danger btn-small" onclick="app.deleteOrder('${order.id}')">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+            },
+
+            filterOrders() {
+                this.renderOrders();
+            },
+
+            updateOrderStatus(orderId, status) {
+                const orders = JSON.parse(localStorage.getItem('tb_orders') || '[]');
+                const order = orders.find(o => o.id === orderId);
+                if (order) {
+                    order.status = status;
+                    localStorage.setItem('tb_orders', JSON.stringify(orders));
+                    this.showToast('Order status updated', 'success');
+                }
+            },
+
+            deleteOrder(orderId) {
+                if (!confirm('Delete this order?')) return;
+
+                let orders = JSON.parse(localStorage.getItem('tb_orders') || '[]');
+                orders = orders.filter(o => o.id !== orderId);
+                localStorage.setItem('tb_orders', JSON.stringify(orders));
+
+                this.renderOrders();
+                this.updateDashboard();
+                this.showToast('Order deleted', 'success');
+            },
+
+            exportOrders() {
+                const orders = JSON.parse(localStorage.getItem('tb_orders') || '[]');
+                let csv = 'Order ID,Branch,Items,Total,Status,Date/Time\n';
+
+                orders.forEach(order => {
+                    const timestamp = order.timestamp ? new Date(order.timestamp).toLocaleString('en-GB') : '-';
+                    csv += `${order.id},"${order.branch}",${order.items ? order.items.length : 0},${(order.total || 0).toFixed(2)},"${order.status}","${timestamp}"\n`;
+                });
+
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `orders_${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+
+                this.showToast('Orders exported', 'success');
+            },
+
+            // SYNC
+            syncToSheets() {
+                this.showToast('Sync functionality requires Google Sheets API setup', 'info');
+            },
+
+            importFromSheets() {
+                this.showToast('Import functionality requires Google Sheets API setup', 'info');
+            },
+
+            // SETTINGS
+            changePIN() {
+                const current = document.getElementById('currentPin').value;
+                const newPin = document.getElementById('newPin').value;
+                const confirm = document.getElementById('confirmPin').value;
+
+                if (current !== this.currentPin) {
+                    this.showToast('Current PIN is incorrect', 'error');
+                    return;
+                }
+
+                if (newPin !== confirm) {
+                    this.showToast('New PINs do not match', 'error');
+                    return;
+                }
+
+                if (newPin.length !== 4) {
+                    this.showToast('PIN must be 4 digits', 'error');
+                    return;
+                }
+
+                this.currentPin = newPin;
+                localStorage.setItem('tb_admin_pin', newPin);
+                document.getElementById('currentPin').value = '';
+                document.getElementById('newPin').value = '';
+                document.getElementById('confirmPin').value = '';
+
+                this.showToast('PIN changed successfully', 'success');
+            },
+
+            saveServerConfig() {
+                const ip = document.getElementById('serverIp').value;
+                const port = document.getElementById('serverPort').value;
+
+                localStorage.setItem('tb_settings', JSON.stringify({
+                    serverIp: ip,
+                    serverPort: port
+                }));
+
+                this.showToast('Server config saved', 'success');
+            },
+
+            populateBranchSelectors() {
+                const branches = JSON.parse(localStorage.getItem('tb_branches') || '[]');
+                const branchFilter = document.getElementById('orderBranchFilter');
+                if (branchFilter) {
+                    branchFilter.innerHTML = '<option value="">All Branches</option>' +
+                        branches.map(b => `<option value="${b.code}">${b.name}</option>`).join('');
+                }
+            },
+
+            showToast(message, type = 'info') {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type}`;
+                toast.textContent = message;
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.style.animation = 'slideIn 0.3s ease reverse';
+                    setTimeout(() => toast.remove(), 300);
+                }, 3000);
+            }
+        };
+
+        // INITIALIZE APP
+        document.addEventListener('DOMContentLoaded', () => {
+            app.init();
+        });
+    </script>
+</body>
+</html>

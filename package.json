@@ -1,0 +1,12 @@
+{
+  "name": "tborder",
+  "version": "4.0.0",
+  "description": "The Bap (더밥) Kiosk Ordering System",
+  "main": "tb-server.js",
+  "scripts": {
+    "start": "node tb-server.js"
+  },
+  "dependencies": {
+    "ws": "^8.19.0"
+  }
+}

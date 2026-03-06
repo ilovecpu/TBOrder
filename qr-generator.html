@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Bap — QR Code Generator</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #FAFAFA;
+            color: #1A1A1A;
+            padding: 40px 20px;
+        }
+        .container { max-width: 800px; margin: 0 auto; }
+        h1 { font-size: 28px; font-weight: 800; margin-bottom: 8px; }
+        .subtitle { color: #6B7280; font-size: 14px; margin-bottom: 40px; }
+
+        .branch-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+            gap: 24px;
+            margin-bottom: 40px;
+        }
+        .branch-qr {
+            background: #fff;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            text-align: center;
+        }
+        .branch-qr h3 {
+            font-size: 18px; font-weight: 700;
+            color: #E85D75; margin-bottom: 4px;
+        }
+        .branch-qr .addr { font-size: 12px; color: #9CA3AF; margin-bottom: 16px; }
+        .qr-img {
+            width: 200px; height: 200px;
+            margin: 0 auto 16px;
+            background: #f5f5f5; border-radius: 12px;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .qr-img img { width: 100%; height: 100%; border-radius: 12px; }
+        .qr-url {
+            font-size: 11px; color: #6B7280;
+            word-break: break-all;
+            background: #F5F5F5;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-bottom: 12px;
+        }
+        .download-btn {
+            background: #E85D75; color: #fff;
+            border: none; border-radius: 10px;
+            padding: 10px 24px;
+            font-size: 13px; font-weight: 600;
+            cursor: pointer; transition: all 0.2s;
+        }
+        .download-btn:hover { background: #C94D63; }
+        .print-btn {
+            background: #374151; color: #fff;
+            border: none; border-radius: 10px;
+            padding: 10px 24px;
+            font-size: 13px; font-weight: 600;
+            cursor: pointer; margin-left: 8px;
+        }
+
+        /* ─── Setup Guide ─── */
+        .guide { background: #fff; border-radius: 20px; padding: 30px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); margin-bottom: 30px; }
+        .guide h2 { font-size: 20px; font-weight: 700; margin-bottom: 20px; color: #E85D75; }
+        .guide ol { padding-left: 20px; line-height: 2; font-size: 14px; }
+        .guide code {
+            background: #F5F5F5; padding: 2px 8px; border-radius: 4px;
+            font-size: 13px; font-family: 'Courier New', monospace;
+        }
+        .guide .step-title { font-weight: 700; }
+        .guide .warn { color: #E85D75; font-weight: 600; }
+
+        .url-input-group {
+            display: flex; gap: 8px; margin: 20px 0;
+        }
+        .url-input-group input {
+            flex: 1; padding: 12px 14px; border: 2px solid #E5E7EB;
+            border-radius: 12px; font-size: 14px; font-family: 'Courier New', monospace;
+        }
+        .url-input-group input:focus { outline: none; border-color: #E85D75; }
+        .url-input-group button {
+            padding: 12px 20px; border: none; border-radius: 12px;
+            background: #34C759; color: #fff; font-weight: 600;
+            cursor: pointer; white-space: nowrap;
+        }
+
+        @media print {
+            body { padding: 0; background: #fff; }
+            .guide, .url-input-group, .download-btn, .print-btn, h1, .subtitle { display: none !important; }
+            .branch-grid { grid-template-columns: 1fr 1fr; }
+            .branch-qr { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <h1>🍚 The Bap — QR Code Generator</h1>
+    <p class="subtitle">각 지점별 QR코드를 생성합니다. 인쇄해서 매장에 비치하세요.</p>
+
+    <!-- 설정 가이드 -->
+    <div class="guide">
+        <h2>📋 설정 가이드 (Setup Guide)</h2>
+        <ol>
+            <li><span class="step-title">Google Sheets 생성</span> — <a href="https://sheets.google.com" target="_blank">sheets.google.com</a>에서 새 스프레드시트 만들기</li>
+            <li><span class="step-title">시트 이름 변경</span> — 기본 시트 이름을 <code>Orders</code>로 변경</li>
+            <li><span class="step-title">Apps Script 열기</span> — 메뉴: <code>확장프로그램 → Apps Script</code> 클릭</li>
+            <li><span class="step-title">코드 붙여넣기</span> — <code>google-apps-script.js</code> 내용을 전부 복사해서 붙여넣기</li>
+            <li><span class="step-title">배포</span> — <code>배포 → 새 배포 → 웹 앱</code> 선택
+                <br>• "다음 계정으로 실행" → <strong>나</strong>
+                <br>• "액세스 권한" → <strong>모든 사용자</strong>
+            </li>
+            <li><span class="step-title">URL 복사</span> — 배포 후 나오는 URL을 복사</li>
+            <li><span class="step-title warn">⚠️ URL 적용 (중요!)</span>
+                <br>• <code>mobile.html</code> 파일의 <code>APPS_SCRIPT_URL</code>에 붙여넣기
+                <br>• <code>TBKitchen_Kiosk.html</code> 파일의 <code>APPS_SCRIPT_URL</code>에 붙여넣기
+            </li>
+            <li><span class="step-title">GitHub에 push</span> — 변경된 파일을 GitHub에 push하면 완료!</li>
+        </ol>
+    </div>
+
+    <!-- QR 기본 URL 설정 -->
+    <div class="guide">
+        <h2>🔗 GitHub Pages URL 설정</h2>
+        <p style="font-size:13px; color:#6B7280; margin-bottom:12px;">
+            QR코드가 연결될 기본 URL을 입력하세요. GitHub Pages URL 형식: <code>https://사용자명.github.io/TBOrder/mobile.html</code>
+        </p>
+        <div class="url-input-group">
+            <input type="text" id="baseUrl" value="https://ilovecpu.github.io/TBOrder/mobile.html" placeholder="https://username.github.io/TBOrder/mobile.html">
+            <button onclick="generateAllQR()">QR 생성</button>
+        </div>
+    </div>
+
+    <!-- QR 코드 그리드 -->
+    <div class="branch-grid" id="branchGrid"></div>
+</div>
+
+<!-- QR Code 라이브러리 (CDN) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+const BRANCHES = [
+    { code: 'PAB', name: 'Pick A Bap', address: 'Unit 24, The Meads, Farnborough' },
+    { code: 'TBS', name: 'The Bap Swindon', address: '12 Havelock Square, Swindon' },
+    { code: 'TBR', name: 'The Bap Reading', address: '23-24 Market Place, Reading' },
+    { code: 'TBB', name: 'The Bap Bristol', address: '21 Queens Road, Clifton, Bristol' },
+    { code: 'TBO', name: 'The Bap Oxford', address: 'Oxford' }
+];
+
+function generateAllQR() {
+    const baseUrl = document.getElementById('baseUrl').value.trim();
+    if (!baseUrl) { alert('URL을 입력하세요'); return; }
+
+    const grid = document.getElementById('branchGrid');
+    grid.innerHTML = '';
+
+    BRANCHES.forEach(branch => {
+        const url = `${baseUrl}?branch=${branch.code}`;
+        const card = document.createElement('div');
+        card.className = 'branch-qr';
+        card.innerHTML = `
+            <h3>${branch.code} — ${branch.name}</h3>
+            <div class="addr">${branch.address}</div>
+            <div class="qr-img" id="qr-${branch.code}"></div>
+            <div class="qr-url">${url}</div>
+            <button class="download-btn" onclick="downloadQR('${branch.code}')">💾 Download PNG</button>
+            <button class="print-btn" onclick="window.print()">🖨 Print All</button>
+        `;
+        grid.appendChild(card);
+
+        // QR 생성
+        new QRCode(document.getElementById(`qr-${branch.code}`), {
+            text: url,
+            width: 200,
+            height: 200,
+            colorDark: '#0D0D0D',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.H
+        });
+    });
+}
+
+function downloadQR(code) {
+    const container = document.getElementById(`qr-${code}`);
+    const canvas = container.querySelector('canvas');
+    if (!canvas) { alert('먼저 QR을 생성하세요'); return; }
+
+    const link = document.createElement('a');
+    link.download = `TheBap_QR_${code}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+}
+
+// 자동 생성
+generateAllQR();
+</script>
+</body>
+</html>

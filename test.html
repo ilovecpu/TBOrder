@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TBOrder - 통신 진단 도구</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; background: #0D0D0D; color: #E8E8E8; padding: 20px; }
+        h1 { color: #E85D75; font-size: 24px; margin-bottom: 4px; }
+        .subtitle { color: #666; margin-bottom: 20px; font-size: 14px; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+        .card { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 16px; }
+        .card h2 { font-size: 16px; color: #E85D75; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+        .full-width { grid-column: 1 / -1; }
+        .status-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #222; }
+        .status-row:last-child { border: none; }
+        .status-label { color: #999; font-size: 14px; }
+        .status-value { font-weight: 600; font-size: 14px; }
+        .status-value.ok { color: #34C759; }
+        .status-value.fail { color: #FF3B30; }
+        .status-value.wait { color: #FF9500; }
+        .status-value.info { color: #5AC8FA; }
+        .log { background: #111; border: 1px solid #333; border-radius: 8px; padding: 12px; max-height: 350px; overflow-y: auto; font-family: 'Courier New', monospace; font-size: 12px; line-height: 1.6; }
+        .log-entry.sent { color: #5AC8FA; }
+        .log-entry.recv { color: #34C759; }
+        .log-entry.err { color: #FF3B30; }
+        .log-entry.info { color: #999; }
+        .log-time { color: #555; }
+        .btn-group { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+        .btn { padding: 10px 20px; border: none; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; transition: all 0.2s; }
+        .btn:hover { transform: translateY(-1px); }
+        .btn:active { transform: translateY(0); }
+        .btn-primary { background: #E85D75; color: white; }
+        .btn-green { background: #34C759; color: white; }
+        .btn-blue { background: #007AFF; color: white; }
+        .btn-orange { background: #FF9500; color: white; }
+        .btn-gray { background: #333; color: #ccc; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .section-title { font-size: 18px; font-weight: 700; color: #fff; margin: 24px 0 12px; padding-top: 16px; border-top: 1px solid #333; }
+        .section-title:first-of-type { border-top: none; margin-top: 0; }
+        .instructions { background: #1a1a1a; border: 1px solid #333; border-radius: 12px; padding: 16px; }
+        .instructions p { color: #999; font-size: 13px; line-height: 1.6; margin-bottom: 4px; }
+        .instructions code { background: #333; padding: 2px 6px; border-radius: 4px; color: #E85D75; font-size: 12px; }
+        .step { display: flex; gap: 8px; margin: 6px 0; }
+        .step-num { color: #E85D75; font-weight: 700; min-width: 20px; }
+    </style>
+</head>
+<body>
+    <h1>🔧 TBOrder 통신 진단 도구</h1>
+    <p class="subtitle">주문 키오스크 ↔ 서버 ↔ 주방 키오스크 연결 상태를 확인합니다</p>
+
+    <div class="section-title">📡 1단계: 환경 정보</div>
+    <div class="grid">
+        <div class="card">
+            <h2>🌐 네트워크</h2>
+            <div class="status-row"><span class="status-label">현재 페이지 URL</span><span class="status-value info" id="pageUrl">-</span></div>
+            <div class="status-row"><span class="status-label">호스트</span><span class="status-value info" id="pageHost">-</span></div>
+            <div class="status-row"><span class="status-label">WebSocket URL</span><span class="status-value info" id="wsUrl">-</span></div>
+            <div class="status-row"><span class="status-label">file:// 로 열었는지</span><span class="status-value" id="isFileProtocol">-</span></div>
+        </div>
+        <div class="card">
+            <h2>🏥 서버 Health Check</h2>
+            <div class="status-row"><span class="status-label">HTTP 응답</span><span class="status-value wait" id="httpStatus">테스트 안함</span></div>
+            <div class="status-row"><span class="status-label">서버 IP</span><span class="status-value info" id="serverIp">-</span></div>
+            <div class="status-row"><span class="status-label">연결된 클라이언트</span><span class="status-value info" id="serverClients">-</span></div>
+            <div class="status-row"><span class="status-label">오늘 주문</span><span class="status-value info" id="serverOrders">-</span></div>
+            <div class="btn-group"><button class="btn btn-blue" onclick="checkServerHealth()">서버 상태 확인</button></div>
+        </div>
+    </div>
+
+    <div class="section-title">🔌 2단계: WebSocket 연결 테스트</div>
+    <div class="grid">
+        <div class="card">
+            <h2>📱 주문 키오스크 (Order)</h2>
+            <div class="status-row"><span class="status-label">WebSocket 상태</span><span class="status-value wait" id="orderWsStatus">연결 안함</span></div>
+            <div class="status-row"><span class="status-label">서버 등록</span><span class="status-value wait" id="orderRegistered">안됨</span></div>
+            <div class="btn-group"><button class="btn btn-primary" onclick="connectOrderWS()">주문쪽 연결</button></div>
+        </div>
+        <div class="card">
+            <h2>🍳 주방 키오스크 (Kitchen)</h2>
+            <div class="status-row"><span class="status-label">WebSocket 상태</span><span class="status-value wait" id="kitchenWsStatus">연결 안함</span></div>
+            <div class="status-row"><span class="status-label">서버 등록</span><span class="status-value wait" id="kitchenRegistered">안됨</span></div>
+            <div class="btn-group"><button class="btn btn-primary" onclick="connectKitchenWS()">주방쪽 연결</button></div>
+        </div>
+    </div>
+
+    <div class="section-title">📋 3단계: 주문 전송 테스트</div>
+    <div class="card full-width" style="margin-bottom:20px">
+        <h2>🧪 테스트 주문 보내기</h2>
+        <p style="color:#999; font-size:13px; margin-bottom:12px;">주문쪽에서 보낸 주문이 서버를 거쳐 주방쪽으로 도착하는지 확인합니다.</p>
+        <div class="btn-group">
+            <button class="btn btn-green" id="sendTestBtn" onclick="sendTestOrder()" disabled>WebSocket으로 주문 전송</button>
+            <button class="btn btn-orange" onclick="sendBroadcastOrder()">BroadcastChannel로 전송</button>
+            <button class="btn btn-gray" onclick="runFullDiagnosis()">🔍 전체 자동 진단</button>
+            <button class="btn btn-gray" onclick="clearLog()">로그 지우기</button>
+        </div>
+    </div>
+
+    <div class="section-title">📝 통신 로그</div>
+    <div class="card"><div class="log" id="log"></div></div>
+
+    <div class="section-title" style="margin-top:24px">📖 사용 방법</div>
+    <div class="instructions">
+        <div class="step"><span class="step-num">1.</span><p>서버 실행: <code>node tb-server.js</code></p></div>
+        <div class="step"><span class="step-num">2.</span><p>이 페이지를 <code>http://[서버IP]:8080/test</code> 로 열기 (file:// 금지!)</p></div>
+        <div class="step"><span class="step-num">3.</span><p>"서버 상태 확인" 클릭 → HTTP 연결 확인</p></div>
+        <div class="step"><span class="step-num">4.</span><p>"주문쪽 연결" → "주방쪽 연결" 순서대로 클릭</p></div>
+        <div class="step"><span class="step-num">5.</span><p>"WebSocket으로 주문 전송" 클릭 → 주방쪽에 도착하는지 확인</p></div>
+        <div class="step"><span class="step-num">⚠️</span><p><strong>다른 기기 테스트:</strong> 같은 WiFi에서 서버 맥의 IP로 접속 (예: <code>http://192.168.1.5:8080/test</code>)</p></div>
+    </div>
+
+<script>
+    let wsOrder = null, wsKitchen = null, broadcastChannel = null, orderCounter = 0;
+
+    function getWsUrl() {
+        const host = window.location.host || 'localhost:8080';
+        return `ws://${host}`;
+    }
+    function getHttpBase() {
+        return `http://${window.location.host || 'localhost:8080'}`;
+    }
+    function log(msg, type = 'info') {
+        const el = document.getElementById('log');
+        const t = new Date().toLocaleTimeString('ko-KR');
+        const d = document.createElement('div');
+        d.className = `log-entry ${type}`;
+        d.innerHTML = `<span class="log-time">[${t}]</span> ${msg}`;
+        el.appendChild(d);
+        el.scrollTop = el.scrollHeight;
+    }
+    function clearLog() { document.getElementById('log').innerHTML = ''; log('로그 초기화됨'); }
+    function setStatus(id, text, cls) {
+        const el = document.getElementById(id);
+        el.textContent = text;
+        el.className = `status-value ${cls}`;
+    }
+
+    // ─── 1단계: 환경 정보 ───
+    function showEnvironment() {
+        const url = window.location.href;
+        document.getElementById('pageUrl').textContent = url.length > 50 ? url.substring(0, 50) + '...' : url;
+        document.getElementById('pageHost').textContent = window.location.host || '(없음 - file://)';
+        document.getElementById('wsUrl').textContent = getWsUrl();
+        const isFile = window.location.protocol === 'file:';
+        setStatus('isFileProtocol', isFile ? '⚠️ YES — 서버로 열기!' : '✅ NO — 정상', isFile ? 'fail' : 'ok');
+        if (isFile) {
+            log('⛔ file:// 프로토콜 감지! WebSocket 작동 안 함!', 'err');
+            log('   → http://[서버IP]:8080/test 로 접속하세요', 'err');
+        }
+    }
+
+    // ─── 서버 Health Check ───
+    async function checkServerHealth() {
+        setStatus('httpStatus', '확인 중...', 'wait');
+        log('🏥 서버 Health Check 시작...', 'info');
+        try {
+            const r = await fetch(`${getHttpBase()}/api/health`, { signal: AbortSignal.timeout(5000) });
+            const d = await r.json();
+            setStatus('httpStatus', `✅ ${r.status} OK`, 'ok');
+            document.getElementById('serverIp').textContent = d.ip || '-';
+            document.getElementById('serverClients').textContent = `주문:${d.clients?.order||0} 주방:${d.clients?.kitchen||0} 관리:${d.clients?.admin||0}`;
+            document.getElementById('serverOrders').textContent = `${d.dailyOrders||0}건`;
+            log(`✅ 서버 응답 OK — IP:${d.ip}, 가동:${Math.floor(d.uptime)}초`, 'recv');
+            log(`   클라이언트: 주문=${d.clients?.order}, 주방=${d.clients?.kitchen}`, 'info');
+            return true;
+        } catch (e) {
+            setStatus('httpStatus', '❌ 연결 실패', 'fail');
+            log(`❌ 서버 연결 실패: ${e.message}`, 'err');
+            log('   → node tb-server.js 실행 확인', 'err');
+            return false;
+        }
+    }
+
+    // ─── 2단계: WebSocket ───
+    function connectOrderWS() {
+        return new Promise((resolve) => {
+            const url = getWsUrl();
+            log(`📱 [주문] 연결 시도: ${url}`, 'sent');
+            setStatus('orderWsStatus', '연결 중...', 'wait');
+            try {
+                wsOrder = new WebSocket(url);
+                wsOrder.onopen = () => {
+                    setStatus('orderWsStatus', '✅ 연결됨', 'ok');
+                    log('📱 [주문] ✅ WebSocket 연결 성공!', 'recv');
+                    wsOrder.send(JSON.stringify({ type: 'register', clientType: 'order', branchCode: 'TEST' }));
+                    log('📱 [주문] → register 전송', 'sent');
+                };
+                wsOrder.onmessage = (event) => {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        if (msg.type === 'registered') {
+                            setStatus('orderRegistered', '✅ 등록됨', 'ok');
+                            document.getElementById('sendTestBtn').disabled = false;
+                            log(`📱 [주문] ✅ 서버 등록 완료 (ID:${msg.clientId})`, 'recv');
+                            resolve(true);
+                        } else {
+                            log(`📱 [주문] ← ${msg.type}`, 'recv');
+                        }
+                    } catch (e) { log(`📱 파싱오류: ${e.message}`, 'err'); }
+                };
+                wsOrder.onerror = () => { setStatus('orderWsStatus', '❌ 오류', 'fail'); log('📱 [주문] ❌ 오류', 'err'); resolve(false); };
+                wsOrder.onclose = (e) => {
+                    setStatus('orderWsStatus', `❌ 닫힘(${e.code})`, 'fail');
+                    setStatus('orderRegistered', '안됨', 'wait');
+                    document.getElementById('sendTestBtn').disabled = true;
+                    log(`📱 [주문] 닫힘 code=${e.code}`, 'err');
+                };
+                setTimeout(() => resolve(false), 5000);
+            } catch (e) { setStatus('orderWsStatus', '❌ 실패', 'fail'); log(`📱 실패: ${e.message}`, 'err'); resolve(false); }
+        });
+    }
+
+    function connectKitchenWS() {
+        return new Promise((resolve) => {
+            const url = getWsUrl();
+            log(`🍳 [주방] 연결 시도: ${url}`, 'sent');
+            setStatus('kitchenWsStatus', '연결 중...', 'wait');
+            try {
+                wsKitchen = new WebSocket(url);
+                wsKitchen.onopen = () => {
+                    setStatus('kitchenWsStatus', '✅ 연결됨', 'ok');
+                    log('🍳 [주방] ✅ WebSocket 연결 성공!', 'recv');
+                    wsKitchen.send(JSON.stringify({ type: 'register', clientType: 'kitchen' }));
+                    log('🍳 [주방] → register 전송', 'sent');
+                };
+                wsKitchen.onmessage = (event) => {
+                    try {
+                        const msg = JSON.parse(event.data);
+                        if (msg.type === 'registered') {
+                            setStatus('kitchenRegistered', '✅ 등록됨', 'ok');
+                            log(`🍳 [주방] ✅ 서버 등록 완료 (ID:${msg.clientId})`, 'recv');
+                            resolve(true);
+                        } else if (msg.type === 'new_order') {
+                            const o = msg.order;
+                            log(`🍳 🎉🎉🎉 주문 도착!! ${o.orderNumber} — ${o.items?.length||0}개, £${o.total}`, 'recv');
+                            o.items?.forEach((item, i) => {
+                                const sauce = typeof item.sauce === 'object' ? item.sauce?.name : item.sauce;
+                                const tops = item.toppings?.map(t => typeof t === 'object' ? (t.nameEn||t.name) : t) || [];
+                                log(`   아이템${i+1}: ${item.nameEn||item.name} x${item.quantity} 소스:${sauce||'없음'} 토핑:${tops.join(',')||'없음'}`, 'info');
+                            });
+                        } else {
+                            log(`🍳 [주방] ← ${msg.type}`, 'recv');
+                        }
+                    } catch (e) { log(`🍳 파싱오류: ${e.message}`, 'err'); }
+                };
+                wsKitchen.onerror = () => { setStatus('kitchenWsStatus', '❌ 오류', 'fail'); log('🍳 [주방] ❌ 오류', 'err'); resolve(false); };
+                wsKitchen.onclose = (e) => {
+                    setStatus('kitchenWsStatus', `❌ 닫힘(${e.code})`, 'fail');
+                    setStatus('kitchenRegistered', '안됨', 'wait');
+                    log(`🍳 [주방] 닫힘 code=${e.code}`, 'err');
+                };
+                setTimeout(() => resolve(false), 5000);
+            } catch (e) { setStatus('kitchenWsStatus', '❌ 실패', 'fail'); log(`🍳 실패: ${e.message}`, 'err'); resolve(false); }
+        });
+    }
+
+    // ─── 3단계: 주문 전송 ───
+    function sendTestOrder() {
+        orderCounter++;
+        const orderNumber = `TEST-${String(orderCounter).padStart(3, '0')}`;
+        const order = {
+            orderNumber,
+            branchCode: 'TEST', branchName: 'Test Branch',
+            orderType: Math.random() > 0.5 ? 'eat_in' : 'take_away',
+            items: [
+                { itemId: 'bap01', nameEn: 'Classic Bap', nameKr: '클래식밥', sauce: { name: 'Spicy Mayo', spice: 2 }, toppings: [{ nameEn: 'Lettuce' }, { nameEn: 'Tomato' }], quantity: 1, unitPrice: 8.50, totalPrice: 8.50 },
+                { itemId: 'side01', nameEn: 'Chicken Tender', nameKr: '치킨텐더', sauce: { name: 'BBQ Sauce', spice: 0 }, toppings: [], quantity: 2, unitPrice: 4.50, totalPrice: 9.00 }
+            ],
+            subtotal: 17.50, vat: 3.50, total: 17.50,
+            status: 'pending', createdAt: new Date().toISOString()
+        };
+        if (wsOrder && wsOrder.readyState === WebSocket.OPEN) {
+            wsOrder.send(JSON.stringify({ type: 'new_order', order }));
+            log(`📱 → 주문 전송: ${orderNumber} (${order.orderType}) £${order.total}`, 'sent');
+        } else {
+            log('📱 ❌ WebSocket 연결 안 됨!', 'err');
+        }
+    }
+
+    function sendBroadcastOrder() {
+        orderCounter++;
+        const orderNumber = `BC-${String(orderCounter).padStart(3, '0')}`;
+        const order = {
+            orderNumber, branchCode: 'TEST', branchName: 'Test',
+            orderType: 'eat_in',
+            items: [{ itemId: 'test', nameEn: 'BC Test Item', nameKr: '테스트', sauce: { name: 'Test' }, toppings: [], quantity: 1, unitPrice: 1, totalPrice: 1 }],
+            subtotal: 1, vat: 0.2, total: 1, status: 'pending', createdAt: new Date().toISOString()
+        };
+        try {
+            if (!broadcastChannel) {
+                broadcastChannel = new BroadcastChannel('thebap_orders');
+                broadcastChannel.onmessage = (e) => {
+                    if (e.data?.type === 'new_order') log(`🔊 BC 수신: ${e.data.order.orderNumber}`, 'recv');
+                };
+            }
+            broadcastChannel.postMessage({ type: 'new_order', order });
+            log(`🔊 BC 전송: ${orderNumber} (같은 브라우저 탭에서만 수신 가능)`, 'sent');
+        } catch (e) { log(`🔊 BC 실패: ${e.message}`, 'err'); }
+    }
+
+    // ─── 전체 자동 진단 ───
+    async function runFullDiagnosis() {
+        clearLog();
+        log('═══════════════════════════════════════', 'info');
+        log('🔍 전체 자동 진단 시작...', 'info');
+        log('═══════════════════════════════════════', 'info');
+        log('', 'info');
+
+        // Step 1: HTTP
+        log('【1단계】 서버 HTTP 연결 테스트', 'info');
+        const httpOk = await checkServerHealth();
+        if (!httpOk) { log('⛔ 서버 연결 실패 — 진단 중단', 'err'); return; }
+        log('', 'info');
+
+        // Step 2: Order WS
+        log('【2단계】 주문 WebSocket 연결', 'info');
+        const orderOk = await connectOrderWS();
+        await new Promise(r => setTimeout(r, 1000));
+        if (!orderOk) { log('⛔ 주문 WebSocket 실패 — 진단 중단', 'err'); return; }
+        log('', 'info');
+
+        // Step 3: Kitchen WS
+        log('【3단계】 주방 WebSocket 연결', 'info');
+        const kitchenOk = await connectKitchenWS();
+        await new Promise(r => setTimeout(r, 1000));
+        if (!kitchenOk) { log('⛔ 주방 WebSocket 실패 — 진단 중단', 'err'); return; }
+        log('', 'info');
+
+        // Step 4: Send test order
+        log('【4단계】 테스트 주문 전송', 'info');
+        sendTestOrder();
+        log('', 'info');
+        log('⏳ 주방에서 주문 수신 대기 중... (위에 🎉 가 뜨면 성공!)', 'info');
+
+        setTimeout(async () => {
+            log('', 'info');
+            log('═══════════════════════════════════════', 'info');
+            log('📊 진단 결과 요약', 'info');
+            log(`   HTTP 서버: ${httpOk ? '✅' : '❌'}`, httpOk ? 'recv' : 'err');
+            log(`   주문 WebSocket: ${orderOk ? '✅' : '❌'}`, orderOk ? 'recv' : 'err');
+            log(`   주방 WebSocket: ${kitchenOk ? '✅' : '❌'}`, kitchenOk ? 'recv' : 'err');
+
+            // Check if kitchen received order
+            const r = await fetch(`${getHttpBase()}/api/health`).then(r=>r.json()).catch(()=>null);
+            if (r) {
+                log(`   서버에 등록된 클라이언트: 주문=${r.clients?.order}, 주방=${r.clients?.kitchen}`, 'info');
+                log(`   서버에 저장된 주문: ${r.dailyOrders}건`, 'info');
+            }
+            log('═══════════════════════════════════════', 'info');
+        }, 3000);
+    }
+
+    // ─── 초기화 ───
+    showEnvironment();
+    log('🔧 TBOrder 통신 진단 도구 v2.0', 'info');
+    log(`   WebSocket URL: ${getWsUrl()}`, 'info');
+    if (window.location.protocol === 'file:') {
+        log('⛔ file:// 로 열면 작동 안 함! http://[IP]:8080/test 로 접속!', 'err');
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Bap - Kitchen Kiosk</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Noto Sans KR', sans-serif;
+            background-color: #0D0D0D;
+            color: #E8E8E8;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            height: 60px;
+            background-color: #1a1a1a;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            gap: 24px;
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-width: 250px;
+        }
+
+        .kitchen-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #E85D75;
+        }
+
+        .clock {
+            font-size: 18px;
+            font-weight: 500;
+            color: #999;
+            font-family: 'Courier New', monospace;
+            min-width: 100px;
+        }
+
+        .top-bar-center {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-label {
+            color: #999;
+        }
+
+        .stat-value {
+            color: #FFF;
+            font-size: 20px;
+            font-weight: 700;
+        }
+
+        .top-bar-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            min-width: 200px;
+            justify-content: flex-end;
+        }
+
+        .icon-button {
+            width: 48px;
+            height: 48px;
+            border: none;
+            background-color: #333;
+            color: #FFF;
+            font-size: 20px;
+            cursor: pointer;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .icon-button:hover {
+            background-color: #444;
+        }
+
+        .icon-button:active {
+            transform: scale(0.95);
+        }
+
+        .connection-indicator {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: #666;
+            display: inline-block;
+            animation: pulse-glow 2s infinite;
+        }
+
+        .connection-indicator.connected {
+            background-color: #34C759;
+            box-shadow: 0 0 8px rgba(52, 199, 89, 0.6);
+        }
+
+        .connection-indicator.disconnected {
+            background-color: #E85D75;
+            box-shadow: 0 0 8px rgba(232, 93, 117, 0.6);
+        }
+
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+
+        /* Filter Bar */
+        .filter-bar {
+            height: 50px;
+            background-color: #1a1a1a;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            padding: 0 16px;
+            gap: 8px;
+            justify-content: space-between;
+        }
+
+        .filter-tabs {
+            display: flex;
+            gap: 8px;
+        }
+
+        .filter-tab {
+            height: 40px;
+            padding: 0 20px;
+            border: none;
+            background-color: #333;
+            color: #999;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .filter-tab:hover {
+            background-color: #444;
+        }
+
+        .filter-tab.active {
+            background-color: #E85D75;
+            color: #FFF;
+        }
+
+        .filter-tab span {
+            display: inline-block;
+        }
+
+        .filter-tab .count {
+            margin-left: 6px;
+            font-weight: 700;
+        }
+
+        .clear-done-btn {
+            height: 40px;
+            padding: 0 20px;
+            border: none;
+            background-color: #444;
+            color: #FFF;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+        }
+
+        .clear-done-btn:hover {
+            background-color: #555;
+        }
+
+        .clear-done-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* Main Content Area */
+        .main-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 16px;
+            background-color: #0D0D0D;
+        }
+
+        .orders-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+            padding: 0;
+        }
+
+        .empty-state {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 300px;
+            color: #666;
+            font-size: 18px;
+            gap: 12px;
+        }
+
+        /* Order Card */
+        .order-card {
+            background-color: #1a1a1a;
+            border-radius: 12px;
+            border-left: 4px solid #E85D75;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            transition: all 0.3s ease;
+            animation: slideIn 0.3s ease;
+        }
+
+        .order-card.new {
+            border-left-color: #E85D75;
+            animation: slideIn 0.3s ease, pulse-border 1.5s ease-in-out infinite;
+        }
+
+        .order-card.preparing {
+            border-left-color: #FF9500;
+        }
+
+        .order-card.ready {
+            border-left-color: #34C759;
+        }
+
+        .order-card.done {
+            border-left-color: #666;
+            opacity: 0.6;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        @keyframes pulse-border {
+            0%, 100% { box-shadow: none; }
+            50% { box-shadow: inset -4px 0 0 #E85D75, 0 0 12px rgba(232, 93, 117, 0.4); }
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .order-number {
+            font-size: 24px;
+            font-weight: 700;
+            color: #FFF;
+        }
+
+        .order-type-badge {
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            background-color: #333;
+            color: #FFF;
+            white-space: nowrap;
+        }
+
+        .order-type-badge.eat-in {
+            background-color: rgba(52, 199, 89, 0.2);
+            color: #34C759;
+            border: 1px solid rgba(52, 199, 89, 0.4);
+        }
+
+        .order-type-badge.takeaway {
+            background-color: rgba(255, 149, 0, 0.2);
+            color: #FF9500;
+            border: 1px solid rgba(255, 149, 0, 0.4);
+        }
+
+        .card-time {
+            font-size: 14px;
+            font-weight: 500;
+            padding: 8px;
+            border-radius: 6px;
+            background-color: #333;
+            display: inline-block;
+        }
+
+        .card-time.fresh {
+            color: #34C759;
+        }
+
+        .card-time.warning {
+            color: #FF9500;
+        }
+
+        .card-time.urgent {
+            color: #E85D75;
+        }
+
+        .card-items {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .item {
+            font-size: 14px;
+            line-height: 1.4;
+            color: #DDD;
+        }
+
+        .item-quantity {
+            color: #999;
+            font-weight: 600;
+        }
+
+        .item-name {
+            font-weight: 500;
+            color: #FFF;
+        }
+
+        .item-sauce,
+        .item-toppings {
+            font-size: 12px;
+            color: #999;
+            margin-left: 16px;
+        }
+
+        .action-button {
+            width: 100%;
+            height: 60px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .action-button:active {
+            transform: scale(0.98);
+        }
+
+        .action-button.start {
+            background-color: #34C759;
+            color: #FFF;
+        }
+
+        .action-button.start:hover {
+            background-color: #2EB550;
+        }
+
+        .action-button.ready {
+            background-color: #FF9500;
+            color: #FFF;
+        }
+
+        .action-button.ready:hover {
+            background-color: #E68A00;
+        }
+
+        .action-button.done {
+            background-color: #666;
+            color: #FFF;
+            cursor: not-allowed;
+        }
+
+        /* Test Button */
+        .test-button {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            border: none;
+            background-color: #E85D75;
+            color: #FFF;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(232, 93, 117, 0.3);
+            z-index: 1000;
+        }
+
+        .test-button:hover {
+            background-color: #D64D63;
+            box-shadow: 0 6px 16px rgba(232, 93, 117, 0.5);
+        }
+
+        .test-button:active {
+            transform: scale(0.95);
+        }
+
+        /* Scrollbar */
+        .main-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .main-content::-webkit-scrollbar-track {
+            background: #0D0D0D;
+        }
+
+        .main-content::-webkit-scrollbar-thumb {
+            background: #444;
+            border-radius: 4px;
+        }
+
+        .main-content::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .orders-grid {
+                grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            }
+        }
+
+        @media (max-width: 768px) {
+            .top-bar {
+                flex-direction: column;
+                height: auto;
+                padding: 12px;
+                gap: 8px;
+            }
+
+            .top-bar-center {
+                font-size: 14px;
+                gap: 16px;
+            }
+
+            .orders-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Bar -->
+    <div class="top-bar">
+        <div class="top-bar-left">
+            <div class="kitchen-title">🍳 Kitchen</div>
+            <div class="clock" id="clock">00:00:00</div>
+        </div>
+
+        <div class="top-bar-center">
+            <div class="stat">
+                <span class="stat-label">New:</span>
+                <span class="stat-value" id="stat-new">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Preparing:</span>
+                <span class="stat-value" id="stat-preparing">0</span>
+            </div>
+            <div class="stat">
+                <span class="stat-label">Ready:</span>
+                <span class="stat-value" id="stat-ready">0</span>
+            </div>
+        </div>
+
+        <div class="top-bar-right">
+            <button class="icon-button" id="sound-toggle" title="Toggle sound">🔊</button>
+            <div style="display: flex; align-items: center; gap: 6px;">
+                <div class="connection-indicator" id="connection-indicator"></div>
+                <span style="font-size: 12px; color: #999;">Disconnected</span>
+            </div>
+            <button class="icon-button" id="fullscreen-toggle" title="Toggle fullscreen">⛶</button>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="filter-tabs">
+            <button class="filter-tab active" data-filter="all">
+                <span>All</span>
+                <span class="count" id="count-all">(0)</span>
+            </button>
+            <button class="filter-tab" data-filter="new">
+                <span>New</span>
+                <span class="count" id="count-new">(0)</span>
+            </button>
+            <button class="filter-tab" data-filter="preparing">
+                <span>Preparing</span>
+                <span class="count" id="count-preparing">(0)</span>
+            </button>
+            <button class="filter-tab" data-filter="ready">
+                <span>Ready</span>
+                <span class="count" id="count-ready">(0)</span>
+            </button>
+        </div>
+        <button class="clear-done-btn" id="clear-done-btn">Clear Done</button>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <div class="orders-grid" id="orders-grid">
+            <div class="empty-state">
+                <div>⏳ Waiting for orders...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Test Button -->
+    <button class="test-button" id="test-button" title="Add test order">⚙️</button>
+
+    <script>
+        // ============================================
+        // GOOGLE SHEETS 설정 (모바일 주문 수신용)
+        // ============================================
+        // ⚠️ Google Apps Script 배포 URL을 여기에 붙여넣기
+        const APPS_SCRIPT_URL = '';
+        // 예시: 'https://script.google.com/macros/s/AKfycbx.../exec'
+        const SHEETS_POLL_INTERVAL = 15000; // 15초마다 폴링
+
+        // ============================================
+        // STATE MANAGEMENT
+        // ============================================
+        const state = {
+            orders: new Map(), // orderNumber -> order object
+            currentFilter: 'all',
+            soundEnabled: true,
+            processedOrderIds: new Set(),
+            sheetsPollTimer: null,
+        };
+
+        // ============================================
+        // DOM ELEMENTS
+        // ============================================
+        const elements = {
+            clock: document.getElementById('clock'),
+            statNew: document.getElementById('stat-new'),
+            statPreparing: document.getElementById('stat-preparing'),
+            statReady: document.getElementById('stat-ready'),
+            soundToggle: document.getElementById('sound-toggle'),
+            connectionIndicator: document.getElementById('connection-indicator'),
+            fullscreenToggle: document.getElementById('fullscreen-toggle'),
+            filterTabs: document.querySelectorAll('.filter-tab'),
+            clearDoneBtn: document.getElementById('clear-done-btn'),
+            ordersGrid: document.getElementById('orders-grid'),
+            testButton: document.getElementById('test-button'),
+        };
+
+        // ============================================
+        // COMMUNICATION
+        // ============================================
+        let websocket = null;
+        let orderChannel = null;
+        let connectionStatus = 'disconnected';
+        let reconnectTimer = null;
+        let reconnectAttempts = 0;
+
+        function initBroadcastChannel() {
+            try {
+                orderChannel = new BroadcastChannel('thebap_orders');
+                orderChannel.onmessage = handleBroadcastMessage;
+                console.log('BroadcastChannel initialized');
+            } catch (error) {
+                console.warn('BroadcastChannel not available:', error);
+            }
+        }
+
+        function handleBroadcastMessage(event) {
+            const data = event.data;
+            if (data.type === 'new_order') {
+                addNewOrder(data.order);
+            } else if (data.type === 'order_status') {
+                updateOrderStatus(data.orderNumber, data.status);
+            }
+        }
+
+        function initWebSocket() {
+            // 이미 재연결 타이머가 돌고 있으면 중복 방지
+            if (reconnectTimer) {
+                clearTimeout(reconnectTimer);
+                reconnectTimer = null;
+            }
+
+            // 기존 연결이 아직 열려있으면 닫기
+            if (websocket && (websocket.readyState === WebSocket.OPEN || websocket.readyState === WebSocket.CONNECTING)) {
+                try { websocket.close(); } catch (e) {}
+            }
+
+            // 동적으로 서버 주소 감지 - 같은 서버에서 페이지를 로드했으므로
+            // window.location.host를 사용하면 어떤 기기에서든 작동
+            const wsHost = window.location.host || 'localhost:8080';
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${wsProtocol}//${wsHost}`;
+
+            try {
+                console.log(`[WS] 연결 시도 #${reconnectAttempts + 1}: ${wsUrl}`);
+                websocket = new WebSocket(wsUrl);
+
+                websocket.onopen = () => {
+                    console.log(`[WS] ✅ 연결 성공: ${wsUrl}`);
+                    reconnectAttempts = 0;
+                    setConnectionStatus('connected');
+                    websocket.send(JSON.stringify({
+                        type: 'register',
+                        clientType: 'kitchen'
+                    }));
+                };
+
+                websocket.onmessage = (event) => {
+                    try {
+                        const message = JSON.parse(event.data);
+                        console.log(`[WS] 📩 수신: type=${message.type}`);
+                        if (message.type === 'new_order') {
+                            addNewOrder(message.order);
+                        } else if (message.type === 'order_status') {
+                            updateOrderStatus(message.orderNumber, message.status);
+                        }
+                    } catch (error) {
+                        console.error('[WS] 파싱 오류:', error);
+                    }
+                };
+
+                websocket.onerror = (error) => {
+                    console.error('[WS] ❌ 연결 오류');
+                    setConnectionStatus('disconnected');
+                };
+
+                websocket.onclose = (event) => {
+                    console.log(`[WS] 연결 끊김 (code: ${event.code})`);
+                    setConnectionStatus('disconnected');
+                    // 점진적 재연결 (최대 30초)
+                    reconnectAttempts++;
+                    const delay = Math.min(5000 * reconnectAttempts, 30000);
+                    console.log(`[WS] ${delay/1000}초 후 재연결...`);
+                    reconnectTimer = setTimeout(initWebSocket, delay);
+                };
+            } catch (error) {
+                console.error('[WS] 연결 실패:', error);
+                setConnectionStatus('disconnected');
+                reconnectAttempts++;
+                const delay = Math.min(5000 * reconnectAttempts, 30000);
+                reconnectTimer = setTimeout(initWebSocket, delay);
+            }
+        }
+
+        function initLocalStoragePolling() {
+            setInterval(() => {
+                try {
+                    const ordersJson = localStorage.getItem('tb_pending_orders');
+                    if (ordersJson) {
+                        const orders = JSON.parse(ordersJson);
+                        if (Array.isArray(orders)) {
+                            orders.forEach(order => {
+                                if (order && order.orderNumber && !state.processedOrderIds.has(order.orderNumber)) {
+                                    addNewOrder(order);
+                                }
+                            });
+                        }
+                    }
+                } catch (error) {
+                    console.warn('localStorage polling error:', error);
+                }
+            }, 2000);
+
+            window.addEventListener('storage', (event) => {
+                if (event.key === 'tb_order_signal') {
+                    const ordersJson = localStorage.getItem('tb_pending_orders');
+                    if (ordersJson) {
+                        try {
+                            const orders = JSON.parse(ordersJson);
+                            if (Array.isArray(orders)) {
+                                orders.forEach(order => {
+                                    if (order && order.orderNumber && !state.processedOrderIds.has(order.orderNumber)) {
+                                        addNewOrder(order);
+                                    }
+                                });
+                            }
+                        } catch (error) {
+                            console.warn('storage event parsing error:', error);
+                        }
+                    }
+                }
+            });
+        }
+
+        // ============================================
+        // GOOGLE SHEETS POLLING (모바일 주문 수신)
+        // ============================================
+        function initGoogleSheetsPolling() {
+            if (!APPS_SCRIPT_URL) {
+                console.log('[Sheets] ⚠️ APPS_SCRIPT_URL 미설정 — 모바일 주문 폴링 비활성화');
+                return;
+            }
+            console.log('[Sheets] 📱 모바일 주문 폴링 시작 (매 ' + SHEETS_POLL_INTERVAL/1000 + '초)');
+            // 즉시 1회 실행 후 반복
+            fetchMobileOrders();
+            state.sheetsPollTimer = setInterval(fetchMobileOrders, SHEETS_POLL_INTERVAL);
+        }
+
+        async function fetchMobileOrders() {
+            try {
+                const url = `${APPS_SCRIPT_URL}?action=pending&markFetched=true`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const data = await response.json();
+
+                if (data.orders && data.orders.length > 0) {
+                    console.log(`[Sheets] 📱 모바일 주문 ${data.orders.length}건 수신`);
+                    data.orders.forEach(order => {
+                        if (order.orderNumber && !state.processedOrderIds.has(order.orderNumber)) {
+                            // source 표시 추가
+                            order.source = 'mobile';
+                            addNewOrder(order);
+                        }
+                    });
+                }
+            } catch (error) {
+                console.warn('[Sheets] 폴링 오류:', error.message);
+            }
+        }
+
+        function setConnectionStatus(status) {
+            connectionStatus = status;
+            const indicator = elements.connectionIndicator;
+            const statusText = indicator.nextElementSibling;
+
+            if (status === 'connected') {
+                indicator.classList.remove('disconnected');
+                indicator.classList.add('connected');
+                statusText.textContent = 'Connected';
+            } else {
+                indicator.classList.remove('connected');
+                indicator.classList.add('disconnected');
+                statusText.textContent = 'Disconnected';
+            }
+        }
+
+        // ============================================
+        // ORDER MANAGEMENT
+        // ============================================
+        function addNewOrder(order) {
+            if (!order || !order.orderNumber) return;
+
+            // Duplicate prevention
+            if (state.processedOrderIds.has(order.orderNumber)) {
+                console.log('Order already processed:', order.orderNumber);
+                return;
+            }
+
+            state.processedOrderIds.add(order.orderNumber);
+
+            // Initialize order with defaults
+            // createdAt: ISO string → convert to timestamp for time calculations
+            let createdAtMs = Date.now();
+            if (order.createdAt) {
+                const parsed = new Date(order.createdAt).getTime();
+                if (!isNaN(parsed)) createdAtMs = parsed;
+                else if (typeof order.createdAt === 'number') createdAtMs = order.createdAt;
+            }
+            const normalizedOrder = {
+                orderNumber: order.orderNumber,
+                status: (order.status === 'pending' ? 'new' : order.status) || 'new',
+                type: order.orderType || order.type || 'take_away',
+                items: order.items || [],
+                createdAt: createdAtMs,
+                total: order.total || order.subtotal || 0,
+                timestamp: order.timestamp || new Date().toLocaleTimeString(),
+                source: order.source || 'kiosk',
+            };
+
+            state.orders.set(normalizedOrder.orderNumber, normalizedOrder);
+            playNewOrderSound();
+            renderOrders();
+        }
+
+        function updateOrderStatus(orderNumber, newStatus) {
+            const order = state.orders.get(orderNumber);
+            if (order) {
+                order.status = newStatus;
+                renderOrders();
+
+                // Auto-hide done cards after 5 seconds
+                if (newStatus === 'done') {
+                    setTimeout(() => {
+                        removeOrder(orderNumber);
+                    }, 5000);
+                }
+            }
+        }
+
+        function removeOrder(orderNumber) {
+            state.orders.delete(orderNumber);
+            renderOrders();
+        }
+
+        function markOrderReady(orderNumber) {
+            const order = state.orders.get(orderNumber);
+            if (order) {
+                order.status = 'ready';
+                broadcastOrderStatus(orderNumber, 'ready');
+                sendWebSocketStatus(orderNumber, 'ready');
+                renderOrders();
+            }
+        }
+
+        function startOrder(orderNumber) {
+            const order = state.orders.get(orderNumber);
+            if (order) {
+                order.status = 'preparing';
+                broadcastOrderStatus(orderNumber, 'preparing');
+                sendWebSocketStatus(orderNumber, 'preparing');
+                renderOrders();
+            }
+        }
+
+        function markOrderDone(orderNumber) {
+            const order = state.orders.get(orderNumber);
+            if (order) {
+                order.status = 'done';
+                broadcastOrderStatus(orderNumber, 'done');
+                sendWebSocketStatus(orderNumber, 'done');
+                setTimeout(() => {
+                    removeOrder(orderNumber);
+                }, 5000);
+                renderOrders();
+            }
+        }
+
+        function broadcastOrderStatus(orderNumber, status) {
+            if (orderChannel) {
+                try {
+                    orderChannel.postMessage({
+                        type: 'order_status',
+                        orderNumber: orderNumber,
+                        status: status
+                    });
+                } catch (error) {
+                    console.error('BroadcastChannel send error:', error);
+                }
+            }
+        }
+
+        function sendWebSocketStatus(orderNumber, status) {
+            if (websocket && websocket.readyState === WebSocket.OPEN) {
+                try {
+                    websocket.send(JSON.stringify({
+                        type: 'order_status',
+                        orderNumber: orderNumber,
+                        status: status
+                    }));
+                } catch (error) {
+                    console.error('WebSocket send error:', error);
+                }
+            }
+        }
+
+        // ============================================
+        // RENDERING
+        // ============================================
+        function renderOrders() {
+            const grid = elements.ordersGrid;
+
+            // Apply filter
+            let filteredOrders = Array.from(state.orders.values());
+            if (state.currentFilter !== 'all') {
+                filteredOrders = filteredOrders.filter(o => o.status === state.currentFilter);
+            }
+
+            // Update filter counts
+            updateFilterCounts();
+
+            // Render cards
+            if (filteredOrders.length === 0) {
+                grid.innerHTML = '<div class="empty-state"><div>⏳ Waiting for orders...</div></div>';
+            } else {
+                grid.innerHTML = filteredOrders.map(order => createOrderCard(order)).join('');
+                attachCardEventListeners();
+            }
+
+            // Update top stats
+            updateStats();
+        }
+
+        function createOrderCard(order) {
+            const statusTime = getStatusTime(order.createdAt);
+            const timeClass = getTimeClass(order.createdAt);
+            const typeBadgeClass = order.type === 'eat_in' ? 'eat-in' : 'takeaway';
+            const typeLabel = order.type === 'eat_in' ? 'Eat In' : 'Take Away';
+            const isMobile = order.source === 'mobile';
+            const mobileBadge = isMobile ? '<span style="background:#3B82F6;color:#fff;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700;margin-left:6px;">📱 Mobile</span>' : '';
+
+            let actionButton = '';
+            if (order.status === 'new') {
+                actionButton = `<button class="action-button start" data-order="${order.orderNumber}" data-action="start">▶ Start</button>`;
+            } else if (order.status === 'preparing') {
+                actionButton = `<button class="action-button ready" data-order="${order.orderNumber}" data-action="ready">✅ Ready</button>`;
+            } else if (order.status === 'ready') {
+                actionButton = `<button class="action-button ready" data-order="${order.orderNumber}" data-action="done">🏁 Done</button>`;
+            } else {
+                actionButton = `<button class="action-button done" disabled>✓ Done</button>`;
+            }
+
+            const itemsHtml = order.items.map(item => {
+                let itemHtml = `<div class="item">
+                    <span class="item-quantity">${item.quantity || 1}x</span>
+                    <span class="item-name">${escapeHtml(item.nameEn || item.name || 'Unknown Item')}</span>`;
+
+                if (item.sauce) {
+                    const sauceName = typeof item.sauce === 'object' ? (item.sauce.name || '') : item.sauce;
+                    itemHtml += `<div class="item-sauce">🌶️ ${escapeHtml(sauceName)}</div>`;
+                }
+
+                if (item.toppings && item.toppings.length > 0) {
+                    const toppingNames = item.toppings.map(t => typeof t === 'object' ? (t.nameEn || t.name || '') : t);
+                    itemHtml += `<div class="item-toppings">+ ${escapeHtml(toppingNames.join(', '))}</div>`;
+                }
+
+                itemHtml += '</div>';
+                return itemHtml;
+            }).join('');
+
+            return `
+                <div class="order-card ${order.status}" data-order="${order.orderNumber}">
+                    <div class="card-header">
+                        <div class="order-number">${escapeHtml(order.orderNumber)}</div>
+                        <div class="order-type-badge ${typeBadgeClass}">${typeLabel}</div>${mobileBadge}
+                    </div>
+                    <div class="card-time ${timeClass}">${statusTime}</div>
+                    <div class="card-items">
+                        ${itemsHtml}
+                    </div>
+                    ${actionButton}
+                </div>
+            `;
+        }
+
+        function attachCardEventListeners() {
+            document.querySelectorAll('.action-button:not([disabled])').forEach(btn => {
+                btn.addEventListener('click', handleActionButton);
+            });
+        }
+
+        function handleActionButton(event) {
+            const button = event.currentTarget;
+            const orderNumber = button.dataset.order;
+            const action = button.dataset.action;
+
+            if (action === 'start') {
+                startOrder(orderNumber);
+            } else if (action === 'ready') {
+                markOrderReady(orderNumber);
+            } else if (action === 'done') {
+                markOrderDone(orderNumber);
+            }
+        }
+
+        function updateStats() {
+            const stats = {
+                new: 0,
+                preparing: 0,
+                ready: 0,
+                done: 0,
+            };
+
+            state.orders.forEach(order => {
+                stats[order.status] = (stats[order.status] || 0) + 1;
+            });
+
+            elements.statNew.textContent = stats.new;
+            elements.statPreparing.textContent = stats.preparing;
+            elements.statReady.textContent = stats.ready;
+        }
+
+        function updateFilterCounts() {
+            const counts = {
+                all: state.orders.size,
+                new: 0,
+                preparing: 0,
+                ready: 0,
+            };
+
+            state.orders.forEach(order => {
+                if (order.status !== 'done') {
+                    counts[order.status] = (counts[order.status] || 0) + 1;
+                }
+            });
+
+            document.getElementById('count-all').textContent = `(${counts.all})`;
+            document.getElementById('count-new').textContent = `(${counts.new})`;
+            document.getElementById('count-preparing').textContent = `(${counts.preparing})`;
+            document.getElementById('count-ready').textContent = `(${counts.ready})`;
+        }
+
+        function getStatusTime(createdAt) {
+            const now = Date.now();
+            const diffMs = now - createdAt;
+            const diffSec = Math.floor(diffMs / 1000);
+            const diffMin = Math.floor(diffSec / 60);
+
+            if (diffMin === 0) {
+                return 'Just now';
+            } else if (diffMin < 60) {
+                return `${diffMin} min${diffMin > 1 ? 's' : ''} ago`;
+            } else {
+                const hours = Math.floor(diffMin / 60);
+                return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+            }
+        }
+
+        function getTimeClass(createdAt) {
+            const diffMs = Date.now() - createdAt;
+            const diffMin = Math.floor(diffMs / 1000 / 60);
+
+            if (diffMin < 5) return 'fresh';
+            if (diffMin < 10) return 'warning';
+            return 'urgent';
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // ============================================
+        // UI INTERACTIONS
+        // ============================================
+        elements.soundToggle.addEventListener('click', () => {
+            state.soundEnabled = !state.soundEnabled;
+            elements.soundToggle.textContent = state.soundEnabled ? '🔊' : '🔇';
+        });
+
+        elements.fullscreenToggle.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.error('Fullscreen request failed:', err);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        });
+
+        elements.filterTabs.forEach(tab => {
+            tab.addEventListener('click', () => {
+                elements.filterTabs.forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                state.currentFilter = tab.dataset.filter;
+                renderOrders();
+            });
+        });
+
+        elements.clearDoneBtn.addEventListener('click', () => {
+            const doneOrders = Array.from(state.orders.entries())
+                .filter(([_, order]) => order.status === 'done')
+                .map(([key, _]) => key);
+
+            doneOrders.forEach(orderNumber => {
+                removeOrder(orderNumber);
+            });
+        });
+
+        // ============================================
+        // SOUND
+        // ============================================
+        function playNewOrderSound() {
+            if (!state.soundEnabled) return;
+
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const now = audioContext.currentTime;
+                const duration = 0.2;
+
+                // First tone
+                const osc1 = audioContext.createOscillator();
+                const gain1 = audioContext.createGain();
+                osc1.frequency.value = 800;
+                osc1.connect(gain1);
+                gain1.connect(audioContext.destination);
+                gain1.gain.setValueAtTime(0.3, now);
+                gain1.gain.exponentialRampToValueAtTime(0.01, now + duration);
+                osc1.start(now);
+                osc1.stop(now + duration);
+
+                // Second tone
+                const osc2 = audioContext.createOscillator();
+                const gain2 = audioContext.createGain();
+                osc2.frequency.value = 1000;
+                osc2.connect(gain2);
+                gain2.connect(audioContext.destination);
+                gain2.gain.setValueAtTime(0.3, now + duration + 0.1);
+                gain2.gain.exponentialRampToValueAtTime(0.01, now + 2 * duration + 0.1);
+                osc2.start(now + duration + 0.1);
+                osc2.stop(now + 2 * duration + 0.1);
+            } catch (error) {
+                console.warn('Sound playback failed:', error);
+            }
+        }
+
+        // ============================================
+        // CLOCK
+        // ============================================
+        function updateClock() {
+            const now = new Date();
+            const hours = String(now.getHours()).padStart(2, '0');
+            const minutes = String(now.getMinutes()).padStart(2, '0');
+            const seconds = String(now.getSeconds()).padStart(2, '0');
+            elements.clock.textContent = `${hours}:${minutes}:${seconds}`;
+        }
+
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // ============================================
+        // TEST MODE
+        // ============================================
+        elements.testButton.addEventListener('click', () => {
+            const testOrder = {
+                orderNumber: `TEST-${Date.now().toString().slice(-4)}`,
+                status: 'new',
+                type: Math.random() > 0.5 ? 'eat_in' : 'takeaway',
+                items: [
+                    {
+                        name: 'Classic Bap',
+                        quantity: 1,
+                        sauce: 'Spicy Mayo',
+                        toppings: ['Lettuce', 'Tomato']
+                    },
+                    {
+                        name: 'Chicken Tender',
+                        quantity: 2,
+                        sauce: 'BBQ',
+                        toppings: ['Pickles']
+                    }
+                ],
+                createdAt: Date.now(),
+            };
+            addNewOrder(testOrder);
+        });
+
+        // ============================================
+        // INITIALIZATION
+        // ============================================
+        function initialize() {
+            console.log('Initializing Kitchen Kiosk...');
+            initBroadcastChannel();
+            initWebSocket();
+            initLocalStoragePolling();
+            initGoogleSheetsPolling();
+            renderOrders();
+            setConnectionStatus('disconnected');
+            console.log('Kitchen Kiosk initialized');
+        }
+
+        // Start on page load
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', initialize);
+        } else {
+            initialize();
+        }
+
+        // Prevent accidental page navigation
+        window.addEventListener('beforeunload', (e) => {
+            if (state.orders.size > 0) {
+                e.preventDefault();
+                e.returnValue = 'You have pending orders. Are you sure?';
+            }
+        });
+    </script>
+</body>
+</html>
