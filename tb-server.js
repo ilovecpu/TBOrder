@@ -64,7 +64,7 @@ if (STRIPE_SECRET_KEY) {
 }
 
 const PORT = parseInt(process.env.TB_PORT) || 8080;
-const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbzU3Cv-XbKShKQNiu55PhgfxkyLYIbg41-1Wl5Cwlvhh-w1ropFzlVGw2fbd11a8fP87Q/exec';
+const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbxMZ5PQbti-dKYUgJQJl3Yn0maegOwLyj3nIWL5Lsltx3jM8ZJ2v4CSGDp73BQq4VJ3WA/exec';
 
 // ─── 메뉴 데이터 로드/캐시 ───
 const MENU_FILE = path.join(__dirname, 'data', 'menu.json');
