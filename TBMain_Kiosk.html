@@ -1545,33 +1545,64 @@
         const ALLERGENS_LIST = ['Sesame', 'Soy', 'Egg', 'Peanuts', 'Tree Nuts', 'Milk', 'Gluten', 'Fish', 'Shellfish', 'Mustard', 'Celery', 'Lupin', 'Molluscs', 'Sulphites'];
 
         // ─── Google Apps Script API (직접 통신) ───
-        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbzU3Cv-XbKShKQNiu55PhgfxkyLYIbg41-1Wl5Cwlvhh-w1ropFzlVGw2fbd11a8fP87Q/exec';
+        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbxMZ5PQbti-dKYUgJQJl3Yn0maegOwLyj3nIWL5Lsltx3jM8ZJ2v4CSGDp73BQq4VJ3WA/exec';
 
-        // 원격 모드 감지 (GitHub Pages 등 로컬 서버 아닌 곳)
+        // 원격 모드 감지 (GitHub Pages, file://, ?remote=true 등)
         function isRemote() {
+            // URL 파라미터 ?remote=true 로 강제 원격 모드
+            if (new URLSearchParams(location.search).get('remote') === 'true') return true;
+            // file:// 프로토콜
+            if (location.protocol === 'file:') return true;
+            // GitHub Pages 등 외부 호스트
             const h = location.hostname;
             return h !== 'localhost' && h !== '127.0.0.1' && !h.match(/^192\.168\./) && !h.match(/^10\./) && !h.match(/^172\.(1[6-9]|2\d|3[01])\./);
         }
 
-        // Google Apps Script에 직접 GET 요청
+        // Google Apps Script GET — TBMS와 동일한 패턴
         async function googleGet(action) {
-            const url = GOOGLE_API + '?action=' + encodeURIComponent(action);
-            const resp = await fetch(url);
-            if (!resp.ok) throw new Error('Google API error: ' + resp.status);
-            return resp.json();
+            // 프록시 서버가 있으면 프록시 우선 (ADMIN.command 실행 시)
+            if (location.protocol !== 'file:') {
+                try {
+                    const pr = await fetch('/google?action=' + encodeURIComponent(action));
+                    if (pr.ok) return await pr.json();
+                } catch(e) {}
+            }
+            // 직접 호출 (TBMS 패턴: redirect:follow, resp.ok 체크 안함)
+            try {
+                const url = GOOGLE_API + '?action=' + encodeURIComponent(action);
+                const r = await fetch(url, {redirect:'follow'});
+                return await r.json();
+            } catch(e) {
+                console.error('googleGet error:', e);
+                throw e;
+            }
         }
 
-        // Google Apps Script에 직접 POST 요청
-        // Content-Type: text/plain → CORS preflight 회피
+        // Google Apps Script POST — TBMS와 동일한 패턴
         async function googlePost(data) {
-            const resp = await fetch(GOOGLE_API, {
-                method: 'POST',
-                headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
-                body: JSON.stringify(data),
-                redirect: 'follow'
-            });
-            if (!resp.ok) throw new Error('Google API error: ' + resp.status);
-            return resp.json();
+            const body = JSON.stringify(data);
+            // 프록시 서버가 있으면 프록시 우선
+            if (location.protocol !== 'file:') {
+                try {
+                    const pr = await fetch('/google', {
+                        method:'POST', headers:{'Content-Type':'application/json'}, body:body
+                    });
+                    if (pr.ok) return await pr.json();
+                } catch(e) {}
+            }
+            // 직접 호출 (TBMS 패턴: text/plain, redirect:follow)
+            try {
+                const r = await fetch(GOOGLE_API, {
+                    method:'POST',
+                    headers:{'Content-Type':'text/plain'},
+                    body:body,
+                    redirect:'follow'
+                });
+                return await r.json();
+            } catch(e) {
+                console.error('googlePost error:', e);
+                throw e;
+            }
         }
 
         // APP STATE
