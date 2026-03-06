@@ -4,7 +4,7 @@ color 0D
 echo.
 echo   ========================================
 echo     TBOrder Server Starting...
-echo     The Bap Kiosk System
+echo     The Bap Kiosk + POS System
 echo   ========================================
 echo.
 
@@ -19,8 +19,15 @@ if %errorlevel% neq 0 (
     exit /b
 )
 
-:: 서버 실행
+:: npm 패키지 자동 설치 (node_modules 없으면)
 cd /d "%~dp0"
+if not exist "node_modules" (
+    echo   패키지 설치 중...
+    npm install
+    echo.
+)
+
+:: 서버 실행
 echo   Node.js version:
 node --version
 echo.

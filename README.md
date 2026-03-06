@@ -1,239 +1,176 @@
-# The Bap - Order Kiosk System
+# 🍚 The Bap (더밥) — TBOrder Kiosk & POS System
 
-## File Location
-`/sessions/ecstatic-compassionate-maxwell/mnt/outputs/thebap-kiosk/TBOrder_Kiosk.html`
+> Multi-branch Korean takeaway ordering system with Kiosk, Kitchen Display, POS, and Admin panel.
 
-## Overview
-A complete, production-ready customer ordering kiosk for "The Bap" Korean restaurant. Single-file HTML application with embedded CSS and JavaScript - no external dependencies except Google Fonts.
+## Quick Start
 
-## Key Features
+```bash
+# 1. Clone
+git clone https://github.com/ilovecpu/TBOrder.git
+cd TBOrder
 
-### 1. **Welcome Screen**
-- Restaurant branding with English and Korean text (The Bap / 더밥)
-- Tagline: "K-Food on the Bap"
-- Two large, touch-friendly buttons for service type selection:
-  - Eat In (식사)
-  - Take Away (포장)
+# 2. Install dependencies
+npm install
 
-### 2. **Menu Screen**
-- **Left Sidebar**: 7 categories with active state highlighting
-  - K-Food on the Bap
-  - K-Chicken on the Bap
-  - Bulgogi BBQ on the Bap
-  - Bibim Bap
-  - Noodle in Soup
-  - Sides
-  - Korean Chicken Box
-- **Main Grid**: Responsive menu item cards (280px minimum)
-  - Item name (English + Korean)
-  - Description
-  - Dietary badges (V for Vegetarian, VG for Vegan, Spicy)
-  - Price (GBP)
-  - Hover effects with elevation
+# 3. Run server
+node tb-server.js
 
-### 3. **Item Detail Modal**
-When customer taps a menu item:
-- **Header**: Item name (EN+KR) and price
-- **Nutrition Facts Panel**: Calories, Protein, Carbs, Fat, Sugar
-- **Allergen Badges**: Visual warnings for all allergens
-- **Sauce Selector** (for Bap items):
-  - 8 sauces with spice level indicators (chili pepper icons: 0-5 level)
-  - Options: White, Bulgogi, Baby Hot, Bibim Bap, Spicy, Extra Spicy, Hot, Crazy Hot
-- **Topping Selector** (for applicable items):
-  - Combo Bap: 2 topping selections
-  - Bibim Bap with Topping: 1 topping selection
-  - 6 topping options with Korean names
-- **Quantity Selector**: +/- buttons
-- **Add to Cart Button**: Green action button
+# 4. Open browser
+# http://localhost:8080        → Launcher
+# http://localhost:8080/order   → Customer Kiosk
+# http://localhost:8080/kitchen → Kitchen Display
+# http://localhost:8080/pos     → POS System
+# http://localhost:8080/admin   → Admin Panel
+```
 
-### 4. **Cart Sidebar**
-- Slides in from the right edge
-- Shows all items with:
-  - Item name
-  - Sauce selection (if applicable)
-  - Toppings (if applicable)
-  - Price per item
-- **Quantity Controls**: +/- buttons per item
-- **Remove Option**: Delete individual items
-- **Cart Summary**: Subtotal and total calculations
-- **Place Order Button**: Proceeds to payment when cart has items
+## System Overview
 
-### 5. **Payment Screen**
-- Display of order total
-- Payment method selection:
-  - Card Payment (SumUp API integration placeholder)
-  - Cash Payment
-- Back and Confirm buttons
-- Radio button selection interface
+| URL | File | Purpose | Device |
+|-----|------|---------|--------|
+| `/order` | TBOrder_Kiosk.html | Customer self-ordering kiosk | Tablet / Touchscreen |
+| `/kitchen` | TBKitchen_Kiosk.html | Kitchen order display | Tablet (landscape) |
+| `/pos` | TBPos.html | Point of Sale — payments, cash register, reports | Tablet / Desktop |
+| `/admin` | TBMain_Kiosk.html | Admin — menu, branches, orders management | Desktop |
+| `/mobile` | mobile.html | Mobile customer ordering | Phone |
+| `/` | index.html | Launcher with all URLs | Any |
 
-### 6. **Order Confirmation**
-- Order number (auto-generated format: TB-001, TB-002, etc.)
-- Confirmation message
-- Estimated wait time (random 10-20 minutes)
-- Countdown timer (10 seconds) before auto-return to welcome
-- Success animation
+## Architecture
 
-## Menu Data (21 Items Total)
+```
+┌──────────────┐     WebSocket      ┌──────────────┐
+│ Order Kiosk  │ ──────────────────→ │              │
+│ (Customer)   │                     │              │
+└──────────────┘                     │              │
+                                     │  tb-server   │
+┌──────────────┐     WebSocket      │   (Node.js)  │     ┌──────────┐
+│   POS        │ ←─────────────────→ │              │ ←──→│  data/   │
+│ (Staff)      │                     │  Port 8080   │     │  (JSON)  │
+└──────────────┘                     │              │     └──────────┘
+                                     │              │
+┌──────────────┐     WebSocket      │              │
+│   Kitchen    │ ←────────────────── │              │
+│  Display     │                     └──────────────┘
+└──────────────┘
+```
 
-### K-Food on the Bap (4 items)
-- Combo Bap £9.55
-- Tofu Bap £7.45 (V)
-- Man Du Bap £7.45
-- Jap Che Bap £6.95 (V)
+All devices on the same WiFi network connect to `http://[SERVER-IP]:8080/[route]`.
 
-### K-Chicken on the Bap (4 items)
-- KFC Bap £8.25
-- Katsu Bap £8.25
-- Kang Jung Bap £8.25
-- Sweet Soy Bap £8.25
+## Features
 
-### Bulgogi BBQ on the Bap (3 items)
-- Beef Bap £8.75
-- Pork Bap £8.75 (Spicy)
-- Chicken Bap £8.75
+### Order Kiosk (`/order`)
+- Responsive design: small tablets to 20" screens
+- Fullscreen kiosk mode
+- Bilingual menu (English + Korean)
+- Sauce & topping selection
+- Customer name input
+- Eat In / Take Away selection
+- Bottom cart bar for minimal scrolling
+- Stripe Terminal card payment integration
 
-### Bibim Bap (2 items)
-- Vegetable Bibim Bap £8.45 (VG)
-- Bibim Bap with Topping £9.95
+### POS System (`/pos`)
+- Staff login with branch selection + PIN
+- Direct order entry from menu
+- Receive kiosk/mobile orders in real-time
+- Cash payment with change calculator (quick buttons: £5/£10/£20/£50)
+- Card payment processing
+- Percentage discount application
+- Cash register management (open/close with float)
+- Daily sales reports (revenue, payment breakdown, top items, VAT)
+- Receipt printing (80mm thermal printer)
+- Responsive: tablet to desktop
 
-### Noodle in Soup (3 items)
-- Katsu Guk Su £8.00
-- Man Du Guk Su £8.00
-- Tofu Guk Su £7.95 (V)
+### Kitchen Display (`/kitchen`)
+- Real-time order queue via WebSocket
+- Order status management (pending → preparing → done)
+- Auto-filters completed orders
 
-### Sides (4 items)
-- Man Du Set £2.95
-- Kim Mari Set £3.25 (V)
-- Ttok-Bok-Ki £4.45 (V, Spicy)
-- Kim Chi £2.95 (VG)
+### Admin Panel (`/admin`)
+- Branch management (PAB, TBS, TBR, TBB)
+- Menu item CRUD
+- Sauce management
+- Order monitoring & management
+- Daily data export
 
-### Korean Chicken Box (1 item)
-- Korean Chicken Box £17.95
+## Branches
 
-## Sauce System
-8 complete sauces with:
-- Names (White, Bulgogi, Baby Hot, Bibim Bap, Spicy, Extra Spicy, Hot, Crazy Hot)
-- Spice levels (0-5 represented with chili pepper icons)
-- Allergen information for each sauce
+| Code | Name | Korean |
+|------|------|--------|
+| PAB | PAB Kitchen | 팝 키친 |
+| TBS | The Bap Swindon | 더밥 스윈던 |
+| TBR | The Bap Reading | 더밥 레딩 |
+| TBB | The Bap Bristol | 더밥 브리스톨 |
 
-## Toppings System
-6 available toppings:
-- Fried Chicken / 튀긴 치킨
-- Beef Bulgogi / 소불고기
-- Pork Bulgogi / 돼지불고기
-- Tofu / 두부
-- Dumplings / 만두
-- Chicken Katsu / 닭까스
+## Server API
 
-## Complete Allergen Data
-Every menu item includes allergen information:
-- Gluten
-- Eggs
-- Soy
-- Sesame
-- Milk
-- And more as applicable per item
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/health` | GET | Server status, connected clients count |
+| `/api/orders` | GET | Today's orders (or `?date=YYYY-MM-DD`) |
+| `/api/orders/dates` | GET | Available order dates |
+| `/api/ip` | GET | Server IP and WebSocket URL |
+| `/api/stripe/connection-token` | POST | Stripe Terminal connection token |
+| `/api/stripe/create-payment-intent` | POST | Create payment intent |
+| `/api/stripe/payment-status/:id` | GET | Check payment status |
+| `/api/stripe/status` | GET | Stripe configuration status |
 
-Allergens are displayed as visual badges in item details.
+## WebSocket Messages
 
-## Complete Nutrition Data
-Every item includes:
-- Calories
-- Protein (g)
-- Carbohydrates (g)
-- Fat (g)
-- Sugar (g)
+| Type | Direction | Description |
+|------|-----------|-------------|
+| `register` | Client → Server | Register client type (order/kitchen/pos/admin) |
+| `new_order` | Client ↔ Server | New order created, broadcast to kitchen/pos/admin |
+| `order_status` | Client ↔ Server | Status change, broadcast to all |
+| `menu_update` | Client ↔ Server | Menu data update broadcast |
+| `delete_order` | Client → Server | Delete single order |
+| `clear_orders` | Client → Server | Delete all orders |
 
-## Design Specifications
+## Data Storage
 
-### Color Palette
-- **Primary Pink**: #FFB4C8
-- **Light Background Pink**: #FFF5F7
-- **Dark Text**: #1A1A1A
-- **Green Accent**: #2D8C4E
-- **Light Green**: #4CAF7F
+Orders are saved to `data/orders_YYYY-MM-DD.json` (auto-created). This folder is git-ignored.
 
-### Typography
-- **English Font**: Poppins (300, 400, 600, 700, 800 weights)
-- **Korean Font**: Noto Sans KR (400, 500, 700 weights)
-- **Monospace** (order numbers): Courier New
+## Stripe Terminal (Optional)
 
-### Responsive Design
-- **Optimized for**: Tablets and kiosk displays (1024x768 to 1920x1080)
-- **Touch-Friendly**: 48px minimum touch targets
-- **Large Buttons**: Welcome screen buttons are 60x60px
-- **Smooth Animations**: 0.3s cubic-bezier transitions
-- **Custom Scrollbars**: Pink themed scrollbars
+```bash
+# Set environment variables before starting server
+export STRIPE_SECRET_KEY=sk_live_...
+export STRIPE_LOCATION_ID=tml_...
+node tb-server.js
+```
 
-## Technical Implementation
+See `STRIPE_SETUP.md` for detailed integration guide.
 
-### Storage & Persistence
-- **IndexedDB**: Stores orders and cart data locally
-- **LocalStorage**: Tracks daily order count (TB-001, TB-002, etc.)
-- **Cart Persistence**: Cart survives page refresh
-- **Order History**: All orders saved locally
+## Requirements
 
-### Communication Features
-- **BroadcastChannel API**: Real-time communication with kitchen kiosk (if available)
-- **WebSocket**: Connection to local server (ws://localhost:8080) for cross-device sync
-- **Graceful Fallback**: Works without server/WebSocket connection
+- Node.js 14+
+- npm
+- Modern browser (Chrome 80+, Safari 12+, Firefox 75+, Edge 80+)
+- Same WiFi network for multi-device setup
 
-### User Feedback
-- **Audio Beeps**: Web Audio API simple tone feedback on all button taps
-- **Visual Feedback**: Hover effects, active states, animations
-- **Loading States**: Button disable states during processing
-- **Success Animations**: Pulse animation on confirmation screen
+## Project Structure
 
-### No External Dependencies
-- Pure vanilla HTML/CSS/JavaScript
-- Google Fonts for typography (only external CDN load)
-- No jQuery, React, Vue, or other frameworks
-- Single 2064-line HTML file
-
-## Usage Instructions
-
-1. **Open File**: Open `TBOrder_Kiosk.html` in a modern web browser
-2. **Select Service Type**: Choose "Eat In" or "Take Away"
-3. **Browse Menu**: Select category from left sidebar, tap items to view details
-4. **Customize Item**: Select sauce and/or toppings, adjust quantity
-5. **Add to Cart**: Tap "Add to Cart" button
-6. **View Cart**: Tap shopping cart button (bottom right) to review items
-7. **Proceed to Payment**: Tap "Place Order" when ready
-8. **Select Payment**: Choose payment method (Card or Cash)
-9. **Confirm**: Tap "Confirm Payment"
-10. **Order Placed**: View confirmation with order number and wait time
-
-## Browser Compatibility
-- Chrome/Chromium 60+
-- Firefox 55+
-- Safari 12+
-- Edge 79+
-- Opera 47+
-
-Requires:
-- JavaScript enabled
-- IndexedDB support
-- Web Audio API support (for audio feedback)
-- CSS Grid and Flexbox support
-
-## Future Enhancement Placeholders
-- SumUp API integration for card payments (currently showing mock UI)
-- Kitchen display system integration via WebSocket
-- Multi-language support (currently English with Korean subtitles)
-- Image/photos for menu items
-- Real-time inventory sync
-- Advanced analytics and reporting
-
-## Performance Notes
-- Single HTML file loads in <2 seconds
-- No compile step needed
-- Minimal CPU usage
-- Optimized CSS for smooth animations
-- Efficient grid rendering for 21+ menu items
-- IndexedDB for fast local data access
+```
+TBOrder/
+├── tb-server.js          # Node.js server (HTTP + WebSocket)
+├── package.json          # Dependencies (ws, stripe)
+├── index.html            # Launcher page
+├── TBOrder_Kiosk.html    # Customer ordering kiosk
+├── TBKitchen_Kiosk.html  # Kitchen display
+├── TBPos.html            # POS system
+├── TBMain_Kiosk.html     # Admin panel
+├── mobile.html           # Mobile ordering
+├── qr-generator.html     # QR code generator for mobile URL
+├── test.html             # Connection diagnostic tool
+├── TBLOGO.png            # Company logo
+├── BOYAK.png             # Sub-logo (밥이보약)
+├── google-apps-script.js # Google Sheets integration script
+├── DB_Design.md          # Database schema design
+├── STRIPE_SETUP.md       # Stripe Terminal setup guide
+├── data/                 # Runtime order data (git-ignored)
+└── node_modules/         # Dependencies (git-ignored)
+```
 
 ---
 
-Created: 2026-03-05
-Version: 1.0.0
-Restaurant: The Bap (더밥) - Korean K-Food
+**The Bap 더밥** — 밥이보약 · K-Food on the Bap
+
+Version: 5.0 | 2026-03-06

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Admin v1.0 | 2026-03-06 -->
+<!-- The Bap Admin v1.2 | 2026-03-06 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -921,7 +921,7 @@
     <div class="container" id="mainContainer" style="display: none;">
         <!-- SIDEBAR -->
         <div class="sidebar">
-            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v1.0</span></div>
+            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v1.2</span></div>
             <div class="nav-menu">
                 <div class="nav-item active" data-section="dashboard">
                     <div class="nav-icon">📊</div>
@@ -968,7 +968,7 @@
                     <span>설정 Settings</span>
                 </div>
             </div>
-            <div class="sidebar-footer">v1.0 | The Bap Group</div>
+            <div class="sidebar-footer">v1.2 | The Bap Group</div>
         </div>
 
         <!-- MAIN CONTENT -->
@@ -1176,13 +1176,18 @@
 
                 <!-- SYNC SECTION -->
                 <div class="content-section" id="section-sync">
+                    <!-- 모드 표시 배너 -->
+                    <div id="syncModeBanner" style="padding:14px 20px;border-radius:10px;margin-bottom:16px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px"></div>
+
+                    <div id="syncStatus" style="padding:12px;border-radius:8px;background:#f0f9ff;margin-bottom:12px;font-size:13px;color:#1e40af;display:none"></div>
+
                     <div class="grid-2">
-                        <div class="card">
+                        <!-- 로컬 서버 동기화 (원격 모드에선 숨김) -->
+                        <div class="card" id="serverSyncCard">
                             <div style="margin-bottom: 16px;">
                                 <h3>Server Menu Sync</h3>
                                 <p style="font-size:12px;color:#888;margin-top:4px">Push/pull menu data to/from server (all clients will update)</p>
                             </div>
-                            <div id="syncStatus" style="padding:12px;border-radius:8px;background:#f0f9ff;margin-bottom:12px;font-size:13px;color:#1e40af;display:none"></div>
                             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                                 <button class="btn-primary" onclick="app.pushMenuToServer()" style="flex:1">⬆️ Push to Server</button>
                                 <button class="btn-secondary" onclick="app.pullMenuFromServer()" style="flex:1">⬇️ Pull from Server</button>
@@ -1192,18 +1197,19 @@
                                 <button class="btn-primary" onclick="app.broadcastMenuUpdate()" style="width:100%;background:#059669">📡 Broadcast Menu Update</button>
                             </div>
                         </div>
+
+                        <!-- Google Sheets 동기화 (항상 표시) -->
                         <div class="card">
                             <div style="margin-bottom: 16px;">
-                                <h3>Google Sheets Sync</h3>
-                                <p style="font-size:12px;color:#888;margin-top:4px">Sync with Google Sheets (requires GOOGLE_MENU_API env)</p>
+                                <h3>☁️ Google Sheets Sync</h3>
+                                <p style="font-size:12px;color:#888;margin-top:4px" id="googleSyncDesc">Sync with Google Sheets</p>
                             </div>
                             <div style="display: flex; gap: 8px; flex-wrap: wrap;">
                                 <button class="btn-primary" onclick="app.syncToGoogle()" style="flex:1">⬆️ Push to Google</button>
                                 <button class="btn-secondary" onclick="app.syncFromGoogle()" style="flex:1">⬇️ Pull from Google</button>
                             </div>
-                            <div style="margin-top:12px;font-size:12px;color:#888">
-                                <strong>Server API:</strong> /api/menu<br>
-                                <strong>Google Sheets:</strong> Set GOOGLE_MENU_API in server env
+                            <div style="margin-top:12px;font-size:12px;color:#888" id="googleSyncInfo">
+                                <strong>Google API:</strong> Connected
                             </div>
                         </div>
                     </div>
@@ -1538,6 +1544,36 @@
 
         const ALLERGENS_LIST = ['Sesame', 'Soy', 'Egg', 'Peanuts', 'Tree Nuts', 'Milk', 'Gluten', 'Fish', 'Shellfish', 'Mustard', 'Celery', 'Lupin', 'Molluscs', 'Sulphites'];
 
+        // ─── Google Apps Script API (직접 통신) ───
+        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbzU3Cv-XbKShKQNiu55PhgfxkyLYIbg41-1Wl5Cwlvhh-w1ropFzlVGw2fbd11a8fP87Q/exec';
+
+        // 원격 모드 감지 (GitHub Pages 등 로컬 서버 아닌 곳)
+        function isRemote() {
+            const h = location.hostname;
+            return h !== 'localhost' && h !== '127.0.0.1' && !h.match(/^192\.168\./) && !h.match(/^10\./) && !h.match(/^172\.(1[6-9]|2\d|3[01])\./);
+        }
+
+        // Google Apps Script에 직접 GET 요청
+        async function googleGet(action) {
+            const url = GOOGLE_API + '?action=' + encodeURIComponent(action);
+            const resp = await fetch(url);
+            if (!resp.ok) throw new Error('Google API error: ' + resp.status);
+            return resp.json();
+        }
+
+        // Google Apps Script에 직접 POST 요청
+        // Content-Type: text/plain → CORS preflight 회피
+        async function googlePost(data) {
+            const resp = await fetch(GOOGLE_API, {
+                method: 'POST',
+                headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+                body: JSON.stringify(data),
+                redirect: 'follow'
+            });
+            if (!resp.ok) throw new Error('Google API error: ' + resp.status);
+            return resp.json();
+        }
+
         // APP STATE
         const app = {
             currentSection: 'dashboard',
@@ -1550,10 +1586,30 @@
             init() {
                 this.setupPinLock();
                 this.setupEventListeners();
+                this.setupModeUI();
                 this.loadAllData();
                 this.updateClock();
                 setInterval(() => this.updateClock(), 1000);
                 this.setupBroadcastChannel();
+            },
+
+            // 원격/로컬 모드에 따라 UI 조정
+            setupModeUI() {
+                const banner = document.getElementById('syncModeBanner');
+                const serverCard = document.getElementById('serverSyncCard');
+                if (isRemote()) {
+                    banner.style.background = '#EFF6FF';
+                    banner.style.color = '#1D4ED8';
+                    banner.innerHTML = '☁️ 원격 모드 — Google Sheets 직접 연결 (서버 불필요)';
+                    serverCard.style.display = 'none';
+                    document.getElementById('googleSyncDesc').textContent = '직접 Google Sheets와 동기화 (원격 모드)';
+                    console.log('[Admin] ☁️ 원격 모드 활성화 — Google API 직접 통신');
+                } else {
+                    banner.style.background = '#F0FDF4';
+                    banner.style.color = '#166534';
+                    banner.innerHTML = '🖥️ 로컬 모드 — 서버 연결됨 (' + location.host + ')';
+                    console.log('[Admin] 🖥️ 로컬 모드 — 서버 경유 통신');
+                }
             },
 
             setupPinLock() {
@@ -1654,6 +1710,13 @@
             },
 
             connectWebSocket() {
+                // 원격 모드에선 WebSocket 불필요 (로컬 서버가 없으므로)
+                if (isRemote()) {
+                    console.log('[Admin WS] 원격 모드 — WebSocket 건너뜀');
+                    document.getElementById('wsStatus').textContent = '☁️ Cloud';
+                    document.getElementById('wsStatus').style.color = '#006AFF';
+                    return;
+                }
                 try {
                     const wsHost = window.location.host || 'localhost:8080';
                     const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -1751,12 +1814,12 @@
                     this.initializeBranchPricing();
                 }
 
-                // Try to pull menu from server API (overrides localStorage defaults)
+                // 메뉴 데이터 로딩: 원격→Google API, 로컬→서버
                 try {
                     await this.pullMenuFromServer();
-                    console.log('[Admin] Menu loaded from server API');
+                    console.log('[Admin] Menu loaded from ' + (isRemote() ? 'Google Sheets' : 'server'));
                 } catch (e) {
-                    console.log('[Admin] Server not available, using localStorage defaults');
+                    console.log('[Admin] API not available, using localStorage defaults');
                 }
 
                 this.updateDashboard();
@@ -2213,25 +2276,15 @@
             },
 
             async uploadImageToGoogle(itemId, base64, fileName, mimeType) {
-                // Upload to Google Drive via Apps Script
-                const apiUrl = localStorage.getItem('tb_google_api_url') || 'https://script.google.com/macros/s/AKfycbzU3Cv-XbKShKQNiu55PhgfxkyLYIbg41-1Wl5Cwlvhh-w1ropFzlVGw2fbd11a8fP87Q/exec';
-                if (!apiUrl) {
-                    this.showToast('Google API URL not set — go to Settings', 'error');
-                    return null;
-                }
+                // Upload to Google Drive via Apps Script (직접 통신)
                 try {
-                    const resp = await fetch(apiUrl, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            action: 'uploadImage',
-                            itemId: itemId,
-                            fileName: fileName,
-                            mimeType: mimeType,
-                            base64: base64,
-                        }),
+                    const result = await googlePost({
+                        action: 'uploadImage',
+                        itemId: itemId,
+                        fileName: fileName,
+                        mimeType: mimeType,
+                        base64: base64,
                     });
-                    const result = await resp.json();
                     if (result.success) {
                         this.showToast('Image uploaded to Google Drive!', 'success');
                         return result;
@@ -2935,33 +2988,45 @@
                 };
             },
 
-            // Push local menu to server
+            // Push local menu to server (local) or Google API (remote)
             async pushMenuToServer() {
                 try {
-                    this.showSyncStatus('Pushing menu to server...', 'info');
                     const payload = this.buildMenuPayload();
-                    const resp = await fetch('/api/menu', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'updateAll', menuData: payload })
-                    });
-                    if (!resp.ok) throw new Error('Server error: ' + resp.status);
-                    const result = await resp.json();
-                    this.showSyncStatus('Menu pushed to server successfully!', 'success');
-                    this.showToast('Menu pushed to server', 'success');
+                    if (isRemote()) {
+                        this.showSyncStatus('Google Sheets에 메뉴 저장 중...', 'info');
+                        await googlePost({ action: 'updateMenu', ...payload });
+                        this.showSyncStatus('Google Sheets에 저장 완료!', 'success');
+                        this.showToast('Google Sheets에 저장됨', 'success');
+                    } else {
+                        this.showSyncStatus('Pushing menu to server...', 'info');
+                        const resp = await fetch('/api/menu', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'updateAll', ...payload })
+                        });
+                        if (!resp.ok) throw new Error('Server error: ' + resp.status);
+                        this.showSyncStatus('Menu pushed to server successfully!', 'success');
+                        this.showToast('Menu pushed to server', 'success');
+                    }
                 } catch (err) {
                     this.showSyncStatus('Push failed: ' + err.message, 'error');
                     this.showToast('Push failed: ' + err.message, 'error');
                 }
             },
 
-            // Pull menu from server → update localStorage
+            // Pull menu from server (local) or Google API (remote) → update localStorage
             async pullMenuFromServer() {
                 try {
-                    this.showSyncStatus('Pulling menu from server...', 'info');
-                    const resp = await fetch('/api/menu');
-                    if (!resp.ok) throw new Error('Server error: ' + resp.status);
-                    const data = await resp.json();
+                    let data;
+                    if (isRemote()) {
+                        this.showSyncStatus('Google Sheets에서 메뉴 가져오는 중...', 'info');
+                        data = await googleGet('menu');
+                    } else {
+                        this.showSyncStatus('Pulling menu from server...', 'info');
+                        const resp = await fetch('/api/menu');
+                        if (!resp.ok) throw new Error('Server error: ' + resp.status);
+                        data = await resp.json();
+                    }
 
                     // Convert server format → admin localStorage format
                     if (data.items) {
@@ -3023,23 +3088,28 @@
                 }
             },
 
-            // Google Sheets sync via server
+            // Google Sheets sync — 원격 모드에선 직접 통신, 로컬에선 서버 경유
             async syncToGoogle() {
                 try {
-                    this.showSyncStatus('Syncing to Google Sheets...', 'info');
-                    // Push local → server first
-                    await this.pushMenuToServer();
-                    // Then tell server to push to Google
-                    const resp = await fetch('/api/menu', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'syncToGoogle' })
-                    });
-                    if (!resp.ok) throw new Error('Server error: ' + resp.status);
-                    const result = await resp.json();
-                    if (result.error) throw new Error(result.error);
-                    this.showSyncStatus('Synced to Google Sheets!', 'success');
-                    this.showToast('Synced to Google Sheets', 'success');
+                    this.showSyncStatus('Google Sheets에 저장 중...', 'info');
+                    const payload = this.buildMenuPayload();
+                    if (isRemote()) {
+                        // 원격: 직접 Google API 호출
+                        await googlePost({ action: 'updateMenu', ...payload });
+                    } else {
+                        // 로컬: 서버 경유
+                        await this.pushMenuToServer();
+                        const resp = await fetch('/api/menu', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'syncToGoogle' })
+                        });
+                        if (!resp.ok) throw new Error('Server error: ' + resp.status);
+                        const result = await resp.json();
+                        if (result.error) throw new Error(result.error);
+                    }
+                    this.showSyncStatus('Google Sheets 저장 완료!', 'success');
+                    this.showToast('Google Sheets에 저장됨', 'success');
                 } catch (err) {
                     this.showSyncStatus('Google sync failed: ' + err.message, 'error');
                     this.showToast('Google sync failed: ' + err.message, 'error');
@@ -3048,37 +3118,49 @@
 
             async syncFromGoogle() {
                 try {
-                    this.showSyncStatus('Pulling from Google Sheets...', 'info');
-                    const resp = await fetch('/api/menu', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'syncFromGoogle' })
-                    });
-                    if (!resp.ok) throw new Error('Server error: ' + resp.status);
-                    const result = await resp.json();
-                    if (result.error) throw new Error(result.error);
-                    // Now pull the refreshed data from server
-                    await this.pullMenuFromServer();
-                    this.showSyncStatus('Pulled from Google Sheets!', 'success');
-                    this.showToast('Pulled from Google Sheets', 'success');
+                    this.showSyncStatus('Google Sheets에서 가져오는 중...', 'info');
+                    if (isRemote()) {
+                        // 원격: 직접 Google API에서 pull
+                        await this.pullMenuFromServer(); // 이미 isRemote() 분기 있음
+                    } else {
+                        // 로컬: 서버에게 Google에서 pull 요청
+                        const resp = await fetch('/api/menu', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'syncFromGoogle' })
+                        });
+                        if (!resp.ok) throw new Error('Server error: ' + resp.status);
+                        const result = await resp.json();
+                        if (result.error) throw new Error(result.error);
+                        await this.pullMenuFromServer();
+                    }
+                    this.showSyncStatus('Google Sheets에서 가져오기 완료!', 'success');
+                    this.showToast('Google Sheets에서 메뉴 업데이트됨', 'success');
                 } catch (err) {
                     this.showSyncStatus('Google pull failed: ' + err.message, 'error');
                     this.showToast('Google pull failed: ' + err.message, 'error');
                 }
             },
 
-            // Auto-sync to server after any menu change
+            // Auto-sync: 메뉴 변경 시 자동 저장 (원격→Google, 로컬→서버)
             async autoSyncToServer() {
                 try {
                     const payload = this.buildMenuPayload();
-                    await fetch('/api/menu', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'updateAll', menuData: payload })
-                    });
-                    // Broadcast to connected clients
-                    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-                        this.ws.send(JSON.stringify({ type: 'menu_update' }));
+                    if (isRemote()) {
+                        // 원격 모드: Google Sheets에 직접 저장
+                        await googlePost({ action: 'updateMenu', ...payload });
+                        console.log('[Admin] ☁️ Google Sheets 자동 동기화 완료');
+                    } else {
+                        // 로컬 모드: 서버에 저장
+                        await fetch('/api/menu', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'updateAll', ...payload })
+                        });
+                        // Broadcast to connected clients
+                        if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+                            this.ws.send(JSON.stringify({ type: 'menu_update' }));
+                        }
                     }
                 } catch (err) {
                     console.error('[Admin] Auto-sync failed:', err);

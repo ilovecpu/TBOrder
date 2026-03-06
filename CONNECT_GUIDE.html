@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Bap — 접속 가이드</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#F3F4F6; color:#1F2937; }
+.header { background:#006AFF; color:#fff; padding:24px; text-align:center; }
+.header h1 { font-size:24px; margin-bottom:4px; }
+.header p { font-size:14px; opacity:.8; }
+.container { max-width:800px; margin:24px auto; padding:0 16px; }
+.card { background:#fff; border-radius:16px; padding:24px; margin-bottom:20px; box-shadow:0 2px 8px rgba(0,0,0,.06); }
+.card h2 { font-size:18px; margin-bottom:12px; display:flex; align-items:center; gap:8px; }
+.card h3 { font-size:15px; margin:16px 0 8px; color:#374151; }
+.step { display:flex; gap:12px; margin:10px 0; padding:12px; background:#F9FAFB; border-radius:10px; }
+.step-num { width:28px; height:28px; background:#006AFF; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; flex-shrink:0; }
+.step-text { font-size:14px; line-height:1.6; }
+.url-box { background:#1F2937; color:#10B981; padding:16px 20px; border-radius:10px; font-family:'Courier New',monospace; font-size:15px; margin:12px 0; word-break:break-all; }
+.url-box span { color:#9CA3AF; font-size:12px; display:block; margin-bottom:4px; }
+.grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+@media (max-width:600px) { .grid { grid-template-columns:1fr; } }
+.device-card { border:2px solid #E5E7EB; border-radius:12px; padding:20px; text-align:center; }
+.device-card .icon { font-size:48px; margin-bottom:8px; }
+.device-card h3 { margin:0 0 8px; font-size:16px; }
+.device-card p { font-size:13px; color:#6B7280; }
+.tag { display:inline-block; padding:3px 10px; border-radius:20px; font-size:12px; font-weight:600; }
+.tag-pos { background:#DBEAFE; color:#1D4ED8; }
+.tag-admin { background:#FEE2E2; color:#DC2626; }
+.tag-order { background:#D1FAE5; color:#059669; }
+.tag-kitchen { background:#FEF3C7; color:#D97706; }
+.note { background:#FFF7ED; border-left:4px solid #F59E0B; padding:16px; border-radius:0 10px 10px 0; margin:16px 0; font-size:14px; }
+.note strong { color:#D97706; }
+.footer { text-align:center; padding:24px; color:#9CA3AF; font-size:12px; }
+
+/* Auto-detect IP script */
+#serverIP { color:#34D399; font-weight:700; }
+</style>
+</head>
+<body>
+
+<div class="header">
+    <h1>🍚 The Bap (더밥)</h1>
+    <p>iPad / Android / 모바일 접속 가이드</p>
+</div>
+
+<div class="container">
+
+    <!-- 구조 설명 -->
+    <div class="card">
+        <h2>📡 시스템 구조</h2>
+        <p style="font-size:14px;line-height:1.8;color:#4B5563">
+            Mac 또는 Windows PC에서 서버를 실행하면, 같은 Wi-Fi에 연결된 모든 기기(iPad, Android, 다른 PC)에서
+            브라우저로 접속할 수 있습니다. 별도 앱 설치가 필요 없습니다!
+        </p>
+        <div style="text-align:center;padding:20px;font-size:14px;color:#6B7280">
+            <div style="font-size:32px">🖥️</div>
+            서버 PC (Mac/Windows)
+            <div style="font-size:24px;margin:8px 0">↕️</div>
+            <div style="font-size:14px;color:#006AFF;font-weight:600">같은 Wi-Fi 네트워크</div>
+            <div style="font-size:24px;margin:8px 0">↕️</div>
+            <div style="display:flex;justify-content:center;gap:32px;flex-wrap:wrap">
+                <div><div style="font-size:32px">📱</div>iPad</div>
+                <div><div style="font-size:32px">📱</div>Android</div>
+                <div><div style="font-size:32px">💻</div>다른 PC</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 접속 주소 -->
+    <div class="card">
+        <h2>🔗 접속 주소</h2>
+        <p style="font-size:14px;color:#6B7280;margin-bottom:12px">서버 PC의 IP 주소를 아래 형식으로 브라우저에 입력하세요</p>
+
+        <div class="url-box">
+            <span>POS (계산대)</span>
+            http://<span id="serverIP">서버IP</span>:8080/pos
+        </div>
+        <div class="url-box">
+            <span>Admin (관리자)</span>
+            http://<span class="sip">서버IP</span>:8080/admin
+        </div>
+        <div class="url-box">
+            <span>Order (고객 주문 키오스크)</span>
+            http://<span class="sip">서버IP</span>:8080/order
+        </div>
+        <div class="url-box">
+            <span>Kitchen (주방 디스플레이)</span>
+            http://<span class="sip">서버IP</span>:8080/kitchen
+        </div>
+
+        <div class="note">
+            <strong>💡 서버 IP 확인 방법:</strong> 서버를 시작하면 터미널에 IP 주소가 표시됩니다.<br>
+            예: <code>http://192.168.1.100:8080</code>
+        </div>
+    </div>
+
+    <!-- 기기별 안내 -->
+    <div class="card">
+        <h2>📱 기기별 접속 방법</h2>
+
+        <div class="grid">
+            <div class="device-card">
+                <div class="icon">🍎</div>
+                <h3>iPad / iPhone</h3>
+                <p>Safari 브라우저에서 접속 주소를 입력하세요</p>
+            </div>
+            <div class="device-card">
+                <div class="icon">🤖</div>
+                <h3>Android</h3>
+                <p>Chrome 브라우저에서 접속 주소를 입력하세요</p>
+            </div>
+        </div>
+
+        <h3>🍎 iPad 홈 화면에 바로가기 추가</h3>
+        <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-text">Safari에서 접속 주소 열기</div>
+        </div>
+        <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-text">하단 <strong>공유 버튼</strong> (□↑) 탭</div>
+        </div>
+        <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-text"><strong>"홈 화면에 추가"</strong> 선택</div>
+        </div>
+        <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-text">이름 입력 (예: "The Bap POS") → <strong>추가</strong></div>
+        </div>
+        <div class="note">
+            <strong>✨ 전체 화면 모드:</strong> 홈 화면 바로가기로 열면 주소창 없이 앱처럼 전체 화면으로 실행됩니다!
+        </div>
+
+        <h3>🤖 Android 홈 화면에 바로가기 추가</h3>
+        <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-text">Chrome에서 접속 주소 열기</div>
+        </div>
+        <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-text">우측 상단 <strong>⋮ 메뉴</strong> 탭</div>
+        </div>
+        <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-text"><strong>"홈 화면에 추가"</strong> 선택</div>
+        </div>
+        <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-text">이름 입력 → <strong>추가</strong></div>
+        </div>
+    </div>
+
+    <!-- 지점별 추천 구성 -->
+    <div class="card">
+        <h2>🏪 지점별 추천 기기 배치</h2>
+        <div style="overflow-x:auto">
+        <table style="width:100%;border-collapse:collapse;font-size:14px;margin-top:12px">
+            <tr style="background:#F3F4F6">
+                <th style="padding:10px;text-align:left;border-bottom:2px solid #E5E7EB">위치</th>
+                <th style="padding:10px;text-align:left;border-bottom:2px solid #E5E7EB">화면</th>
+                <th style="padding:10px;text-align:left;border-bottom:2px solid #E5E7EB">추천 기기</th>
+            </tr>
+            <tr>
+                <td style="padding:10px;border-bottom:1px solid #F3F4F6">계산대</td>
+                <td style="padding:10px;border-bottom:1px solid #F3F4F6"><span class="tag tag-pos">POS</span></td>
+                <td style="padding:10px;border-bottom:1px solid #F3F4F6">iPad 10.2" 이상 / Windows PC</td>
+            </tr>
+            <tr>
+                <td style="padding:10px;border-bottom:1px solid #F3F4F6">카운터 앞</td>
+                <td style="padding:10px;border-bottom:1px solid #F3F4F6"><span class="tag tag-order">고객 주문</span></td>
+                <td style="padding:10px;border-bottom:1px solid #F3F4F6">iPad / Android 태블릿</td>
+            </tr>
+            <tr>
+                <td style="padding:10px;border-bottom:1px solid #F3F4F6">주방</td>
+                <td style="padding:10px;border-bottom:1px solid #F3F4F6"><span class="tag tag-kitchen">주방 디스플레이</span></td>
+                <td style="padding:10px;border-bottom:1px solid #F3F4F6">태블릿 / 모니터 + PC</td>
+            </tr>
+            <tr>
+                <td style="padding:10px">사무실</td>
+                <td style="padding:10px"><span class="tag tag-admin">관리자</span></td>
+                <td style="padding:10px">Mac / Windows PC</td>
+            </tr>
+        </table>
+        </div>
+    </div>
+
+    <!-- 문제 해결 -->
+    <div class="card">
+        <h2>🔧 문제 해결</h2>
+
+        <h3>접속이 안 될 때</h3>
+        <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-text">서버 PC와 같은 <strong>Wi-Fi</strong>에 연결되어 있는지 확인</div>
+        </div>
+        <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-text">서버가 <strong>실행 중</strong>인지 확인 (터미널에 "Server running" 표시)</div>
+        </div>
+        <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-text">방화벽에서 <strong>포트 8080</strong>이 열려있는지 확인</div>
+        </div>
+        <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-text">IP 주소가 맞는지 확인 (서버 재시작 시 IP가 변경될 수 있음)</div>
+        </div>
+
+        <h3 style="margin-top:20px">Mac 방화벽 설정</h3>
+        <p style="font-size:13px;color:#6B7280;line-height:1.8">
+            시스템 설정 → 네트워크 → 방화벽 → Node.js 허용<br>
+            또는 터미널: <code>sudo /usr/libexec/ApplicationFirewall/socketfilterfw --add /usr/local/bin/node</code>
+        </p>
+
+        <h3 style="margin-top:20px">Windows 방화벽 설정</h3>
+        <p style="font-size:13px;color:#6B7280;line-height:1.8">
+            Windows 보안 → 방화벽 → 고급 설정 → 인바운드 규칙 → 새 규칙 → 포트 8080 허용
+        </p>
+    </div>
+</div>
+
+<div class="footer">
+    The Bap (더밥) — TBOrder System v1.1<br>
+    © 2026 The Bap Korean Takeaway
+</div>
+
+</body>
+</html>

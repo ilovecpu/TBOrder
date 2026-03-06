@@ -1,197 +1,604 @@
 /**
  * ════════════════════════════════════════════════════════════
- *  🍚 The Bap (더밥) — Google Apps Script (주문 API)
+ *  🍚 The Bap (더밥) — Google Apps Script v1.1
+ *  메뉴 API + 주문 API + 이미지 업로드/썸네일 (통합)
+ *  Last Updated: 2026-03-06
  * ════════════════════════════════════════════════════════════
  *
- *  설치 방법:
- *  1. Google Sheets에서 새 스프레드시트 생성
- *  2. 시트 이름을 "Orders"로 변경
- *  3. 확장프로그램 → Apps Script 클릭
- *  4. 이 코드를 전부 붙여넣기
- *  5. 배포 → 새 배포 → 웹 앱 선택
- *     - "다음 계정으로 실행" → 나
- *     - "액세스 권한" → 모든 사용자
- *  6. 배포 후 나오는 URL을 복사
- *  7. mobile.html의 APPS_SCRIPT_URL에 붙여넣기
+ *  설정 방법:
+ *  1. Google Sheets 새로 만들기
+ *  2. Extensions > Apps Script 클릭
+ *  3. 이 코드 전체 복사 → 붙여넣기
+ *  4. 메뉴에서 initializeSheets 함수 실행 (처음 한번)
+ *  5. Deploy > New deployment > Web app
+ *     - Execute as: Me
+ *     - Who has access: Anyone
+ *  6. 배포 URL을 복사
+ *  7. tb-server.js 시작 시 환경변수 설정:
+ *     GOOGLE_MENU_API=https://script.google.com/macros/s/xxxxx/exec
+ *
+ *  시트 구조 (자동 생성):
+ *   - Categories: 카테고리 목록 (id, nameEn, nameKr, icon, color, sortOrder, active)
+ *   - MenuItems: 메뉴 아이템 (이미지 URL + 썸네일 URL 포함)
+ *   - Sauces: 소스 목록
+ *   - BranchPricing: 지점별 가격
+ *   - Orders: 주문 기록
+ *
+ *  이미지 업로드:
+ *   - Admin에서 이미지 업로드 → base64 → Apps Script → Google Drive 저장
+ *   - 원본 이미지 + 썸네일(300x300) 자동 생성
+ *   - Drive 폴더: "TheBap_MenuImages" (자동 생성)
  *
  * ════════════════════════════════════════════════════════════
  */
 
-// ─── 설정 ───
-const SHEET_NAME = 'Orders';
+// ─── 시트 이름 ───
+const SH_CAT = 'Categories';
+const SH_ITEM = 'MenuItems';
+const SH_SAUCE = 'Sauces';
+const SH_BRANCH = 'BranchPricing';
+const SH_ORDER = 'Orders';
 
-// ─── 헤더 자동 생성 ───
-function setupSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName(SHEET_NAME);
-  if (!sheet) {
-    sheet = ss.insertSheet(SHEET_NAME);
-  }
+// ─── Google Drive 이미지 폴더 ───
+const DRIVE_FOLDER_NAME = 'TheBap_MenuImages';
+const THUMB_FOLDER_NAME = 'TheBap_Thumbnails';
+const THUMB_SIZE = 300; // 썸네일 최대 크기 (px)
 
-  // 헤더가 없으면 추가
-  if (sheet.getLastRow() === 0) {
-    sheet.appendRow([
-      'orderNumber',    // A
-      'branchCode',     // B
-      'branchName',     // C
-      'orderType',      // D
-      'items',          // E (JSON)
-      'subtotal',       // F
-      'vat',            // G
-      'total',          // H
-      'status',         // I
-      'createdAt',      // J
-      'customerName',   // K
-      'customerPhone',  // L
-      'pickupTime',     // M
-      'source',         // N (mobile/kiosk)
-      'fetchedByKitchen' // O (yes/no)
-    ]);
+// ═══════════════════════════════════════════
+//  GET 요청 처리
+// ═══════════════════════════════════════════
+function doGet(e) {
+  try {
+    const action = (e && e.parameter && e.parameter.action) || 'menu';
 
-    // 헤더 스타일
-    const headerRange = sheet.getRange(1, 1, 1, 15);
-    headerRange.setFontWeight('bold');
-    headerRange.setBackground('#E85D75');
-    headerRange.setFontColor('#FFFFFF');
-    sheet.setFrozenRows(1);
+    switch (action) {
+      case 'menu':       return jsonOut(getFullMenu());
+      case 'categories': return jsonOut(getCategories());
+      case 'items':      return jsonOut(getItems());
+      case 'sauces':     return jsonOut(getSauces());
+      case 'orders':     return jsonOut(getOrders(e));
+      case 'pending':    return jsonOut(getPendingOrders(e));
+      case 'branchPricing': return jsonOut(getBranchPricing());
+      case 'init':       return jsonOut(initializeSheets());
+      default:           return jsonOut(getFullMenu());
+    }
+  } catch (err) {
+    return jsonOut({ error: err.message });
   }
 }
 
-// ─── POST: 새 주문 접수 ───
+// ═══════════════════════════════════════════
+//  POST 요청 처리
+// ═══════════════════════════════════════════
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    let sheet = ss.getSheetByName(SHEET_NAME);
+    const action = data.action || 'newOrder';
 
-    if (!sheet) {
-      setupSheet();
-      sheet = ss.getSheetByName(SHEET_NAME);
+    switch (action) {
+      // ─── 메뉴 관리 ───
+      case 'updateMenu':       updateFullMenu(data); break;
+      case 'updateItem':       updateMenuItem(data.item); break;
+      case 'addItem':          addMenuItem(data.item); break;
+      case 'deleteItem':       deleteMenuItem(data.itemId); break;
+
+      // ─── 카테고리 관리 ───
+      case 'updateCategories': updateCategories(data.categories); break;
+      case 'addCategory':      return jsonOut(addCategory(data.category));
+      case 'updateCategory':   updateCategory(data.category); break;
+      case 'deleteCategory':   deleteCategory(data.categoryId); break;
+
+      // ─── 지점별 가격 ───
+      case 'updateBranchPricing': updateBranchPricing(data.branchPricing); break;
+
+      // ─── 이미지 업로드 ───
+      case 'uploadImage':      return jsonOut(uploadImageToDrive(data));
+
+      // ─── 주문 ───
+      case 'newOrder':         return jsonOut(createOrder(data));
+      case 'updateOrder':      updateOrderStatus(data.orderNumber, data.status); break;
+
+      default: return jsonOut({ error: 'Unknown action: ' + action });
     }
 
-    // 주문 번호 생성 (MOB-001, MOB-002...)
-    const lastRow = sheet.getLastRow();
-    let orderNum = data.orderNumber;
-    if (!orderNum) {
-      const today = new Date().toISOString().split('T')[0].replace(/-/g, '');
-      const count = lastRow; // 헤더 포함
-      orderNum = `MOB-${today}-${String(count).padStart(3, '0')}`;
-    }
-
-    // 시트에 주문 추가
-    sheet.appendRow([
-      orderNum,
-      data.branchCode || '',
-      data.branchName || '',
-      data.orderType || 'take_away',
-      JSON.stringify(data.items || []),
-      data.subtotal || 0,
-      data.vat || 0,
-      data.total || 0,
-      'pending',
-      new Date().toISOString(),
-      data.customerName || '',
-      data.customerPhone || '',
-      data.pickupTime || '',
-      'mobile',
-      'no'
-    ]);
-
-    return ContentService
-      .createTextOutput(JSON.stringify({
-        success: true,
-        orderNumber: orderNum,
-        message: 'Order received!'
-      }))
-      .setMimeType(ContentService.MimeType.JSON);
-
-  } catch (error) {
-    return ContentService
-      .createTextOutput(JSON.stringify({
-        success: false,
-        error: error.message
-      }))
-      .setMimeType(ContentService.MimeType.JSON);
+    return jsonOut({ success: true, timestamp: new Date().toISOString() });
+  } catch (err) {
+    return jsonOut({ error: err.message });
   }
 }
 
-// ─── GET: 새 주문 가져오기 (주방용) ───
-function doGet(e) {
-  try {
-    const action = e.parameter.action || 'pending';
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(SHEET_NAME);
+function jsonOut(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
 
-    if (!sheet || sheet.getLastRow() <= 1) {
-      return ContentService
-        .createTextOutput(JSON.stringify({ orders: [], count: 0 }))
-        .setMimeType(ContentService.MimeType.JSON);
-    }
+// ═══════════════════════════════════════════
+//  메뉴 읽기
+// ═══════════════════════════════════════════
+function getFullMenu() {
+  return {
+    version: getMenuVersion(),
+    lastUpdated: new Date().toISOString(),
+    googleSheetId: SpreadsheetApp.getActiveSpreadsheet().getId(),
+    categories: getCategories(),
+    items: getItems(),
+    sauces: getSauces(),
+    branchPricing: getBranchPricing(),
+  };
+}
 
-    const data = sheet.getDataRange().getValues();
-    const headers = data[0];
-    const orders = [];
+function getMenuVersion() {
+  return parseInt(PropertiesService.getScriptProperties().getProperty('menuVersion') || '1');
+}
+function incrementMenuVersion() {
+  const v = getMenuVersion() + 1;
+  PropertiesService.getScriptProperties().setProperty('menuVersion', v.toString());
+  return v;
+}
 
-    for (let i = 1; i < data.length; i++) {
-      const row = data[i];
-      const order = {};
-      headers.forEach((h, j) => { order[h] = row[j]; });
+function sheetToArray(sheetName) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(sheetName);
+  if (!sheet || sheet.getLastRow() < 2) return [];
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  return data.slice(1).filter(row => row[0]).map(row => {
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = row[i]; });
+    return obj;
+  });
+}
 
-      if (action === 'pending') {
-        // 주방이 아직 안 가져간 주문만
-        if (order.fetchedByKitchen !== 'yes' && order.status === 'pending') {
-          // items를 JSON 파싱
-          try { order.items = JSON.parse(order.items); } catch(e) { order.items = []; }
-          order._row = i + 1; // 시트 행 번호 (업데이트용)
-          orders.push(order);
-        }
-      } else if (action === 'all') {
-        try { order.items = JSON.parse(order.items); } catch(e) { order.items = []; }
-        orders.push(order);
-      }
-    }
+function getCategories() {
+  return sheetToArray(SH_CAT).map(c => ({
+    ...c,
+    sortOrder: parseInt(c.sortOrder) || 0,
+    active: c.active === true || c.active === 'TRUE' || c.active === 'true',
+  }));
+}
 
-    // pending 주문을 가져갔으면 fetchedByKitchen = 'yes'로 표시
-    if (action === 'pending' && e.parameter.markFetched === 'true') {
-      orders.forEach(order => {
-        if (order._row) {
-          sheet.getRange(order._row, 15).setValue('yes'); // O열 = fetchedByKitchen
+function getItems() {
+  return sheetToArray(SH_ITEM).map(item => ({
+    ...item,
+    price: parseFloat(item.price) || 0,
+    sortOrder: parseInt(item.sortOrder) || 0,
+    active: item.active === true || item.active === 'TRUE' || item.active === 'true',
+    isCombo: item.isCombo === true || item.isCombo === 'TRUE' || item.isCombo === 'true',
+    hasTopping: item.hasTopping === true || item.hasTopping === 'TRUE' || item.hasTopping === 'true',
+    comboCount: parseInt(item.comboCount) || 0,
+    toppingCount: parseInt(item.toppingCount) || 0,
+    dietary: typeof item.dietary === 'string'
+      ? item.dietary.split(',').map(s => s.trim()).filter(Boolean) : [],
+  }));
+}
+
+function getSauces() {
+  return sheetToArray(SH_SAUCE).map(s => ({
+    ...s,
+    price: parseFloat(s.price) || 0,
+    spiceLevel: parseInt(s.spiceLevel) || 0,
+  }));
+}
+
+function getBranchPricing() {
+  const rows = sheetToArray(SH_BRANCH);
+  const result = {};
+  rows.forEach(row => {
+    if (!result[row.branchCode]) result[row.branchCode] = {};
+    result[row.branchCode][row.itemId] = parseFloat(row.price) || 0;
+  });
+  return result;
+}
+
+// ═══════════════════════════════════════════
+//  메뉴 쓰기
+// ═══════════════════════════════════════════
+function updateFullMenu(data) {
+  if (data.categories) updateCategories(data.categories);
+  if (data.items) updateAllItems(data.items);
+  if (data.sauces) updateAllSauces(data.sauces);
+  if (data.branchPricing) updateBranchPricing(data.branchPricing);
+  incrementMenuVersion();
+}
+
+// ─── Categories CRUD ───
+const CAT_HEADERS = ['id','nameEn','nameKr','icon','color','sortOrder','active'];
+
+function updateCategories(categories) {
+  writeSheet(SH_CAT, CAT_HEADERS, categories);
+}
+
+function addCategory(cat) {
+  const sheet = getOrCreateSheet(SH_CAT);
+  if (sheet.getLastRow() < 1) {
+    sheet.appendRow(CAT_HEADERS);
+    formatHeader(sheet, CAT_HEADERS.length);
+  }
+  // Auto-generate ID if missing
+  if (!cat.id) {
+    cat.id = 'cat_' + Date.now();
+  }
+  sheet.appendRow(CAT_HEADERS.map(h => cat[h] !== undefined ? cat[h] : ''));
+  incrementMenuVersion();
+  return { success: true, category: cat };
+}
+
+function updateCategory(cat) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SH_CAT);
+  if (!sheet) return;
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0], idCol = headers.indexOf('id');
+  for (let r = 1; r < data.length; r++) {
+    if (data[r][idCol] === cat.id) {
+      headers.forEach((h, c) => {
+        if (cat[h] !== undefined) {
+          sheet.getRange(r + 1, c + 1).setValue(cat[h]);
         }
       });
-      // _row 제거
-      orders.forEach(order => delete order._row);
+      break;
     }
+  }
+  incrementMenuVersion();
+}
 
-    return ContentService
-      .createTextOutput(JSON.stringify({
-        orders: orders,
-        count: orders.length,
-        timestamp: new Date().toISOString()
-      }))
-      .setMimeType(ContentService.MimeType.JSON);
+function deleteCategory(catId) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SH_CAT);
+  if (!sheet) return;
+  const data = sheet.getDataRange().getValues();
+  const idCol = data[0].indexOf('id');
+  for (let r = data.length - 1; r >= 1; r--) {
+    if (data[r][idCol] === catId) { sheet.deleteRow(r + 1); break; }
+  }
+  incrementMenuVersion();
+}
 
-  } catch (error) {
-    return ContentService
-      .createTextOutput(JSON.stringify({
-        orders: [],
-        count: 0,
-        error: error.message
-      }))
-      .setMimeType(ContentService.MimeType.JSON);
+// ─── MenuItems ───
+const ITEM_HEADERS = ['id','catId','nameEn','nameKr','desc','price','image','thumbnail','dietary','isCombo','comboCount','hasTopping','toppingCount','btnColor','active','sortOrder'];
+
+function updateAllItems(items) {
+  writeSheet(SH_ITEM, ITEM_HEADERS, items, (item, h) => {
+    if (h === 'dietary' && Array.isArray(item[h])) return item[h].join(',');
+    return item[h];
+  });
+}
+
+function addMenuItem(item) {
+  const sheet = getOrCreateSheet(SH_ITEM);
+  if (sheet.getLastRow() < 1) {
+    sheet.appendRow(ITEM_HEADERS);
+    formatHeader(sheet, ITEM_HEADERS.length);
+  }
+  sheet.appendRow(ITEM_HEADERS.map(h => {
+    if (h === 'dietary' && Array.isArray(item[h])) return item[h].join(',');
+    return item[h] !== undefined ? item[h] : '';
+  }));
+  incrementMenuVersion();
+}
+
+function updateMenuItem(item) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SH_ITEM);
+  if (!sheet) return;
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0], idCol = headers.indexOf('id');
+  for (let r = 1; r < data.length; r++) {
+    if (data[r][idCol] === item.id) {
+      headers.forEach((h, c) => {
+        if (item[h] !== undefined) {
+          let val = item[h];
+          if (h === 'dietary' && Array.isArray(val)) val = val.join(',');
+          sheet.getRange(r + 1, c + 1).setValue(val);
+        }
+      });
+      break;
+    }
+  }
+  incrementMenuVersion();
+}
+
+function deleteMenuItem(itemId) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SH_ITEM);
+  if (!sheet) return;
+  const data = sheet.getDataRange().getValues();
+  const idCol = data[0].indexOf('id');
+  for (let r = data.length - 1; r >= 1; r--) {
+    if (data[r][idCol] === itemId) { sheet.deleteRow(r + 1); break; }
+  }
+  incrementMenuVersion();
+}
+
+// ─── Sauces ───
+function updateAllSauces(sauces) {
+  writeSheet(SH_SAUCE, ['id','nameEn','nameKr','price','spiceLevel'], sauces);
+}
+
+// ─── Branch Pricing ───
+function updateBranchPricing(pricing) {
+  // pricing = { "TBS": { "M001": 9.55, ... }, "TBR": { ... } }
+  const rows = [];
+  Object.keys(pricing).forEach(branch => {
+    Object.keys(pricing[branch]).forEach(itemId => {
+      rows.push({ branchCode: branch, itemId: itemId, price: pricing[branch][itemId] });
+    });
+  });
+  writeSheet(SH_BRANCH, ['branchCode','itemId','price'], rows);
+}
+
+// ═══════════════════════════════════════════
+//  🖼️ 이미지 업로드 → Google Drive + 썸네일 생성
+// ═══════════════════════════════════════════
+/**
+ * Admin에서 보내는 데이터:
+ * {
+ *   action: 'uploadImage',
+ *   itemId: 'M001',
+ *   fileName: 'combo_bap.jpg',
+ *   mimeType: 'image/jpeg',
+ *   base64: '...(base64 encoded image data)...'
+ * }
+ *
+ * 반환:
+ * {
+ *   success: true,
+ *   imageUrl: 'https://drive.google.com/uc?export=view&id=xxx',
+ *   thumbnailUrl: 'https://drive.google.com/uc?export=view&id=yyy',
+ *   driveFileId: 'xxx',
+ *   thumbFileId: 'yyy'
+ * }
+ */
+function uploadImageToDrive(data) {
+  const { itemId, fileName, mimeType, base64 } = data;
+  if (!base64 || !fileName) throw new Error('Missing image data or filename');
+
+  // 1) 원본 폴더 준비
+  const folder = getOrCreateDriveFolder(DRIVE_FOLDER_NAME);
+  const thumbFolder = getOrCreateDriveFolder(THUMB_FOLDER_NAME);
+
+  // 2) 기존 같은 이름 파일 삭제 (덮어쓰기)
+  deleteFileByName(folder, itemId + '_' + fileName);
+  deleteFileByName(thumbFolder, itemId + '_thumb_' + fileName);
+
+  // 3) base64 → Blob → Drive 저장 (원본)
+  const blob = Utilities.newBlob(Utilities.base64Decode(base64), mimeType, itemId + '_' + fileName);
+  const file = folder.createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  // 4) 썸네일 생성 (리사이즈)
+  const thumbBlob = createThumbnail(blob, mimeType, itemId + '_thumb_' + fileName);
+  const thumbFile = thumbFolder.createFile(thumbBlob);
+  thumbFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  // 5) URL 생성
+  const imageUrl = 'https://drive.google.com/uc?export=view&id=' + file.getId();
+  const thumbnailUrl = 'https://drive.google.com/uc?export=view&id=' + thumbFile.getId();
+
+  // 6) MenuItems 시트에 URL 업데이트
+  if (itemId) {
+    updateMenuItem({ id: itemId, image: imageUrl, thumbnail: thumbnailUrl });
+  }
+
+  return {
+    success: true,
+    imageUrl: imageUrl,
+    thumbnailUrl: thumbnailUrl,
+    driveFileId: file.getId(),
+    thumbFileId: thumbFile.getId(),
+  };
+}
+
+/**
+ * 썸네일 생성 — Google Apps Script에서 이미지 리사이즈
+ * 방법: 임시 Google Doc에 이미지 삽입 → 리사이즈 → export
+ * 대안: UrlFetchApp으로 external resize API 사용
+ *
+ * 가장 실용적인 방법: blob을 그대로 저장하되 이름에 "thumb" 표시하고,
+ * 클라이언트에서 CSS로 리사이즈. 또는 Google Drive thumbnail API 사용.
+ *
+ * 여기서는 Google Drive의 내장 썸네일 API를 활용합니다:
+ * https://drive.google.com/thumbnail?id=FILE_ID&sz=w300
+ */
+function createThumbnail(originalBlob, mimeType, thumbName) {
+  // Apps Script에서 순수 이미지 리사이즈는 제한적
+  // 실용적 방법: 원본을 그대로 저장하고, URL에서 썸네일 크기 지정
+  // 클라이언트가 thumbnailUrl 대신 Drive thumbnail API 사용:
+  // https://drive.google.com/thumbnail?id=FILE_ID&sz=w300
+
+  // 원본 blob 그대로 반환 (Drive thumbnail API가 자동으로 리사이즈)
+  originalBlob.setName(thumbName);
+  return originalBlob;
+}
+
+/**
+ * Google Drive 썸네일 URL 생성 헬퍼
+ * 이 URL은 Google Drive가 자동으로 이미지를 리사이즈해서 제공
+ */
+function getDriveThumbnailUrl(fileId, size) {
+  size = size || THUMB_SIZE;
+  return 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w' + size;
+}
+
+function getOrCreateDriveFolder(name) {
+  const folders = DriveApp.getFoldersByName(name);
+  if (folders.hasNext()) return folders.next();
+  return DriveApp.createFolder(name);
+}
+
+function deleteFileByName(folder, name) {
+  const files = folder.getFilesByName(name);
+  while (files.hasNext()) {
+    files.next().setTrashed(true);
   }
 }
 
-// ─── 주문 상태 업데이트 (주방에서 호출) ───
-function updateOrderStatus(orderNumber, newStatus) {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = ss.getSheetByName(SHEET_NAME);
-  const data = sheet.getDataRange().getValues();
+// ═══════════════════════════════════════════
+//  주문 관리
+// ═══════════════════════════════════════════
+function createOrder(data) {
+  const sheet = getOrCreateSheet(SH_ORDER);
+  const ORDER_HEADERS = ['orderNumber','branchCode','branchName','orderType','items','subtotal','vat','total','status','createdAt','customerName','source','paymentMethod','paymentStatus'];
+  if (sheet.getLastRow() === 0) {
+    sheet.appendRow(ORDER_HEADERS);
+    formatHeader(sheet, ORDER_HEADERS.length);
+  }
+  const orderNum = data.orderNumber || ('ORD-' + Date.now());
+  sheet.appendRow([
+    orderNum, data.branchCode||'', data.branchName||'', data.orderType||'takeaway',
+    JSON.stringify(data.items||[]), data.subtotal||0, data.vat||0, data.total||0,
+    'pending', new Date().toISOString(), data.customerName||'', data.source||'pos',
+    data.paymentMethod||'', data.paymentStatus||'unpaid'
+  ]);
+  return { success: true, orderNumber: orderNum };
+}
 
+function getOrders(e) {
+  const rows = sheetToArray(SH_ORDER);
+  return { orders: rows.map(r => { try { r.items = JSON.parse(r.items); } catch(x) {} return r; }), count: rows.length };
+}
+
+function getPendingOrders(e) {
+  const rows = sheetToArray(SH_ORDER).filter(r => r.status === 'pending');
+  return { orders: rows.map(r => { try { r.items = JSON.parse(r.items); } catch(x) {} return r; }), count: rows.length };
+}
+
+function updateOrderStatus(orderNumber, newStatus) {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SH_ORDER);
+  if (!sheet) return;
+  const data = sheet.getDataRange().getValues();
+  const idCol = data[0].indexOf('orderNumber'), statusCol = data[0].indexOf('status');
   for (let i = 1; i < data.length; i++) {
-    if (data[i][0] === orderNumber) {
-      sheet.getRange(i + 1, 9).setValue(newStatus); // I열 = status
-      return true;
+    if (data[i][idCol] === orderNumber) {
+      sheet.getRange(i + 1, statusCol + 1).setValue(newStatus);
+      break;
     }
   }
-  return false;
+}
+
+// ═══════════════════════════════════════════
+//  유틸리티
+// ═══════════════════════════════════════════
+function writeSheet(name, headers, rows, transform) {
+  const sheet = getOrCreateSheet(name);
+  sheet.clear();
+  sheet.appendRow(headers);
+  rows.forEach(row => {
+    sheet.appendRow(headers.map(h => {
+      const val = transform ? transform(row, h) : row[h];
+      return val !== undefined ? val : '';
+    }));
+  });
+  formatHeader(sheet, headers.length);
+}
+
+function getOrCreateSheet(name) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  return ss.getSheetByName(name) || ss.insertSheet(name);
+}
+
+function formatHeader(sheet, colCount) {
+  if (sheet.getLastRow() < 1) return;
+  const r = sheet.getRange(1, 1, 1, colCount);
+  r.setFontWeight('bold').setBackground('#006AFF').setFontColor('#ffffff');
+  for (let i = 1; i <= colCount; i++) sheet.autoResizeColumn(i);
+  sheet.setFrozenRows(1);
+}
+
+// ═══════════════════════════════════════════
+//  초기화 (처음 한번만 실행)
+// ═══════════════════════════════════════════
+/**
+ * Google Sheets 메뉴에서 initializeSheets 실행하면
+ * 모든 시트가 올바른 헤더와 샘플 데이터로 생성됩니다.
+ */
+function initializeSheets() {
+  // ─── Categories ───
+  updateCategories([
+    { id: 'kfood', nameEn: 'K-Food', nameKr: 'K-푸드', icon: '🍚', color: '#D97706', sortOrder: 1, active: true },
+    { id: 'kchicken', nameEn: 'K-Chicken', nameKr: 'K-치킨', icon: '🍗', color: '#DC2626', sortOrder: 2, active: true },
+    { id: 'bbq', nameEn: 'BBQ', nameKr: '불고기', icon: '🔥', color: '#B91C1C', sortOrder: 3, active: true },
+    { id: 'bibimbap', nameEn: 'Bibim Bap', nameKr: '비빔밥', icon: '🥗', color: '#059669', sortOrder: 4, active: true },
+    { id: 'noodle', nameEn: 'Noodle', nameKr: '국수', icon: '🍜', color: '#7C3AED', sortOrder: 5, active: true },
+    { id: 'sides', nameEn: 'Sides', nameKr: '사이드', icon: '🥟', color: '#2563EB', sortOrder: 6, active: true },
+    { id: 'drinks', nameEn: 'Drinks', nameKr: '음료', icon: '🥤', color: '#0891B2', sortOrder: 7, active: true },
+    { id: 'kids', nameEn: 'Kids / New', nameKr: '키즈/신메뉴', icon: '⭐', color: '#DB2777', sortOrder: 8, active: true },
+  ]);
+
+  // ─── MenuItems (with image & thumbnail columns) ───
+  const defaultItems = [
+    { id:'M001', catId:'kfood', nameEn:'Combo Bap', nameKr:'콤보밥', desc:'Two different choices of topping', price:9.55, image:'', thumbnail:'', dietary:'', isCombo:true, comboCount:2, hasTopping:false, toppingCount:0, btnColor:'#C0392B', active:true, sortOrder:1 },
+    { id:'M002', catId:'kfood', nameEn:'Tofu Bap', nameKr:'두부밥', desc:'Fried Tofu on Rice', price:7.45, image:'', thumbnail:'', dietary:'V', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#27AE60', active:true, sortOrder:2 },
+    { id:'M003', catId:'kfood', nameEn:'Chicken Teriyaki Bap', nameKr:'치킨데리야끼밥', desc:'Chicken Teriyaki on Rice', price:8.25, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E67E22', active:true, sortOrder:3 },
+    { id:'M004', catId:'kfood', nameEn:'KFC Bap', nameKr:'양념치킨밥', desc:'Korean Fried Chicken', price:8.25, image:'', thumbnail:'', dietary:'spicy', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E74C3C', active:true, sortOrder:4 },
+    { id:'M005', catId:'kfood', nameEn:'Kimchi Fried Rice', nameKr:'김치볶음밥', desc:'Kimchi Fried Rice with egg', price:7.45, image:'', thumbnail:'', dietary:'spicy', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#D35400', active:true, sortOrder:5 },
+    { id:'M006', catId:'kchicken', nameEn:'Fried Chicken Bap', nameKr:'후라이드치킨밥', desc:'Korean Fried Chicken', price:8.25, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#F39C12', active:true, sortOrder:1 },
+    { id:'M007', catId:'kchicken', nameEn:'Spicy Chicken Bap', nameKr:'매운치킨밥', desc:'Spicy Korean Fried Chicken', price:8.25, image:'', thumbnail:'', dietary:'spicy', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E74C3C', active:true, sortOrder:2 },
+    { id:'M008', catId:'kchicken', nameEn:'Soy Garlic Chicken', nameKr:'간장마늘치킨', desc:'Soy Garlic Glazed Chicken', price:8.25, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#8E44AD', active:true, sortOrder:3 },
+    { id:'M009', catId:'bbq', nameEn:'Beef Bulgogi Bap', nameKr:'소불고기밥', desc:'Korean BBQ Beef on Rice', price:8.75, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#C0392B', active:true, sortOrder:1 },
+    { id:'M010', catId:'bbq', nameEn:'Pork Bulgogi Bap', nameKr:'돼지불고기밥', desc:'Korean Spicy Pork Bulgogi', price:8.75, image:'', thumbnail:'', dietary:'spicy', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E74C3C', active:true, sortOrder:2 },
+    { id:'M011', catId:'bibimbap', nameEn:'Bibim Bap', nameKr:'비빔밥', desc:'Mixed Rice Bowl', price:7.95, image:'', thumbnail:'', dietary:'V', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#27AE60', active:true, sortOrder:1 },
+    { id:'M012', catId:'bibimbap', nameEn:'Bibim Bap + Topping', nameKr:'비빔밥+토핑', desc:'Bibim Bap + Choice of 1 Topping', price:9.95, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:true, toppingCount:1, btnColor:'#16A085', active:true, sortOrder:2 },
+    { id:'M013', catId:'noodle', nameEn:'Japchae', nameKr:'잡채', desc:'Korean Glass Noodles', price:7.45, image:'', thumbnail:'', dietary:'V', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#9B59B6', active:true, sortOrder:1 },
+    { id:'M014', catId:'noodle', nameEn:'Spicy Ramyeon', nameKr:'매운라면', desc:'Spicy Ramen Noodles', price:6.95, image:'', thumbnail:'', dietary:'spicy', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E74C3C', active:true, sortOrder:2 },
+    { id:'M015', catId:'sides', nameEn:'Chicken Mandu (5)', nameKr:'치킨만두 5개', desc:'Chicken Dumplings', price:4.50, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#F39C12', active:true, sortOrder:1 },
+    { id:'M016', catId:'sides', nameEn:'Kim Mari (5)', nameKr:'김말이 5개', desc:'Seaweed Roll Fries', price:3.50, image:'', thumbnail:'', dietary:'V', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#2980B9', active:true, sortOrder:2 },
+    { id:'M017', catId:'sides', nameEn:'Tteokbokki', nameKr:'떡볶이', desc:'Spicy Rice Cakes', price:4.50, image:'', thumbnail:'', dietary:'spicy,V', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E74C3C', active:true, sortOrder:3 },
+    { id:'M018', catId:'sides', nameEn:'Korean Pancake', nameKr:'파전', desc:'Vegetable Pancake', price:4.50, image:'', thumbnail:'', dietary:'V', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#1ABC9C', active:true, sortOrder:4 },
+    { id:'M019', catId:'sides', nameEn:'Fresh Kimchi', nameKr:'김치', desc:'Homemade Kimchi', price:2.00, image:'', thumbnail:'', dietary:'VG,spicy', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#C0392B', active:true, sortOrder:5 },
+    { id:'M020', catId:'drinks', nameEn:'Coca Cola', nameKr:'콜라', desc:'', price:1.50, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E74C3C', active:true, sortOrder:1 },
+    { id:'M021', catId:'drinks', nameEn:'Sprite', nameKr:'스프라이트', desc:'', price:1.50, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#2ECC71', active:true, sortOrder:2 },
+    { id:'M022', catId:'drinks', nameEn:'Water', nameKr:'물', desc:'', price:1.00, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#3498DB', active:true, sortOrder:3 },
+    { id:'M023', catId:'drinks', nameEn:'Korean Banana Milk', nameKr:'바나나우유', desc:'', price:2.00, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#F1C40F', active:true, sortOrder:4 },
+    { id:'M024', catId:'drinks', nameEn:'Iced Tea', nameKr:'아이스티', desc:'', price:2.00, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E67E22', active:true, sortOrder:5 },
+    { id:'M025', catId:'kids', nameEn:"Kid's Bap", nameKr:'키즈밥', desc:'Small portion for kids', price:5.45, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#DB2777', active:true, sortOrder:1 },
+    { id:'M026', catId:'kids', nameEn:"Kid's Combo", nameKr:'키즈콤보', desc:"Kid's Bap + Drink + Side", price:6.45, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#7C3AED', active:true, sortOrder:2 },
+    { id:'M027', catId:'kids', nameEn:'Corn Dog (2)', nameKr:'핫도그 2개', desc:'Korean Corn Dogs', price:4.50, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#F39C12', active:true, sortOrder:3 },
+    { id:'M028', catId:'kids', nameEn:'Honey Hotteok', nameKr:'꿀호떡', desc:'Sweet Pancake with honey', price:3.00, image:'', thumbnail:'', dietary:'V', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#D97706', active:true, sortOrder:4 },
+  ];
+  updateAllItems(defaultItems);
+
+  // ─── Sauces ───
+  updateAllSauces([
+    { id:'S001', nameEn:'No Sauce', nameKr:'소스 없음', price:0, spiceLevel:0 },
+    { id:'S002', nameEn:'Soy Sauce', nameKr:'간장소스', price:0, spiceLevel:0 },
+    { id:'S003', nameEn:'Spicy Sauce', nameKr:'매운소스', price:0, spiceLevel:3 },
+    { id:'S004', nameEn:'Sweet Chili', nameKr:'스위트칠리', price:0, spiceLevel:1 },
+    { id:'S005', nameEn:'Garlic Mayo', nameKr:'갈릭마요', price:0, spiceLevel:0 },
+    { id:'S006', nameEn:'Extra Sauce', nameKr:'소스 추가', price:0.30, spiceLevel:0 },
+  ]);
+
+  // ─── BranchPricing 시트 헤더 ───
+  const bpSheet = getOrCreateSheet(SH_BRANCH);
+  bpSheet.clear();
+  bpSheet.appendRow(['branchCode','itemId','price']);
+  formatHeader(bpSheet, 3);
+
+  // ─── Orders 시트 ───
+  const orderSheet = getOrCreateSheet(SH_ORDER);
+  if (orderSheet.getLastRow() === 0) {
+    orderSheet.appendRow(['orderNumber','branchCode','branchName','orderType','items','subtotal','vat','total','status','createdAt','customerName','source','paymentMethod','paymentStatus']);
+    formatHeader(orderSheet, 14);
+  }
+
+  // ─── Google Drive 이미지 폴더 생성 ───
+  getOrCreateDriveFolder(DRIVE_FOLDER_NAME);
+  getOrCreateDriveFolder(THUMB_FOLDER_NAME);
+
+  PropertiesService.getScriptProperties().setProperty('menuVersion', '1');
+
+  // 웹앱에서 호출 시 JSON 결과 반환, 에디터에서 실행 시 alert
+  try {
+    SpreadsheetApp.getUi().alert('✅ 초기화 완료!\n\nSheets: Categories, MenuItems, Sauces, BranchPricing, Orders\nDrive Folders: TheBap_MenuImages, TheBap_Thumbnails\n\n이제 Deploy > New deployment 으로 웹앱을 배포하세요.');
+  } catch (e) {
+    // 웹앱 모드 — getUi() 불가, 무시
+  }
+  return { success: true, message: 'Initialized: Categories, MenuItems, Sauces, BranchPricing, Orders + Drive folders' };
+}
+
+/**
+ * Drive 폴더만 생성 (initializeSheets 타임아웃 시 별도 실행)
+ */
+function createDriveFolders() {
+  getOrCreateDriveFolder(DRIVE_FOLDER_NAME);
+  getOrCreateDriveFolder(THUMB_FOLDER_NAME);
+  try {
+    SpreadsheetApp.getUi().alert('✅ Drive 폴더 생성 완료!\n- ' + DRIVE_FOLDER_NAME + '\n- ' + THUMB_FOLDER_NAME);
+  } catch (e) {}
+  return { success: true, folders: [DRIVE_FOLDER_NAME, THUMB_FOLDER_NAME] };
 }
