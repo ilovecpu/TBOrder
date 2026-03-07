@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap POS v1.7 | 2026-03-07 -->
+<!-- The Bap POS v1.9 | 2026-03-07 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -106,31 +106,31 @@ button { font-family: inherit; cursor: pointer; }
 
 .login-pin-area { text-align: center; }
 .login-pin-area.show { display: block; }
-.login-pin-label { font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 10px; }
+.login-pin-label { font-size: 18px; font-weight: 600; color: #374151; margin-bottom: 16px; }
 .login-pin-display {
-    display: flex; gap: 8px; justify-content: center; margin: 0 auto 14px;
+    display: flex; gap: 12px; justify-content: center; margin: 0 auto 20px;
 }
 .login-pin-dot {
-    width: 18px; height: 18px; border-radius: 50%;
-    border: 2px solid #D1D5DB; background: #fff;
+    width: 28px; height: 28px; border-radius: 50%;
+    border: 3px solid #D1D5DB; background: #fff;
     transition: all .15s;
 }
 .login-pin-dot.filled { background: #006AFF; border-color: #006AFF; }
 .login-numpad {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
-    width: 100%; max-width: 280px;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px;
+    width: 100%; max-width: 420px;
 }
 .login-numpad button {
-    aspect-ratio: 1 / 1; border: 1px solid #E5E7EB; border-radius: 14px;
-    background: #fff; color: #1F2937; font-size: clamp(22px, 2.5vw, 30px); font-weight: 600;
+    aspect-ratio: 1 / 1; border: 1px solid #E5E7EB; border-radius: 16px;
+    background: #fff; color: #1F2937; font-size: clamp(28px, 3.5vw, 42px); font-weight: 600;
     transition: all .12s; box-shadow: 0 1px 3px rgba(0,0,0,.06);
     -webkit-tap-highlight-color: transparent;
 }
 .login-numpad button:active { background: #006AFF; color: #fff; transform: scale(.93); }
-.login-numpad .key-clear { color: #DC2626; font-size: 13px; font-weight: 700; }
-.login-numpad .key-ok { background: #006AFF; color: #fff; font-size: 14px; font-weight: 700; }
+.login-numpad .key-clear { color: #DC2626; font-size: 18px; font-weight: 700; }
+.login-numpad .key-ok { background: #006AFF; color: #fff; font-size: 20px; font-weight: 700; }
 .login-numpad .key-ok:active { background: #0052CC; }
-.login-skip { margin-top: 10px; color: #9CA3AF; font-size: 12px; border: none; background: none; }
+.login-skip { margin-top: 14px; color: #9CA3AF; font-size: 14px; border: none; background: none; }
 .login-skip:hover { color: #6B7280; }
 
 /* ═══════════ MAIN MENU SCREEN ═══════════ */
@@ -442,6 +442,26 @@ button { font-family: inherit; cursor: pointer; }
 .settings-row .val { font-size: 13px; font-weight: 600; color: #1F2937; text-align: right; max-width: 60%; word-break: break-all; }
 .settings-row .val.green { color: #059669; }
 .settings-row .val.blue { color: #2563EB; }
+
+/* Toggle switch */
+.settings-toggle { position: relative; display: inline-block; width: 48px; height: 26px; flex-shrink: 0; }
+.settings-toggle input { opacity: 0; width: 0; height: 0; }
+.settings-toggle .slider {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: #D1D5DB; border-radius: 26px; cursor: pointer; transition: .2s;
+}
+.settings-toggle .slider::before {
+    content: ''; position: absolute; width: 20px; height: 20px; left: 3px; bottom: 3px;
+    background: #fff; border-radius: 50%; transition: .2s;
+}
+.settings-toggle input:checked + .slider { background: #006AFF; }
+.settings-toggle input:checked + .slider::before { transform: translateX(22px); }
+
+.settings-section-title {
+    font-size: 12px; font-weight: 700; color: #9CA3AF; text-transform: uppercase;
+    letter-spacing: .5px; padding: 16px 0 8px; margin-top: 4px;
+}
+.settings-option-desc { font-size: 11px; color: #9CA3AF; margin-top: 2px; }
 .settings-row .val.red { color: #DC2626; }
 .settings-client-badge {
     display: inline-flex; align-items: center; gap: 6px;
@@ -601,6 +621,63 @@ button { font-family: inherit; cursor: pointer; }
 .order-card-action-btn:hover { background: #F3F4F6; }
 .order-card-action-btn.pay-cash { border-color: #059669; color: #059669; }
 .order-card-action-btn.pay-card { border-color: #006AFF; color: #006AFF; }
+.order-card-action-btn.delete { border-color: #DC2626; color: #DC2626; }
+.order-card-action-btn.delete:hover { background: #FEE2E2; }
+
+/* Clear All button in header */
+.orders-action-btn.clear-all {
+    padding: 6px 14px; border: 1px solid #DC2626; border-radius: 8px;
+    background: #fff; color: #DC2626; font-size: 12px; font-weight: 600; cursor: pointer;
+    margin-right: 8px;
+}
+.orders-action-btn.clear-all:hover { background: #FEE2E2; }
+
+/* View tabs (Today / Monthly) */
+.orders-view-tabs {
+    display: flex; gap: 0; background: #fff; border-bottom: 1px solid #E5E7EB; padding: 0 16px;
+}
+.orders-view-tab {
+    padding: 10px 20px; border: none; background: none; font-size: 13px; font-weight: 600;
+    color: #9CA3AF; cursor: pointer; border-bottom: 2px solid transparent;
+}
+.orders-view-tab.active { color: #006AFF; border-bottom-color: #006AFF; }
+
+/* Monthly calendar */
+.orders-month-nav {
+    display: flex; align-items: center; justify-content: center; gap: 16px; padding: 14px;
+    background: #fff; border-bottom: 1px solid #E5E7EB;
+}
+.orders-month-btn {
+    width: 36px; height: 36px; border: 1px solid #E5E7EB; border-radius: 8px;
+    background: #fff; font-size: 18px; font-weight: 700; cursor: pointer; color: #374151;
+}
+.orders-month-btn:hover { background: #F3F4F6; }
+.orders-month-title { font-size: 16px; font-weight: 700; color: #1F2937; min-width: 160px; text-align: center; }
+
+.orders-calendar {
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
+    padding: 8px 16px; background: #F5F5F5;
+}
+.cal-header {
+    text-align: center; font-size: 11px; font-weight: 700; color: #9CA3AF; padding: 6px 0;
+}
+.cal-day {
+    background: #fff; border-radius: 8px; padding: 8px 4px; text-align: center;
+    min-height: 70px; cursor: pointer; border: 2px solid transparent; transition: all .12s;
+}
+.cal-day:hover { border-color: #006AFF; }
+.cal-day.today { border-color: #006AFF; background: #EFF6FF; }
+.cal-day.selected { border-color: #006AFF; background: #DBEAFE; }
+.cal-day.empty { background: transparent; cursor: default; border: none; }
+.cal-day.empty:hover { border-color: transparent; }
+.cal-day-num { font-size: 14px; font-weight: 600; color: #374151; }
+.cal-day.empty .cal-day-num { color: transparent; }
+.cal-day-orders { font-size: 11px; color: #006AFF; font-weight: 600; margin-top: 2px; }
+.cal-day-total { font-size: 10px; color: #059669; font-weight: 500; }
+
+.orders-day-detail {
+    flex: 1; overflow-y: auto; padding: 12px 16px;
+}
 
 /* ═══════════ REGISTER SCREEN ═══════════ */
 .register-screen {
@@ -761,14 +838,14 @@ button { font-family: inherit; cursor: pointer; }
         </div>
     </div>
     <div style="text-align:center;padding:10px 0 0;color:#B0B0B0;font-size:11px;line-height:1.6;" id="loginFooter">
-        POS v1.7 <span id="loginServerVer"></span>&nbsp;|&nbsp; © 2026 The Bap. All rights reserved. &nbsp;|&nbsp; Program by DJ Kim
+        POS v1.9 <span id="loginServerVer"></span>&nbsp;|&nbsp; © 2026 The Bap. All rights reserved. &nbsp;|&nbsp; Program by DJ Kim
     </div>
 </div>
 
 <!-- ═══════════ SCREEN: MAIN MENU ═══════════ -->
 <div class="screen main-menu-screen" id="screenMainMenu">
     <div class="main-menu-header">
-        <div class="main-menu-header-title">The Bap POS <span style="font-size:10px;color:#9CA3AF;font-weight:400">v1.7</span></div>
+        <div class="main-menu-header-title">The Bap POS <span style="font-size:10px;color:#9CA3AF;font-weight:400">v1.9</span></div>
         <div class="main-menu-header-branch" id="mainMenuBranch">TBS</div>
         <div class="main-menu-header-spacer"></div>
         <div class="main-menu-header-time" id="mainMenuTime">12:00:00</div>
@@ -925,6 +1002,7 @@ button { font-family: inherit; cursor: pointer; }
             <button class="takings-sub-tab" data-view="by_item" onclick="switchTakingsView('by_item')">Sales Analysis</button>
             <button class="takings-sub-tab" data-view="vat" onclick="switchTakingsView('vat')">VAT Report</button>
             <button class="takings-sub-tab" data-view="register" onclick="switchTakingsView('register')">Cash Register</button>
+            <button class="takings-sub-tab" style="background:#2563EB;color:#fff;border-color:#2563EB" onclick="quickDailyReport()">Daily Report</button>
         </div>
         <div class="takings-content" id="takingsContent"></div>
     </div>
@@ -935,16 +1013,32 @@ button { font-family: inherit; cursor: pointer; }
     <div class="orders-header">
         <div class="orders-header-title">ALL ORDERS</div>
         <div class="orders-header-spacer"></div>
+        <button class="orders-action-btn clear-all" onclick="clearAllOrders()">Clear All</button>
         <button class="orders-back-btn" onclick="gotoMainMenu()">Back to Menu</button>
     </div>
-    <div class="orders-filter-bar">
-        <button class="orders-filter-btn active" data-filter="all" onclick="filterOrders('all')">All</button>
-        <button class="orders-filter-btn" data-filter="pending" onclick="filterOrders('pending')">Pending</button>
-        <button class="orders-filter-btn" data-filter="preparing" onclick="filterOrders('preparing')">Preparing</button>
-        <button class="orders-filter-btn" data-filter="done" onclick="filterOrders('done')">Done</button>
-        <button class="orders-filter-btn" data-filter="unpaid" onclick="filterOrders('unpaid')">Unpaid</button>
+    <div class="orders-view-tabs">
+        <button class="orders-view-tab active" data-view="list" onclick="switchOrdersView('list')">Today</button>
+        <button class="orders-view-tab" data-view="monthly" onclick="switchOrdersView('monthly')">Monthly</button>
     </div>
-    <div class="orders-list-body" id="ordersListBody"></div>
+    <div id="ordersViewList">
+        <div class="orders-filter-bar">
+            <button class="orders-filter-btn active" data-filter="all" onclick="filterOrders('all')">All</button>
+            <button class="orders-filter-btn" data-filter="pending" onclick="filterOrders('pending')">Pending</button>
+            <button class="orders-filter-btn" data-filter="preparing" onclick="filterOrders('preparing')">Preparing</button>
+            <button class="orders-filter-btn" data-filter="done" onclick="filterOrders('done')">Done</button>
+            <button class="orders-filter-btn" data-filter="unpaid" onclick="filterOrders('unpaid')">Unpaid</button>
+        </div>
+        <div class="orders-list-body" id="ordersListBody"></div>
+    </div>
+    <div id="ordersViewMonthly" style="display:none">
+        <div class="orders-month-nav">
+            <button class="orders-month-btn" onclick="changeMonth(-1)">&lt;</button>
+            <div class="orders-month-title" id="ordersMonthTitle">March 2026</div>
+            <button class="orders-month-btn" onclick="changeMonth(1)">&gt;</button>
+        </div>
+        <div class="orders-calendar" id="ordersCalendar"></div>
+        <div class="orders-day-detail" id="ordersDayDetail"></div>
+    </div>
 </div>
 
 
@@ -975,7 +1069,7 @@ button { font-family: inherit; cursor: pointer; }
     <div class="r-line"></div>
     <div class="r-row"><span>Subtotal:</span><span id="receiptSubtotal"></span></div>
     <div class="r-row" id="receiptDiscountRow" style="display:none"><span>Discount:</span><span id="receiptDiscount"></span></div>
-    <div class="r-row"><span>VAT (20%):</span><span id="receiptVat"></span></div>
+    <div class="r-row"><span>VAT:</span><span id="receiptVat"></span></div>
     <div class="r-line"></div>
     <div class="r-row r-total"><span>TOTAL:</span><span id="receiptTotal"></span></div>
     <div class="r-line"></div>
@@ -984,6 +1078,30 @@ button { font-family: inherit; cursor: pointer; }
     <div class="r-line"></div>
     <div class="r-center" style="margin-top:8px;font-size:10px">Thank you for visiting The Bap!</div>
     <div class="r-center" style="font-size:10px">K-Food on the Bap</div>
+</div>
+
+<!-- ═══════════ END SALES / DAILY REPORT RECEIPT (hidden, for printing) ═══════════ -->
+<div class="receipt-print" id="endSalesReceiptPrint" style="display:none">
+    <div class="r-logo">The Bap</div>
+    <div class="r-sub" id="esrBranch"></div>
+    <div class="r-line"></div>
+    <div class="r-row" style="font-weight:700;font-size:12px;text-align:center" id="esrTitle">END SALES REPORT</div>
+    <div class="r-line"></div>
+    <div class="r-row"><span>Period From:</span><span id="esrFrom"></span></div>
+    <div class="r-row"><span>Period To:</span><span id="esrTo"></span></div>
+    <div class="r-line"></div>
+    <div class="r-row"><span>Total Orders:</span><span id="esrOrders"></span></div>
+    <div class="r-row"><span>Cash Customers:</span><span id="esrCashCust"></span></div>
+    <div class="r-row"><span>Card Customers:</span><span id="esrCardCust"></span></div>
+    <div class="r-line"></div>
+    <div class="r-row"><span>Cash Total:</span><span id="esrCash"></span></div>
+    <div class="r-row"><span>Card Total:</span><span id="esrCard"></span></div>
+    <div class="r-row r-total"><span>GRAND TOTAL:</span><span id="esrGrand"></span></div>
+    <div class="r-line"></div>
+    <div id="esrVatRows"></div>
+    <div class="r-row"><span>Total VAT:</span><span id="esrVatTotal"></span></div>
+    <div class="r-line"></div>
+    <div class="r-center" style="margin-top:8px;font-size:9px" id="esrFooter"></div>
 </div>
 
 <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
@@ -1002,7 +1120,7 @@ const POS = {
     orderType: 'takeaway',
     discount: { type: null, value: 0, name: '' },
     orders: [],
-    register: { isOpen: false, openingFloat: 0, cashSales: 0, cardSales: 0, transactions: [] },
+    register: { isOpen: false, openingFloat: 0, cashSales: 0, cardSales: 0, transactions: [], lastEndSalesAt: null },
     dailyOrderCount: 0,
     currentScreen: 'login',
     currentCategory: null,
@@ -1010,10 +1128,14 @@ const POS = {
     // Payment state
     payMethod: null, payNumStr: '0', wantedTime: 25,
     completedOrders: [], // for takings
+    // Settings (persisted in localStorage)
+    settings: {
+        sendPosToKitchen: false, // send POS orders to kitchen display
+    },
 };
 
 // TBMS Google Apps Script API (same as admin)
-const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbwsgxPV8Ak3rFh-_ZWioV3IEZ5sQIO3kE3VVue2XrrHVTYsYel-1rijLdf7WLy15Yzlhg/exec';
+const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbwzRdh2grvGlE1YKH58lEYXf9XrchkGQJGDslzx80OfkRkKcbHRk-pguJd74cGpfrpBUQ/exec';
 
 // Branches loaded dynamically from TBMS/server; fallback if offline
 let BRANCHES = []; // loaded dynamically — no hardcoded fallback
@@ -1110,6 +1232,40 @@ function getItemPrice(item) {
 
 // ─── Utility ───
 function fp(v) { return '£' + Number(v).toFixed(2); }
+
+// ─── VAT calculation helper ───
+function calcVatBreakdown(orders) {
+    const byRate = {};
+    let totalNet = 0, totalVat = 0, totalGross = 0;
+    orders.forEach(o => {
+        (o.items || []).forEach(item => {
+            const rate = item.vatRate != null ? item.vatRate : 20;
+            const gross = item.free ? 0 : (item.totalPrice || 0);
+            const net = rate > 0 ? gross / (1 + rate / 100) : gross;
+            const vat = gross - net;
+            if (!byRate[rate]) byRate[rate] = { net: 0, vat: 0, gross: 0 };
+            byRate[rate].net += net;
+            byRate[rate].vat += vat;
+            byRate[rate].gross += gross;
+            totalNet += net;
+            totalVat += vat;
+            totalGross += gross;
+        });
+    });
+    // Round all values
+    Object.keys(byRate).forEach(r => {
+        byRate[r].net = Math.round(byRate[r].net * 100) / 100;
+        byRate[r].vat = Math.round(byRate[r].vat * 100) / 100;
+        byRate[r].gross = Math.round(byRate[r].gross * 100) / 100;
+    });
+    return {
+        byRate,
+        totalNet: Math.round(totalNet * 100) / 100,
+        totalVat: Math.round(totalVat * 100) / 100,
+        totalGross: Math.round(totalGross * 100) / 100
+    };
+}
+
 function toast(msg, type='info') {
     const c = document.getElementById('toastContainer');
     const el = document.createElement('div');
@@ -1175,6 +1331,19 @@ function toggleFullscreen() {
         (document.exitFullscreen || document.webkitExitFullscreen).call(document);
     }
 }
+// ESC key exits fullscreen (F11 fullscreen doesn't respond to ESC by default)
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+        if (document.fullscreenElement || document.webkitFullscreenElement) {
+            (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+        }
+    }
+    // F11 toggle
+    if (e.key === 'F11') {
+        e.preventDefault();
+        toggleFullscreen();
+    }
+});
 
 // ═══════════════════════════════════════════
 //  SCREEN NAVIGATION
@@ -1459,6 +1628,8 @@ function pinSkip() {
 }
 
 async function startPOS() {
+    // Load persisted settings
+    loadPosSettings();
     // Update branch displays
     ['mainMenuBranch','orderBranch'].forEach(id => {
         const el = document.getElementById(id); if (el) el.textContent = POS.branch + ' — ' + POS.branchName;
@@ -1543,13 +1714,29 @@ function handleWSMessage(msg) {
             break;
         }
         case 'order_deleted': {
-            POS.orders = POS.orders.filter(x => x.orderNumber !== msg.orderNumber);
-            if (POS.currentScreen === 'screenOrders') renderAllOrders();
+            const delDate = msg.date || new Date().toISOString().slice(0, 10);
+            const todayStr = new Date().toISOString().slice(0, 10);
+            if (delDate === todayStr) {
+                POS.orders = POS.orders.filter(x => x.orderNumber !== msg.orderNumber);
+                POS.completedOrders = POS.completedOrders.filter(x => x.orderNumber !== msg.orderNumber);
+            }
+            if (POS.currentScreen === 'screenOrders') {
+                renderAllOrders();
+                if (ordersSelectedDate) selectCalendarDay(ordersSelectedDate);
+            }
             break;
         }
         case 'orders_cleared': {
-            POS.orders = [];
-            if (POS.currentScreen === 'screenOrders') renderAllOrders();
+            const clrDate = msg.date || new Date().toISOString().slice(0, 10);
+            const todayStr2 = new Date().toISOString().slice(0, 10);
+            if (clrDate === todayStr2) {
+                POS.orders = [];
+                POS.completedOrders = [];
+            }
+            if (POS.currentScreen === 'screenOrders') {
+                renderAllOrders();
+                if (ordersSelectedDate) selectCalendarDay(ordersSelectedDate);
+            }
             break;
         }
         case 'menu_update': {
@@ -1648,7 +1835,7 @@ function addToOrder(itemId) {
         existing.quantity++;
         existing.totalPrice = existing.quantity * existing.unitPrice;
     } else {
-        POS.cart.push({ id: item.id, nameEn: item.nameEn, nameKr: item.nameKr, unitPrice: price, quantity: 1, totalPrice: price, note: '', free: false });
+        POS.cart.push({ id: item.id, nameEn: item.nameEn, nameKr: item.nameKr, unitPrice: price, quantity: 1, totalPrice: price, vatRate: item.vatRate || 20, note: '', free: false });
     }
     POS.selectedCartIdx = POS.cart.length - 1;
     renderOrderList();
@@ -1898,6 +2085,7 @@ function completePayment(printCount) {
             nameEn: c.nameEn, nameKr: c.nameKr,
             quantity: c.quantity, unitPrice: c.unitPrice,
             totalPrice: c.free ? 0 : c.totalPrice,
+            vatRate: c.vatRate || 20,
             note: c.note, free: c.free,
         })),
         subtotal: POS.cart.reduce((s, i) => s + (i.free ? 0 : i.totalPrice), 0),
@@ -1912,6 +2100,7 @@ function completePayment(printCount) {
         status: 'pending',
         timestamp: now.toISOString(),
         source: 'pos',
+        skipKitchen: !POS.settings.sendPosToKitchen,
     };
 
     // Send to server
@@ -1956,7 +2145,8 @@ function printReceipt(order, count) {
         document.getElementById('receiptDiscount').textContent = '-' + fp(discAmt);
     } else document.getElementById('receiptDiscountRow').style.display = 'none';
 
-    document.getElementById('receiptVat').textContent = fp(order.total / 6);
+    const orderVat = calcVatBreakdown([order]);
+    document.getElementById('receiptVat').textContent = fp(orderVat.totalVat);
     document.getElementById('receiptTotal').textContent = fp(order.total);
     document.getElementById('receiptPaid').textContent = fp(order.amountPaid);
     document.getElementById('receiptChange').textContent = fp(order.change);
@@ -2002,7 +2192,7 @@ function renderTakings() {
                 <div class="takings-stat-card"><div class="takings-stat-val">${fp(totalSales)}</div><div class="takings-stat-label">Total Sales</div></div>
                 <div class="takings-stat-card"><div class="takings-stat-val">${fp(cashTotal)}</div><div class="takings-stat-label">Cash</div></div>
                 <div class="takings-stat-card"><div class="takings-stat-val">${fp(cardTotal)}</div><div class="takings-stat-label">Card</div></div>
-                <div class="takings-stat-card"><div class="takings-stat-val">${fp(totalSales / 6)}</div><div class="takings-stat-label">VAT (20%)</div></div>
+                <div class="takings-stat-card"><div class="takings-stat-val">${fp(calcVatBreakdown(orders).totalVat)}</div><div class="takings-stat-label">VAT Total</div></div>
                 <div class="takings-stat-card"><div class="takings-stat-val">${orders.length > 0 ? fp(totalSales / orders.length) : '£0.00'}</div><div class="takings-stat-label">Avg Order</div></div>
             </div>
             <table class="takings-table">
@@ -2054,22 +2244,22 @@ function renderTakings() {
             ${sorted.length === 0 ? '<div style="text-align:center;color:#6B7280;padding:20px">No sales data yet</div>' : ''}
         `;
     } else if (takingsView === 'vat') {
-        const netSales = totalSales / 1.2;
-        const vatAmount = totalSales - netSales;
+        const vb = calcVatBreakdown(orders);
+        const rateKeys = Object.keys(vb.byRate).sort((a,b) => Number(b) - Number(a));
         el.innerHTML = `
             <div class="takings-stat-grid">
-                <div class="takings-stat-card"><div class="takings-stat-val">${fp(totalSales)}</div><div class="takings-stat-label">Gross Sales (inc VAT)</div></div>
-                <div class="takings-stat-card"><div class="takings-stat-val">${fp(netSales)}</div><div class="takings-stat-label">Net Sales (ex VAT)</div></div>
-                <div class="takings-stat-card"><div class="takings-stat-val">${fp(vatAmount)}</div><div class="takings-stat-label">VAT @ 20%</div></div>
+                <div class="takings-stat-card"><div class="takings-stat-val">${fp(vb.totalGross)}</div><div class="takings-stat-label">Gross Sales (inc VAT)</div></div>
+                <div class="takings-stat-card"><div class="takings-stat-val">${fp(vb.totalNet)}</div><div class="takings-stat-label">Net Sales (ex VAT)</div></div>
+                <div class="takings-stat-card"><div class="takings-stat-val">${fp(vb.totalVat)}</div><div class="takings-stat-label">Total VAT</div></div>
             </div>
             <table class="takings-table">
-                <thead><tr><th>Description</th><th>Amount</th></tr></thead>
+                <thead><tr><th>VAT Rate</th><th>Net</th><th>VAT</th><th>Gross</th></tr></thead>
                 <tbody>
-                    <tr><td>Total Gross Sales</td><td class="val-highlight">${fp(totalSales)}</td></tr>
-                    <tr><td>Less: VAT @ 20%</td><td>${fp(vatAmount)}</td></tr>
-                    <tr><td>Net Sales</td><td class="val-green">${fp(netSales)}</td></tr>
+                    ${rateKeys.map(r => `<tr><td>${r}%</td><td>${fp(vb.byRate[r].net)}</td><td class="val-highlight">${fp(vb.byRate[r].vat)}</td><td class="val-green">${fp(vb.byRate[r].gross)}</td></tr>`).join('')}
+                    ${rateKeys.length === 0 ? '<tr><td colspan="4" style="text-align:center;color:#6B7280">No sales data</td></tr>' : ''}
                 </tbody>
             </table>
+            <div class="takings-total-bar"><span class="label">TOTAL VAT</span><span class="value">${fp(vb.totalVat)}</span></div>
         `;
     } else if (takingsView === 'register') {
         const r = POS.register;
@@ -2099,6 +2289,7 @@ function renderTakings() {
                         ).join('')}
                 </div>
                 <button class="register-btn close" onclick="closeRegister()">CLOSE REGISTER</button>
+                <button class="register-btn eod" onclick="endSales()" style="margin-top:12px;background:#DC2626;color:#fff;font-weight:700">END SALES</button>
             `;
         }
     }
@@ -2108,6 +2299,10 @@ function renderTakings() {
 //  ALL ORDERS
 // ═══════════════════════════════════════════
 let ordersFilter = 'all';
+let ordersViewMonth = new Date(); // current month for calendar
+let ordersCalendarCache = {}; // { 'YYYY-MM-DD': { count, total } }
+let ordersSelectedDate = null; // currently selected date in calendar view
+
 function filterOrders(f) {
     ordersFilter = f;
     document.querySelectorAll('.orders-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
@@ -2116,7 +2311,6 @@ function filterOrders(f) {
 
 function renderAllOrders() {
     let orders = [...POS.orders, ...POS.completedOrders.filter(o => !POS.orders.find(p => p.orderNumber === o.orderNumber))];
-    // Sort newest first
     orders.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     if (ordersFilter === 'pending') orders = orders.filter(o => o.status === 'pending');
@@ -2147,12 +2341,269 @@ function renderAllOrders() {
                 <div class="order-card-total">${fp(o.total)}</div>
                 <div class="order-card-time">${time} · ${o.source || 'pos'}</div>
             </div>
-            ${o.paymentStatus !== 'paid' ? `<div class="order-card-actions">
+            <div class="order-card-actions">
+                ${o.paymentStatus !== 'paid' ? `
                 <button class="order-card-action-btn pay-cash" onclick="payOrderCash('${o.orderNumber}')">Cash</button>
-                <button class="order-card-action-btn pay-card" onclick="payOrderCard('${o.orderNumber}')">Card</button>
-            </div>` : ''}
+                <button class="order-card-action-btn pay-card" onclick="payOrderCard('${o.orderNumber}')">Card</button>` : ''}
+                <button class="order-card-action-btn delete" onclick="deleteOrder('${o.orderNumber}')">Delete</button>
+            </div>
         </div>`;
     }).join('');
+}
+
+// ─── Delete single order ───
+async function deleteOrder(orderNum, dateStr) {
+    const pin = await tbPromptPin('Admin PIN Required', '🗑');
+    if (pin === false) return;
+    const user = checkUserPin(pin, ['admin']);
+    if (!user) { toast('Access denied — Admin PIN required to delete', 'error'); return; }
+    const ok = await tbConfirm(`Delete order ${orderNum}?`, 'Delete Order', '🗑');
+    if (!ok) return;
+    const today = new Date().toISOString().slice(0, 10);
+    const targetDate = dateStr || today;
+
+    if (targetDate === today) {
+        // Today — remove from local arrays
+        POS.orders = POS.orders.filter(x => x.orderNumber !== orderNum);
+        POS.completedOrders = POS.completedOrders.filter(x => x.orderNumber !== orderNum);
+    }
+    wsSend({ type: 'delete_order', orderNumber: orderNum, date: targetDate });
+    toast(`Order ${orderNum} deleted`, 'success');
+
+    // Refresh the current view
+    if (ordersSelectedDate) {
+        await selectCalendarDay(ordersSelectedDate);
+        await renderMonthlyCalendar();
+    } else {
+        renderAllOrders();
+    }
+}
+
+// ─── Clear all orders for the current view date ───
+async function clearAllOrders() {
+    const pin = await tbPromptPin('Admin PIN Required', '🗑');
+    if (pin === false) return;
+    const user = checkUserPin(pin, ['admin']);
+    if (!user) { toast('Access denied — Admin PIN required to clear orders', 'error'); return; }
+    const today = new Date().toISOString().slice(0, 10);
+    // Determine which date to clear based on current view
+    const isMonthlyView = document.getElementById('ordersViewMonthly').style.display !== 'none';
+    const targetDate = (isMonthlyView && ordersSelectedDate) ? ordersSelectedDate : today;
+
+    if (isMonthlyView && !ordersSelectedDate) {
+        toast('Select a day first to clear its orders', 'info');
+        return;
+    }
+
+    // Count orders for the target date
+    let orderCount = 0;
+    if (targetDate === today) {
+        const allOrders = [...POS.orders, ...POS.completedOrders.filter(o => !POS.orders.find(p => p.orderNumber === o.orderNumber))];
+        orderCount = allOrders.length;
+    } else {
+        try {
+            const resp = await fetch(`/api/orders?date=${targetDate}`);
+            if (resp.ok) { const data = await resp.json(); orderCount = (data.orders || []).length; }
+        } catch (e) { /* skip */ }
+    }
+
+    if (orderCount === 0) { toast('No orders to clear', 'info'); return; }
+
+    const dateLabel = targetDate === today ? 'today' : targetDate;
+    const ok = await tbConfirm(`Clear all ${orderCount} orders for ${dateLabel}?\nThis cannot be undone.`, 'Clear Orders', '🗑');
+    if (!ok) return;
+
+    if (targetDate === today) {
+        POS.orders = [];
+        POS.completedOrders = [];
+    }
+    wsSend({ type: 'clear_orders', date: targetDate });
+    toast(`All orders for ${dateLabel} cleared`, 'success');
+
+    // Refresh the current view
+    if (isMonthlyView) {
+        ordersSelectedDate = null;
+        await renderMonthlyCalendar();
+    } else {
+        renderAllOrders();
+    }
+}
+
+// ─── View switching (Today / Monthly) ───
+function switchOrdersView(view) {
+    document.querySelectorAll('.orders-view-tab').forEach(t => t.classList.toggle('active', t.dataset.view === view));
+    document.getElementById('ordersViewList').style.display = view === 'list' ? '' : 'none';
+    document.getElementById('ordersViewMonthly').style.display = view === 'monthly' ? '' : 'none';
+    if (view === 'monthly') {
+        ordersViewMonth = new Date();
+        renderMonthlyCalendar();
+    }
+}
+
+// ─── Monthly calendar navigation ───
+function changeMonth(delta) {
+    ordersViewMonth.setMonth(ordersViewMonth.getMonth() + delta);
+    renderMonthlyCalendar();
+}
+
+// ─── Render monthly calendar ───
+async function renderMonthlyCalendar() {
+    const year = ordersViewMonth.getFullYear();
+    const month = ordersViewMonth.getMonth();
+    const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    document.getElementById('ordersMonthTitle').textContent = `${monthNames[month]} ${year}`;
+
+    // First, fetch available dates from server
+    let availableDates = [];
+    try {
+        const resp = await fetch('/api/orders/dates');
+        if (resp.ok) {
+            const data = await resp.json();
+            availableDates = data.dates || [];
+        }
+    } catch (e) { console.warn('[Calendar] dates fetch failed:', e.message); }
+
+    // Filter dates for this month
+    const monthPrefix = `${year}-${String(month + 1).padStart(2, '0')}`;
+    const monthDates = availableDates.filter(d => d.startsWith(monthPrefix));
+
+    // Fetch order summaries for each date in this month
+    ordersCalendarCache = {};
+    const today = new Date().toISOString().slice(0, 10);
+    for (const dateStr of monthDates) {
+        try {
+            if (dateStr === today) {
+                // Use local data for today
+                const allToday = [...POS.orders, ...POS.completedOrders.filter(o => !POS.orders.find(p => p.orderNumber === o.orderNumber))];
+                ordersCalendarCache[dateStr] = {
+                    count: allToday.length,
+                    total: allToday.reduce((s, o) => s + (o.total || 0), 0)
+                };
+            } else {
+                const resp = await fetch(`/api/orders?date=${dateStr}`);
+                if (resp.ok) {
+                    const data = await resp.json();
+                    const orders = data.orders || [];
+                    ordersCalendarCache[dateStr] = {
+                        count: orders.length,
+                        total: orders.reduce((s, o) => s + (o.total || 0), 0)
+                    };
+                }
+            }
+        } catch (e) { /* skip */ }
+    }
+
+    // Also ensure today's data is in cache even if not in server dates
+    if (today.startsWith(monthPrefix) && !ordersCalendarCache[today]) {
+        const allToday = [...POS.orders, ...POS.completedOrders.filter(o => !POS.orders.find(p => p.orderNumber === o.orderNumber))];
+        if (allToday.length > 0) {
+            ordersCalendarCache[today] = {
+                count: allToday.length,
+                total: allToday.reduce((s, o) => s + (o.total || 0), 0)
+            };
+        }
+    }
+
+    // Build calendar grid
+    const firstDay = new Date(year, month, 1).getDay(); // 0=Sun
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+    const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+    let html = dayNames.map(d => `<div class="cal-header">${d}</div>`).join('');
+
+    // Empty cells before first day
+    for (let i = 0; i < firstDay; i++) {
+        html += '<div class="cal-day empty"><div class="cal-day-num"></div></div>';
+    }
+
+    // Day cells
+    for (let d = 1; d <= daysInMonth; d++) {
+        const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        const isToday = dateStr === today;
+        const info = ordersCalendarCache[dateStr];
+        const cls = isToday ? 'cal-day today' : 'cal-day';
+        html += `<div class="${cls}" onclick="selectCalendarDay('${dateStr}')">
+            <div class="cal-day-num">${d}</div>
+            ${info ? `<div class="cal-day-orders">${info.count} orders</div>
+            <div class="cal-day-total">${fp(info.total)}</div>` : ''}
+        </div>`;
+    }
+
+    document.getElementById('ordersCalendar').innerHTML = html;
+    document.getElementById('ordersDayDetail').innerHTML = '<div style="text-align:center;color:#9CA3AF;padding:30px">Select a day to view orders</div>';
+}
+
+// ─── Select a calendar day → show orders detail ───
+async function selectCalendarDay(dateStr) {
+    ordersSelectedDate = dateStr;
+
+    // Highlight selected day
+    document.querySelectorAll('.cal-day').forEach(el => el.classList.remove('selected'));
+    document.querySelectorAll('.cal-day').forEach(el => {
+        if (el.getAttribute('onclick') && el.getAttribute('onclick').includes(dateStr)) {
+            el.classList.add('selected');
+        }
+    });
+
+    const detailEl = document.getElementById('ordersDayDetail');
+    detailEl.innerHTML = '<div style="text-align:center;color:#9CA3AF;padding:20px">Loading...</div>';
+
+    let orders = [];
+    const today = new Date().toISOString().slice(0, 10);
+    if (dateStr === today) {
+        orders = [...POS.orders, ...POS.completedOrders.filter(o => !POS.orders.find(p => p.orderNumber === o.orderNumber))];
+    } else {
+        try {
+            const resp = await fetch(`/api/orders?date=${dateStr}`);
+            if (resp.ok) {
+                const data = await resp.json();
+                orders = data.orders || [];
+            }
+        } catch (e) { /* skip */ }
+    }
+
+    // Filter to this branch
+    orders = orders.filter(o => !o.branchCode || o.branchCode === POS.branch);
+    orders.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+    if (orders.length === 0) {
+        detailEl.innerHTML = `<div style="text-align:center;color:#9CA3AF;padding:30px">No orders on ${dateStr}</div>`;
+        return;
+    }
+
+    const cashTotal = orders.filter(o => o.paymentMethod === 'cash').reduce((s, o) => s + (o.total || 0), 0);
+    const cardTotal = orders.filter(o => o.paymentMethod === 'card').reduce((s, o) => s + (o.total || 0), 0);
+    const grandTotal = orders.reduce((s, o) => s + (o.total || 0), 0);
+
+    let html = `<div style="padding:10px 0;border-bottom:1px solid #E5E7EB;margin-bottom:10px;display:flex;gap:16px;flex-wrap:wrap;font-size:13px;font-weight:600;align-items:center">
+        <span>${dateStr}</span>
+        <span style="color:#006AFF">${orders.length} orders</span>
+        <span style="color:#059669">Cash: ${fp(cashTotal)}</span>
+        <span style="color:#6366F1">Card: ${fp(cardTotal)}</span>
+        <span style="color:#1F2937">Total: ${fp(grandTotal)}</span>
+    </div>`;
+
+    html += orders.map(o => {
+        const itemsStr = o.items.map(i => `${i.quantity}x ${i.nameEn}`).join(', ');
+        const time = new Date(o.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+        return `<div style="padding:8px 0;border-bottom:1px solid #F3F4F6;font-size:13px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+                <span style="font-weight:700;color:#374151">${o.orderNumber}</span>
+                <div style="display:flex;gap:6px;align-items:center">
+                    <span style="color:#9CA3AF">${time}</span>
+                    <button onclick="deleteOrder('${o.orderNumber}','${dateStr}')" style="padding:2px 8px;border:1px solid #DC2626;border-radius:6px;background:#fff;color:#DC2626;font-size:11px;font-weight:600;cursor:pointer">Del</button>
+                </div>
+            </div>
+            <div style="color:#6B7280;margin:2px 0">${itemsStr}</div>
+            <div style="display:flex;gap:8px;align-items:center">
+                <span style="font-weight:600">${fp(o.total)}</span>
+                <span style="font-size:11px;color:${o.paymentMethod === 'cash' ? '#059669' : '#6366F1'}">${(o.paymentMethod || 'unpaid').toUpperCase()}</span>
+                <span style="font-size:11px;color:#9CA3AF">${o.orderType === 'eat_in' ? 'Eat In' : 'Takeaway'}</span>
+            </div>
+        </div>`;
+    }).join('');
+
+    detailEl.innerHTML = html;
 }
 
 function payOrderCash(orderNum) {
@@ -2199,6 +2650,7 @@ async function syncRegisterToServer() {
                 transactions: r.transactions,
                 openedAt: r.openedAt || null,
                 closedAt: r.closedAt || null,
+                lastEndSalesAt: r.lastEndSalesAt || null,
             })
         });
         console.log('[Register] synced to server');
@@ -2221,7 +2673,8 @@ async function restoreRegisterFromServer() {
             POS.register.transactions = data.transactions || [];
             POS.register.openedAt = data.openedAt || null;
             POS.register.closedAt = data.closedAt || null;
-            console.log('[Register] restored from server — isOpen:', POS.register.isOpen);
+            POS.register.lastEndSalesAt = data.lastEndSalesAt || null;
+            console.log('[Register] restored from server — isOpen:', POS.register.isOpen, 'lastEndSalesAt:', POS.register.lastEndSalesAt);
         }
     } catch (e) {
         console.warn('[Register] restore failed:', e.message);
@@ -2289,9 +2742,268 @@ async function endOfDay() {
 }
 
 // ═══════════════════════════════════════════
+//  END SALES (periodic settlement)
+// ═══════════════════════════════════════════
+async function endSales() {
+    // 1. Admin PIN required
+    const pin = await tbPromptPin('Admin PIN Required', '💰');
+    if (pin === false) return;
+    const user = checkUserPin(pin, ['admin']);
+    if (!user) { toast('Access denied — Admin PIN required', 'error'); return; }
+
+    // 2. Fetch orders since lastEndSalesAt
+    const since = POS.register.lastEndSalesAt || null;
+    let periodOrders = [];
+    try {
+        const params = new URLSearchParams({ branch: POS.branch });
+        if (since) params.set('since', since);
+        const resp = await fetch(`/api/orders-since?${params}`);
+        if (resp.ok) periodOrders = await resp.json();
+    } catch (e) {
+        console.warn('[END Sales] fetch error:', e.message);
+    }
+
+    // Also include today's local completed orders that may not be on server yet
+    const localOrders = POS.completedOrders.filter(o => {
+        if (!since) return true;
+        return new Date(o.timestamp) > new Date(since);
+    });
+    // Merge: add local orders not already in server result
+    const serverNums = new Set(periodOrders.map(o => o.orderNumber));
+    localOrders.forEach(o => {
+        if (!serverNums.has(o.orderNumber)) periodOrders.push(o);
+    });
+
+    if (periodOrders.length === 0) {
+        toast('No orders since last END Sales — nothing to report', 'info');
+        return;
+    }
+
+    // 3. Calculate totals
+    const cashOrders = periodOrders.filter(o => o.paymentMethod === 'cash');
+    const cardOrders = periodOrders.filter(o => o.paymentMethod === 'card');
+    const cashTotal = cashOrders.reduce((s, o) => s + (o.total || 0), 0);
+    const cardTotal = cardOrders.reduce((s, o) => s + (o.total || 0), 0);
+    const grandTotal = cashTotal + cardTotal;
+    const vatData = calcVatBreakdown(periodOrders);
+    const now = new Date();
+    const fromStr = since ? new Date(since).toLocaleString('en-GB') : 'Start';
+    const toStr = now.toLocaleString('en-GB');
+
+    // 4. Show END Sales report in takingsContent
+    const el = document.getElementById('takingsContent');
+    const rateKeys = Object.keys(vatData.byRate).sort((a,b) => Number(b) - Number(a));
+    el.innerHTML = `
+        <div style="background:#FEF2F2;border:2px solid #DC2626;border-radius:12px;padding:20px;margin-bottom:16px">
+            <h3 style="color:#DC2626;margin:0 0 8px 0;font-size:18px">END SALES REPORT</h3>
+            <div style="color:#6B7280;font-size:13px">${POS.branchName}</div>
+            <div style="color:#6B7280;font-size:12px;margin-top:4px">Period: ${fromStr} → ${toStr}</div>
+        </div>
+        <div class="takings-stat-grid">
+            <div class="takings-stat-card"><div class="takings-stat-val">${periodOrders.length}</div><div class="takings-stat-label">Total Orders</div></div>
+            <div class="takings-stat-card"><div class="takings-stat-val">${cashOrders.length}</div><div class="takings-stat-label">Cash Customers</div></div>
+            <div class="takings-stat-card"><div class="takings-stat-val">${cardOrders.length}</div><div class="takings-stat-label">Card Customers</div></div>
+            <div class="takings-stat-card"><div class="takings-stat-val">${fp(grandTotal)}</div><div class="takings-stat-label">Grand Total</div></div>
+        </div>
+        <table class="takings-table">
+            <thead><tr><th>Payment</th><th>Count</th><th>Amount</th></tr></thead>
+            <tbody>
+                <tr><td>CASH</td><td>${cashOrders.length}</td><td class="val-green">${fp(cashTotal)}</td></tr>
+                <tr><td>CARD</td><td>${cardOrders.length}</td><td class="val-green">${fp(cardTotal)}</td></tr>
+            </tbody>
+        </table>
+        <div class="takings-total-bar"><span class="label">GRAND TOTAL</span><span class="value">${fp(grandTotal)}</span></div>
+        <h4 style="margin:16px 0 8px 0;color:#374151">VAT Breakdown</h4>
+        <table class="takings-table">
+            <thead><tr><th>Rate</th><th>Net</th><th>VAT</th><th>Gross</th></tr></thead>
+            <tbody>
+                ${rateKeys.map(r => `<tr><td>${r}%</td><td>${fp(vatData.byRate[r].net)}</td><td class="val-highlight">${fp(vatData.byRate[r].vat)}</td><td class="val-green">${fp(vatData.byRate[r].gross)}</td></tr>`).join('')}
+            </tbody>
+        </table>
+        <div class="takings-total-bar"><span class="label">TOTAL VAT</span><span class="value">${fp(vatData.totalVat)}</span></div>
+        <div style="display:flex;gap:12px;margin-top:20px">
+            <button class="register-btn open" onclick="printEndSalesReceipt()" style="flex:1">PRINT REPORT</button>
+            <button class="register-btn close" onclick="confirmEndSales()" style="flex:1;background:#DC2626;font-weight:700">CONFIRM & RESET</button>
+        </div>
+        <button class="register-btn eod" onclick="renderTakings()" style="margin-top:8px;background:#6B7280;color:#fff;width:100%">CANCEL</button>
+    `;
+
+    // Stash data for print and confirm
+    POS._endSalesData = {
+        periodOrders, cashOrders, cardOrders, cashTotal, cardTotal, grandTotal,
+        vatData, fromStr, toStr, since, now: now.toISOString()
+    };
+}
+
+async function confirmEndSales() {
+    const d = POS._endSalesData;
+    if (!d) return;
+    const ok = await tbConfirm(
+        `Grand Total: ${fp(d.grandTotal)}\nCash: ${fp(d.cashTotal)} (${d.cashOrders.length} customers)\nCard: ${fp(d.cardTotal)} (${d.cardOrders.length} customers)\n\nThis will reset the register to £100 float.`,
+        'Confirm END Sales', '💰'
+    );
+    if (!ok) return;
+
+    // Send to server
+    wsSend({
+        type: 'end_sales',
+        branchCode: POS.branch,
+        branchName: POS.branchName,
+        periodFrom: d.since || null,
+        periodTo: d.now,
+        totalOrders: d.periodOrders.length,
+        cashTotal: d.cashTotal,
+        cardTotal: d.cardTotal,
+        grandTotal: d.grandTotal,
+        cashCustomers: d.cashOrders.length,
+        cardCustomers: d.cardOrders.length,
+        vatTotal: d.vatData.totalVat,
+        vatBreakdown: d.vatData.byRate
+    });
+
+    // Reset register
+    POS.register.lastEndSalesAt = d.now;
+    POS.register.cashSales = 0;
+    POS.register.cardSales = 0;
+    POS.register.openingFloat = 100;
+    POS.register.transactions = [];
+    await syncRegisterToServer();
+
+    POS._endSalesData = null;
+    toast('END Sales completed — Register reset to £100', 'success');
+    renderTakings();
+}
+
+function printEndSalesReceipt() {
+    const d = POS._endSalesData;
+    if (!d) return;
+    document.getElementById('esrBranch').textContent = POS.branchName;
+    document.getElementById('esrTitle').textContent = 'END SALES REPORT';
+    document.getElementById('esrFrom').textContent = d.fromStr;
+    document.getElementById('esrTo').textContent = d.toStr;
+    document.getElementById('esrOrders').textContent = d.periodOrders.length;
+    document.getElementById('esrCashCust').textContent = d.cashOrders.length;
+    document.getElementById('esrCardCust').textContent = d.cardOrders.length;
+    document.getElementById('esrCash').textContent = fp(d.cashTotal);
+    document.getElementById('esrCard').textContent = fp(d.cardTotal);
+    document.getElementById('esrGrand').textContent = fp(d.grandTotal);
+    // VAT rows
+    const rateKeys = Object.keys(d.vatData.byRate).sort((a,b) => Number(b) - Number(a));
+    document.getElementById('esrVatRows').innerHTML = rateKeys.map(r =>
+        `<div class="r-row"><span>VAT ${r}%:</span><span>${fp(d.vatData.byRate[r].vat)} (Net: ${fp(d.vatData.byRate[r].net)})</span></div>`
+    ).join('');
+    document.getElementById('esrVatTotal').textContent = fp(d.vatData.totalVat);
+    document.getElementById('esrFooter').textContent = `Printed: ${new Date().toLocaleString('en-GB')}`;
+
+    document.getElementById('endSalesReceiptPrint').style.display = 'block';
+    setTimeout(() => window.print(), 200);
+    setTimeout(() => { document.getElementById('endSalesReceiptPrint').style.display = 'none'; }, 800);
+}
+
+// ═══════════════════════════════════════════
+//  QUICK DAILY REPORT
+// ═══════════════════════════════════════════
+async function quickDailyReport() {
+    const orders = POS.completedOrders;
+    const cashOrders = orders.filter(o => o.paymentMethod === 'cash');
+    const cardOrders = orders.filter(o => o.paymentMethod === 'card');
+    const cashTotal = cashOrders.reduce((s, o) => s + (o.total || 0), 0);
+    const cardTotal = cardOrders.reduce((s, o) => s + (o.total || 0), 0);
+    const grandTotal = cashTotal + cardTotal;
+    const vatData = calcVatBreakdown(orders);
+    const today = new Date().toLocaleDateString('en-GB');
+    const rateKeys = Object.keys(vatData.byRate).sort((a,b) => Number(b) - Number(a));
+
+    const el = document.getElementById('takingsContent');
+    el.innerHTML = `
+        <div style="background:#EFF6FF;border:2px solid #2563EB;border-radius:12px;padding:20px;margin-bottom:16px">
+            <h3 style="color:#2563EB;margin:0 0 8px 0;font-size:18px">DAILY REPORT</h3>
+            <div style="color:#6B7280;font-size:13px">${POS.branchName} — ${today}</div>
+            <div style="color:#9CA3AF;font-size:11px;margin-top:4px">View only — no reset</div>
+        </div>
+        <div class="takings-stat-grid">
+            <div class="takings-stat-card"><div class="takings-stat-val">${orders.length}</div><div class="takings-stat-label">Total Orders</div></div>
+            <div class="takings-stat-card"><div class="takings-stat-val">${cashOrders.length}</div><div class="takings-stat-label">Cash Customers</div></div>
+            <div class="takings-stat-card"><div class="takings-stat-val">${cardOrders.length}</div><div class="takings-stat-label">Card Customers</div></div>
+            <div class="takings-stat-card"><div class="takings-stat-val">${fp(grandTotal)}</div><div class="takings-stat-label">Grand Total</div></div>
+        </div>
+        <table class="takings-table">
+            <thead><tr><th>Payment</th><th>Count</th><th>Amount</th></tr></thead>
+            <tbody>
+                <tr><td>CASH</td><td>${cashOrders.length}</td><td class="val-green">${fp(cashTotal)}</td></tr>
+                <tr><td>CARD</td><td>${cardOrders.length}</td><td class="val-green">${fp(cardTotal)}</td></tr>
+            </tbody>
+        </table>
+        <div class="takings-total-bar"><span class="label">GRAND TOTAL</span><span class="value">${fp(grandTotal)}</span></div>
+        <h4 style="margin:16px 0 8px 0;color:#374151">VAT Breakdown</h4>
+        <table class="takings-table">
+            <thead><tr><th>Rate</th><th>Net</th><th>VAT</th><th>Gross</th></tr></thead>
+            <tbody>
+                ${rateKeys.map(r => `<tr><td>${r}%</td><td>${fp(vatData.byRate[r].net)}</td><td class="val-highlight">${fp(vatData.byRate[r].vat)}</td><td class="val-green">${fp(vatData.byRate[r].gross)}</td></tr>`).join('')}
+            </tbody>
+        </table>
+        <div class="takings-total-bar"><span class="label">TOTAL VAT</span><span class="value">${fp(vatData.totalVat)}</span></div>
+        <div style="display:flex;gap:12px;margin-top:20px">
+            <button class="register-btn open" onclick="printDailyReport()" style="flex:1">PRINT REPORT</button>
+            <button class="register-btn eod" onclick="renderTakings()" style="flex:1;background:#6B7280;color:#fff">BACK</button>
+        </div>
+    `;
+
+    // Stash for printing
+    POS._dailyReportData = { orders, cashOrders, cardOrders, cashTotal, cardTotal, grandTotal, vatData, today };
+}
+
+function printDailyReport() {
+    const d = POS._dailyReportData;
+    if (!d) return;
+    document.getElementById('esrBranch').textContent = POS.branchName;
+    document.getElementById('esrTitle').textContent = 'DAILY REPORT (No Reset)';
+    document.getElementById('esrFrom').textContent = d.today;
+    document.getElementById('esrTo').textContent = new Date().toLocaleTimeString('en-GB');
+    document.getElementById('esrOrders').textContent = d.orders.length;
+    document.getElementById('esrCashCust').textContent = d.cashOrders.length;
+    document.getElementById('esrCardCust').textContent = d.cardOrders.length;
+    document.getElementById('esrCash').textContent = fp(d.cashTotal);
+    document.getElementById('esrCard').textContent = fp(d.cardTotal);
+    document.getElementById('esrGrand').textContent = fp(d.grandTotal);
+    const rateKeys = Object.keys(d.vatData.byRate).sort((a,b) => Number(b) - Number(a));
+    document.getElementById('esrVatRows').innerHTML = rateKeys.map(r =>
+        `<div class="r-row"><span>VAT ${r}%:</span><span>${fp(d.vatData.byRate[r].vat)} (Net: ${fp(d.vatData.byRate[r].net)})</span></div>`
+    ).join('');
+    document.getElementById('esrVatTotal').textContent = fp(d.vatData.totalVat);
+    document.getElementById('esrFooter').textContent = `Printed: ${new Date().toLocaleString('en-GB')}`;
+
+    document.getElementById('endSalesReceiptPrint').style.display = 'block';
+    setTimeout(() => window.print(), 200);
+    setTimeout(() => { document.getElementById('endSalesReceiptPrint').style.display = 'none'; }, 800);
+}
+
+// ═══════════════════════════════════════════
 //  SETTINGS — Server Info
 // ═══════════════════════════════════════════
 let _serverInfo = null;
+
+// ─── Settings persistence (localStorage) ───
+function loadPosSettings() {
+    try {
+        const saved = localStorage.getItem('tb_pos_settings');
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            Object.assign(POS.settings, parsed);
+        }
+    } catch (e) { console.warn('[Settings] load failed:', e.message); }
+}
+function savePosSettings() {
+    try {
+        localStorage.setItem('tb_pos_settings', JSON.stringify(POS.settings));
+    } catch (e) { console.warn('[Settings] save failed:', e.message); }
+}
+function toggleSetting(key) {
+    POS.settings[key] = !POS.settings[key];
+    savePosSettings();
+    renderSettings();
+    toast(`${key === 'sendPosToKitchen' ? 'POS to Kitchen' : key}: ${POS.settings[key] ? 'ON' : 'OFF'}`, 'info');
+}
 
 async function gotoSettings() {
     const entered = await tbPromptPin('Manager PIN Required', '⚙️');
@@ -2337,78 +3049,159 @@ function fmtBytes(bytes) {
 function renderSettings() {
     const el = document.getElementById('settingsBody');
     const s = _serverInfo;
-    if (!s) { el.innerHTML = '<div style="text-align:center;color:#9CA3AF;padding:40px">No data</div>'; return; }
 
-    const ipsHtml = s.ips.map(ip =>
-        `<div class="settings-row"><span class="label">${ip.interface}</span><span class="val blue">${ip.address}</span></div>`
-    ).join('');
-
-    const clientsHtml = s.connectedClients.length === 0
-        ? '<div style="color:#9CA3AF;font-size:13px">No clients connected</div>'
-        : s.connectedClients.map(c => {
-            const typeClass = (c.type || '').includes('pos') ? 'pos' : (c.type || '').includes('kiosk') || (c.type || '').includes('order') ? 'kiosk' : (c.type || '').includes('kitchen') ? 'kitchen' : '';
-            return `<span class="settings-client-badge ${typeClass}">#${c.id} ${(c.type || 'unknown').toUpperCase()} ${c.branch || ''} <small>${c.ip || ''}</small></span>`;
-          }).join('');
-
-    const dataHtml = s.dataFiles.length === 0
-        ? '<div style="color:#9CA3AF;font-size:13px">No data files</div>'
-        : s.dataFiles.map(f => `<div style="font-size:12px;color:#6B7280;padding:2px 0">📄 ${f}</div>`).join('');
-
-    el.innerHTML = `
+    // ── POS Options section (always visible, even without server info) ──
+    let html = `
+        <div class="settings-section-title">POS OPTIONS</div>
         <div class="settings-card">
-            <h3>🖥️ Server</h3>
-            <div class="settings-row"><span class="label">Server Version</span><span class="val">v${s.serverVersion}</span></div>
-            <div class="settings-row"><span class="label">Node.js</span><span class="val">${s.nodeVersion}</span></div>
-            <div class="settings-row"><span class="label">Platform</span><span class="val">${s.platform} (${s.arch})</span></div>
-            <div class="settings-row"><span class="label">Hostname</span><span class="val">${s.hostname}</span></div>
-            <div class="settings-row"><span class="label">Port</span><span class="val blue">${s.port}</span></div>
-            <div class="settings-row"><span class="label">Uptime</span><span class="val green">${fmtUptime(s.uptimeSeconds)}</span></div>
-            <div class="settings-row"><span class="label">Started</span><span class="val">${new Date(s.startTime).toLocaleString('en-GB')}</span></div>
-        </div>
-
-        <div class="settings-card">
-            <h3>🌐 Network (IP Addresses)</h3>
-            ${ipsHtml}
-            <div class="settings-row" style="margin-top:8px;padding-top:12px;border-top:2px solid #E5E7EB">
-                <span class="label">POS URL</span>
-                <span class="val blue">http://${s.ips[0]?.address || 'localhost'}:${s.port}/pos</span>
-            </div>
+            <h3>🍳 Kitchen Display</h3>
             <div class="settings-row">
-                <span class="label">Kiosk URL</span>
-                <span class="val blue">http://${s.ips[0]?.address || 'localhost'}:${s.port}/order</span>
+                <div>
+                    <span class="label">Send POS orders to Kitchen</span>
+                    <div class="settings-option-desc">When ON, orders placed from POS will also appear on Kitchen Display</div>
+                </div>
+                <label class="settings-toggle">
+                    <input type="checkbox" ${POS.settings.sendPosToKitchen ? 'checked' : ''} onchange="toggleSetting('sendPosToKitchen')">
+                    <span class="slider"></span>
+                </label>
             </div>
-            <div class="settings-row">
-                <span class="label">Kitchen URL</span>
-                <span class="val blue">http://${s.ips[0]?.address || 'localhost'}:${s.port}/kitchen</span>
-            </div>
-        </div>
-
-        <div class="settings-card">
-            <h3>💾 System</h3>
-            <div class="settings-row"><span class="label">CPU Cores</span><span class="val">${s.cpus}</span></div>
-            <div class="settings-row"><span class="label">Total Memory</span><span class="val">${fmtBytes(s.totalMemory)}</span></div>
-            <div class="settings-row"><span class="label">Free Memory</span><span class="val green">${fmtBytes(s.freeMemory)}</span></div>
-        </div>
-
-        <div class="settings-card">
-            <h3>📡 Connected Clients (${s.connectedClients.length})</h3>
-            <div style="display:flex;flex-wrap:wrap;gap:4px">${clientsHtml}</div>
-        </div>
-
-        <div class="settings-card">
-            <h3>📊 Today's Data</h3>
-            <div class="settings-row"><span class="label">Daily Orders</span><span class="val green">${s.dailyOrders}</span></div>
-        </div>
-
-        <div class="settings-card">
-            <h3>📁 Data Files</h3>
-            ${dataHtml}
-        </div>
-
-        <div style="text-align:center;padding:12px;color:#9CA3AF;font-size:11px">
-            The Bap POS v1.7 | Server v${s.serverVersion} | ${s.nodeVersion}
         </div>
     `;
+
+    // ── Server Monitor section (needs server info) ──
+    if (!s) {
+        html += `<div class="settings-section-title">SERVER MONITOR</div>
+            <div class="settings-card"><div style="text-align:center;color:#9CA3AF;padding:20px">Server info not loaded</div></div>`;
+    } else {
+        const ipsHtml = s.ips.map(ip =>
+            `<div class="settings-row"><span class="label">${ip.interface}</span><span class="val blue">${ip.address}</span></div>`
+        ).join('');
+
+        const clientsHtml = s.connectedClients.length === 0
+            ? '<div style="color:#9CA3AF;font-size:13px">No clients connected</div>'
+            : s.connectedClients.map(c => {
+                const typeClass = (c.type || '').includes('pos') ? 'pos' : (c.type || '').includes('kiosk') || (c.type || '').includes('order') ? 'kiosk' : (c.type || '').includes('kitchen') ? 'kitchen' : '';
+                return `<span class="settings-client-badge ${typeClass}">#${c.id} ${(c.type || 'unknown').toUpperCase()} ${c.branch || ''} <small>${c.ip || ''}</small></span>`;
+              }).join('');
+
+        const dataHtml = s.dataFiles.length === 0
+            ? '<div style="color:#9CA3AF;font-size:13px">No data files</div>'
+            : s.dataFiles.map(f => `<div style="font-size:12px;color:#6B7280;padding:2px 0">${f}</div>`).join('');
+
+        html += `
+            <div class="settings-section-title">SERVER MONITOR</div>
+            <div class="settings-card">
+                <h3>🖥️ Server</h3>
+                <div class="settings-row"><span class="label">Server Version</span><span class="val">v${s.serverVersion}</span></div>
+                <div class="settings-row"><span class="label">Node.js</span><span class="val">${s.nodeVersion}</span></div>
+                <div class="settings-row"><span class="label">Platform</span><span class="val">${s.platform} (${s.arch})</span></div>
+                <div class="settings-row"><span class="label">Hostname</span><span class="val">${s.hostname}</span></div>
+                <div class="settings-row"><span class="label">Port</span><span class="val blue">${s.port}</span></div>
+                <div class="settings-row"><span class="label">Uptime</span><span class="val green">${fmtUptime(s.uptimeSeconds)}</span></div>
+                <div class="settings-row"><span class="label">Started</span><span class="val">${new Date(s.startTime).toLocaleString('en-GB')}</span></div>
+            </div>
+
+            <div class="settings-card">
+                <h3>🌐 Network</h3>
+                ${ipsHtml}
+                <div class="settings-row" style="margin-top:8px;padding-top:12px;border-top:2px solid #E5E7EB">
+                    <span class="label">POS URL</span>
+                    <span class="val blue">http://${s.ips[0]?.address || 'localhost'}:${s.port}/pos</span>
+                </div>
+                <div class="settings-row">
+                    <span class="label">Kiosk URL</span>
+                    <span class="val blue">http://${s.ips[0]?.address || 'localhost'}:${s.port}/order</span>
+                </div>
+                <div class="settings-row">
+                    <span class="label">Kitchen URL</span>
+                    <span class="val blue">http://${s.ips[0]?.address || 'localhost'}:${s.port}/kitchen</span>
+                </div>
+            </div>
+
+            <div class="settings-card">
+                <h3>💾 System</h3>
+                <div class="settings-row"><span class="label">CPU Cores</span><span class="val">${s.cpus}</span></div>
+                <div class="settings-row"><span class="label">Total Memory</span><span class="val">${fmtBytes(s.totalMemory)}</span></div>
+                <div class="settings-row"><span class="label">Free Memory</span><span class="val green">${fmtBytes(s.freeMemory)}</span></div>
+            </div>
+
+            <div class="settings-card">
+                <h3>📡 Connected Clients (${s.connectedClients.length})</h3>
+                <div style="display:flex;flex-wrap:wrap;gap:4px">${clientsHtml}</div>
+            </div>
+
+            <div class="settings-card">
+                <h3>📊 Today's Data</h3>
+                <div class="settings-row"><span class="label">Daily Orders</span><span class="val green">${s.dailyOrders}</span></div>
+            </div>
+
+            <div class="settings-card">
+                <h3>📁 Data Files</h3>
+                ${dataHtml}
+            </div>
+
+            <div style="text-align:center;padding:12px;color:#9CA3AF;font-size:11px">
+                The Bap POS v1.9 | Server v${s.serverVersion} | ${s.nodeVersion}
+            </div>
+        `;
+    }
+
+    // ── ADMIN Section (multi-branch data) ──
+    html += `
+        <div class="settings-section-title">ADMIN — ALL BRANCHES</div>
+        <div class="settings-card">
+            <h3>📊 All Branches Summary</h3>
+            <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px">
+                <label style="font-size:13px;color:#6B7280">Date:</label>
+                <input type="date" id="adminBranchDate" value="${new Date().toISOString().slice(0,10)}" style="padding:6px 10px;border:1px solid #D1D5DB;border-radius:8px;font-size:13px">
+                <button onclick="loadAllBranchesSummary()" style="padding:6px 14px;background:#006AFF;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600">Load</button>
+            </div>
+            <div id="adminBranchesBody" style="color:#9CA3AF;font-size:13px">Select a date and click Load</div>
+        </div>
+    `;
+
+    el.innerHTML = html;
+}
+
+async function loadAllBranchesSummary() {
+    const dateEl = document.getElementById('adminBranchDate');
+    const bodyEl = document.getElementById('adminBranchesBody');
+    if (!dateEl || !bodyEl) return;
+
+    // Admin PIN check
+    const pin = await tbPromptPin('Admin PIN Required', '🔐');
+    if (pin === false) return;
+    const user = checkUserPin(pin, ['admin']);
+    if (!user) { toast('Access denied — Admin PIN required', 'error'); return; }
+
+    const date = dateEl.value;
+    bodyEl.innerHTML = '<div style="text-align:center;padding:10px">Loading...</div>';
+    try {
+        const resp = await fetch(`/api/all-branches-summary?date=${date}`);
+        if (!resp.ok) throw new Error('Server error');
+        const data = await resp.json();
+        if (!data.branches || data.branches.length === 0) {
+            bodyEl.innerHTML = '<div style="text-align:center;color:#9CA3AF;padding:10px">No data for this date</div>';
+            return;
+        }
+        let grandCash = 0, grandCard = 0, grandOrders = 0;
+        const rows = data.branches.map(b => {
+            grandCash += b.cashTotal;
+            grandCard += b.cardTotal;
+            grandOrders += b.totalOrders;
+            return `<tr><td style="font-weight:600">${b.branchName || b.branchCode}</td><td>${b.totalOrders}</td><td class="val-green">${fp(b.cashTotal)}</td><td class="val-green">${fp(b.cardTotal)}</td><td class="val-highlight">${fp(b.grandTotal)}</td></tr>`;
+        }).join('');
+        bodyEl.innerHTML = `
+            <table class="takings-table">
+                <thead><tr><th>Branch</th><th>Orders</th><th>Cash</th><th>Card</th><th>Total</th></tr></thead>
+                <tbody>${rows}
+                    <tr style="background:#F0F9FF;font-weight:700"><td>ALL BRANCHES</td><td>${grandOrders}</td><td class="val-green">${fp(grandCash)}</td><td class="val-green">${fp(grandCard)}</td><td class="val-highlight">${fp(grandCash + grandCard)}</td></tr>
+                </tbody>
+            </table>
+        `;
+    } catch (e) {
+        bodyEl.innerHTML = `<div style="color:#DC2626">Failed to load: ${e.message}</div>`;
+    }
 }
 
 // ═══════════════════════════════════════════

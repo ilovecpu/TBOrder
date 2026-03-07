@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * ════════════════════════════════════════════════════════════
- *  🍚 The Bap (더밥) — TBOrder Local Server v1.3
+ *  🍚 The Bap (더밥) — TBOrder Local Server v1.5
  *  Last Updated: 2026-03-07
  * ════════════════════════════════════════════════════════════
  *
@@ -64,10 +64,10 @@ if (STRIPE_SECRET_KEY) {
 }
 
 const PORT = parseInt(process.env.TB_PORT) || 8080;
-const SERVER_VERSION = '1.3';
+const SERVER_VERSION = '1.5';
 const SERVER_START_TIME = new Date().toISOString();
 const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbzBrKnJg4ypsgDjP9HA6n7k23HgsG1IECGtJUwdy6Wx_n64QcihwxaEzLNOc4EmWtZHsQ/exec';
-const GOOGLE_API = process.env.GOOGLE_API || 'https://script.google.com/macros/s/AKfycbwsgxPV8Ak3rFh-_ZWioV3IEZ5sQIO3kE3VVue2XrrHVTYsYel-1rijLdf7WLy15Yzlhg/exec';
+const GOOGLE_API = process.env.GOOGLE_API || 'https://script.google.com/macros/s/AKfycbwzRdh2grvGlE1YKH58lEYXf9XrchkGQJGDslzx80OfkRkKcbHRk-pguJd74cGpfrpBUQ/exec';
 
 // ─── 메뉴 데이터 로드/캐시 ───
 const MENU_FILE = path.join(__dirname, 'data', 'menu.json');
@@ -398,13 +398,18 @@ function handleMessage(clientId, rawData) {
       saveOrders();
 
       // 주방 + 관리자 + POS에게 전달
+      const skipKitchen = !!order.skipKitchen;
       let sentCount = 0;
       clients.forEach((c, id) => {
         if (id === clientId) return;
         if (c.type === 'kitchen') {
-          sendTo(id, { type: 'new_order', order });
-          sentCount++;
-          console.log(`    → 주방 #${id} 전달 완료`);
+          if (skipKitchen) {
+            console.log(`    → 주방 #${id} 건너뜀 (POS skipKitchen)`);
+          } else {
+            sendTo(id, { type: 'new_order', order });
+            sentCount++;
+            console.log(`    → 주방 #${id} 전달 완료`);
+          }
         }
         if (c.type === 'admin') {
           sendTo(id, { type: 'new_order', order });
@@ -415,7 +420,7 @@ function handleMessage(clientId, rawData) {
           console.log(`    → POS #${id} 전달 완료`);
         }
       });
-      if (sentCount === 0) {
+      if (sentCount === 0 && !skipKitchen) {
         console.log(`    ⚠️ 연결된 주방이 없음! (현재: ${[...clients.values()].map(c => c.type || '?').join(',')})`);
       }
       break;
@@ -536,20 +541,92 @@ function handleMessage(clientId, rawData) {
 
     case 'delete_order': {
       const orderNum = msg.orderNumber;
-      console.log(`  🗑️ [삭제] 주문 ${orderNum}`);
-      dailyOrders = dailyOrders.filter(o => o.orderNumber !== orderNum);
-      saveOrders();
-      // 다른 클라이언트에게 삭제 전파
-      broadcastMsg({ type: 'order_deleted', orderNumber: orderNum }, clientId);
+      const delDate = msg.date || getTodayStr();
+      console.log(`  🗑️ [삭제] 주문 ${orderNum} (${delDate})`);
+      if (delDate === getTodayStr()) {
+        dailyOrders = dailyOrders.filter(o => o.orderNumber !== orderNum);
+        saveOrders();
+      } else {
+        // Past date — load, filter, save back
+        const pastOrders = loadOrders(delDate).filter(o => o.orderNumber !== orderNum);
+        try {
+          fs.writeFileSync(getOrderFilePath(delDate), JSON.stringify(pastOrders, null, 2), 'utf8');
+        } catch (e) { console.error(`  ⚠️ 과거 주문 삭제 저장 실패 (${delDate}):`, e.message); }
+      }
+      broadcastMsg({ type: 'order_deleted', orderNumber: orderNum, date: delDate }, clientId);
       break;
     }
 
     case 'clear_orders': {
-      console.log(`  🗑️ [전체삭제] ${dailyOrders.length}건 삭제`);
-      dailyOrders = [];
-      saveOrders();
-      // 다른 클라이언트에게 전체 삭제 전파
-      broadcastMsg({ type: 'orders_cleared' }, clientId);
+      const clearDate = msg.date || getTodayStr();
+      if (clearDate === getTodayStr()) {
+        console.log(`  🗑️ [전체삭제] 오늘 ${dailyOrders.length}건 삭제`);
+        dailyOrders = [];
+        saveOrders();
+      } else {
+        // Past date — overwrite with empty
+        console.log(`  🗑️ [전체삭제] ${clearDate} 주문 삭제`);
+        try {
+          fs.writeFileSync(getOrderFilePath(clearDate), JSON.stringify([], null, 2), 'utf8');
+        } catch (e) { console.error(`  ⚠️ 과거 주문 전체삭제 실패 (${clearDate}):`, e.message); }
+      }
+      broadcastMsg({ type: 'orders_cleared', date: clearDate }, clientId);
+      break;
+    }
+
+    case 'end_sales': {
+      console.log(`  💰 [END SALES] ${msg.branchName || msg.branchCode} — Grand Total: £${(msg.grandTotal || 0).toFixed(2)}`);
+      // Append to end_sales_log.json
+      const logPath = path.join(DATA_DIR, 'end_sales_log.json');
+      let log = [];
+      try { if (fs.existsSync(logPath)) log = JSON.parse(fs.readFileSync(logPath, 'utf8')); } catch (e) {}
+      log.push({
+        timestamp: new Date().toISOString(),
+        branchCode: msg.branchCode, branchName: msg.branchName,
+        periodFrom: msg.periodFrom, periodTo: msg.periodTo,
+        totalOrders: msg.totalOrders,
+        cashTotal: msg.cashTotal, cardTotal: msg.cardTotal, grandTotal: msg.grandTotal,
+        cashCustomers: msg.cashCustomers, cardCustomers: msg.cardCustomers,
+        vatTotal: msg.vatTotal, vatBreakdown: msg.vatBreakdown
+      });
+      try { fs.writeFileSync(logPath, JSON.stringify(log, null, 2), 'utf8'); } catch (e) { console.error('  ⚠️ end_sales_log write failed:', e.message); }
+
+      // Update register file with lastEndSalesAt
+      const regDate = getTodayStr();
+      const regPath = path.join(DATA_DIR, `register_${regDate}.json`);
+      try {
+        let regData = {};
+        if (fs.existsSync(regPath)) regData = JSON.parse(fs.readFileSync(regPath, 'utf8'));
+        regData.lastEndSalesAt = msg.periodTo;
+        fs.writeFileSync(regPath, JSON.stringify(regData, null, 2), 'utf8');
+      } catch (e) { console.error('  ⚠️ register lastEndSalesAt update failed:', e.message); }
+
+      // Send to Google Sheets (saveEndSales action)
+      try {
+        const esData = JSON.stringify({ action: 'saveEndSales', data: {
+          date: new Date().toISOString().slice(0, 10),
+          branchCode: msg.branchCode, branchName: msg.branchName,
+          periodFrom: msg.periodFrom, periodTo: msg.periodTo,
+          totalOrders: msg.totalOrders,
+          cashTotal: msg.cashTotal, cardTotal: msg.cardTotal, grandTotal: msg.grandTotal,
+          cashCustomers: msg.cashCustomers, cardCustomers: msg.cardCustomers,
+          vatTotal: msg.vatTotal
+        }});
+        const https = require('https');
+        const gUrl = new URL(GOOGLE_API);
+        const opts = { hostname: gUrl.hostname, path: gUrl.pathname + gUrl.search, method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(esData) } };
+        const gReq = https.request(opts, (gRes) => {
+          if (gRes.statusCode >= 300 && gRes.statusCode < 400 && gRes.headers.location) {
+            https.get(gRes.headers.location, (r2) => { let d = ''; r2.on('data', c => d += c); r2.on('end', () => console.log('  ☁️ END Sales → Google Sheets 저장 완료')); }).on('error', e => console.warn('  ⚠️ END Sales Google redirect fail:', e.message));
+            gRes.resume(); return;
+          }
+          let d = ''; gRes.on('data', c => d += c); gRes.on('end', () => console.log('  ☁️ END Sales → Google Sheets 저장 완료'));
+        });
+        gReq.on('error', e => console.warn('  ⚠️ END Sales Google 전송 실패:', e.message));
+        gReq.write(esData); gReq.end();
+      } catch (e) { console.warn('  ⚠️ END Sales Google Sheets error:', e.message); }
+
+      broadcastMsg({ type: 'end_sales_completed', branchCode: msg.branchCode }, clientId);
       break;
     }
 
@@ -643,6 +720,64 @@ const server = http.createServer(async (req, res) => {
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ dates: [getTodayStr()] }));
     }
+    return;
+  }
+
+  // ─── Orders Since (for END Sales) ───
+  if (url === '/api/orders-since') {
+    const urlParams = new URL(req.url, `http://localhost:${PORT}`).searchParams;
+    const since = urlParams.get('since'); // ISO timestamp or null
+    const branch = urlParams.get('branch');
+    let allOrders = [];
+    try {
+      const files = fs.readdirSync(DATA_DIR).filter(f => f.startsWith('orders_') && f.endsWith('.json')).sort();
+      const sinceDate = since ? since.slice(0, 10) : '0000-00-00';
+      for (const f of files) {
+        const fileDate = f.replace('orders_', '').replace('.json', '');
+        if (fileDate >= sinceDate) {
+          const orders = (fileDate === getTodayStr()) ? dailyOrders : loadOrders(fileDate);
+          allOrders = allOrders.concat(orders);
+        }
+      }
+      // Also include today's orders if not in files
+      if (!files.some(f => f.includes(getTodayStr()))) {
+        allOrders = allOrders.concat(dailyOrders);
+      }
+    } catch (e) {
+      allOrders = [...dailyOrders];
+    }
+    // Filter by since timestamp
+    if (since) {
+      const sinceTime = new Date(since).getTime();
+      allOrders = allOrders.filter(o => new Date(o.timestamp).getTime() > sinceTime);
+    }
+    // Filter by branch
+    if (branch) {
+      allOrders = allOrders.filter(o => o.branchCode === branch);
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(allOrders));
+    return;
+  }
+
+  // ─── All Branches Summary (Admin) ───
+  if (url === '/api/all-branches-summary') {
+    const urlParams = new URL(req.url, `http://localhost:${PORT}`).searchParams;
+    const date = urlParams.get('date') || getTodayStr();
+    const orders = (date === getTodayStr()) ? dailyOrders : loadOrders(date);
+    const branchMap = {};
+    orders.forEach(o => {
+      const bc = o.branchCode || 'unknown';
+      if (!branchMap[bc]) branchMap[bc] = { branchCode: bc, branchName: o.branchName || bc, totalOrders: 0, cashTotal: 0, cardTotal: 0, grandTotal: 0 };
+      branchMap[bc].totalOrders++;
+      const amt = o.total || 0;
+      if (o.paymentMethod === 'cash') branchMap[bc].cashTotal += amt;
+      else if (o.paymentMethod === 'card') branchMap[bc].cardTotal += amt;
+      branchMap[bc].grandTotal += amt;
+    });
+    const branches = Object.values(branchMap).sort((a, b) => b.grandTotal - a.grandTotal);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ date, branches }));
     return;
   }
 
