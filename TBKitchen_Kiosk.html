@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Kitchen Display v1.0 | 2026-03-06 -->
+<!-- The Bap Kitchen Display v1.1 | 2026-03-06 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -698,7 +698,7 @@
     <div class="history-overlay" id="history-overlay">
         <div class="history-modal">
             <div class="history-header">
-                <h2>📋 Order History (오늘)</h2>
+                <h2>📋 Order History (Today)</h2>
                 <button class="history-close" id="history-close">✕</button>
             </div>
             <div class="history-stats" id="history-stats"></div>
@@ -1336,7 +1336,7 @@
                 const orders = data.orders || [];
 
                 if (orders.length === 0) {
-                    document.getElementById('history-list').innerHTML = '<div class="history-empty">📭 오늘 주문이 없습니다</div>';
+                    document.getElementById('history-list').innerHTML = '<div class="history-empty">📭 No orders today</div>';
                     document.getElementById('history-stats').innerHTML = '';
                     return;
                 }
@@ -1425,7 +1425,7 @@
 
             } catch (err) {
                 console.error('History fetch error:', err);
-                document.getElementById('history-list').innerHTML = '<div class="history-empty">❌ 서버 연결 실패</div>';
+                document.getElementById('history-list').innerHTML = '<div class="history-empty">❌ Server connection failed</div>';
             }
         }
 

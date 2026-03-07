@@ -1,8 +1,8 @@
 /**
  * ════════════════════════════════════════════════════════════
- *  🍚 The Bap (더밥) — Google Apps Script v1.1
- *  메뉴 API + 주문 API + 이미지 업로드/썸네일 (통합)
- *  Last Updated: 2026-03-06
+ *  🍚 The Bap — Google Apps Script v1.7
+ *  Menu API + Orders + Image Upload + TBMS Stores + Users + DailySales
+ *  Last Updated: 2026-03-07
  * ════════════════════════════════════════════════════════════
  *
  *  설정 방법:
@@ -19,7 +19,7 @@
  *
  *  시트 구조 (자동 생성):
  *   - Categories: 카테고리 목록 (id, nameEn, nameKr, icon, color, sortOrder, active)
- *   - MenuItems: 메뉴 아이템 (이미지 URL + 썸네일 URL 포함)
+ *   - MenuItems: 메뉴 아이템 (driveId = Google Drive File ID)
  *   - Sauces: 소스 목록
  *   - BranchPricing: 지점별 가격
  *   - Orders: 주문 기록
@@ -38,6 +38,10 @@ const SH_ITEM = 'MenuItems';
 const SH_SAUCE = 'Sauces';
 const SH_BRANCH = 'BranchPricing';
 const SH_ORDER = 'Orders';
+
+// ─── TBMS API (지점 정보 읽기 전용) ───
+const TBMS_API = 'https://script.google.com/macros/s/AKfycbybzyd_yHJbzgQeqtPK6EuBturucDGRg7Gl3yX_9KsBg7zMY-MoYLMMCloBHv2QTNJQ/exec';
+const TBMS_KEY = 'tBaP2026xKr!mGt9Qz';
 
 // ─── Google Drive 이미지 폴더 ───
 const DRIVE_FOLDER_NAME = 'TheBap_MenuImages';
@@ -59,6 +63,9 @@ function doGet(e) {
       case 'orders':     return jsonOut(getOrders(e));
       case 'pending':    return jsonOut(getPendingOrders(e));
       case 'branchPricing': return jsonOut(getBranchPricing());
+      case 'stores':     return jsonOut(getTBMSStores());
+      case 'users':      return jsonOut(getTBMSUsers());
+      case 'dailySales': return jsonOut(getDailySales(e));
       case 'init':       return jsonOut(initializeSheets());
       default:           return jsonOut(getFullMenu());
     }
@@ -98,6 +105,9 @@ function doPost(e) {
       case 'newOrder':         return jsonOut(createOrder(data));
       case 'updateOrder':      updateOrderStatus(data.orderNumber, data.status); break;
 
+      // ─── Daily Sales Summary ───
+      case 'saveDailySummary': return jsonOut(saveDailySummary(data.data || data));
+
       default: return jsonOut({ error: 'Unknown action: ' + action });
     }
 
@@ -105,6 +115,85 @@ function doPost(e) {
   } catch (err) {
     return jsonOut({ error: err.message });
   }
+}
+
+// ═══════════════════════════════════════════
+//  TBMS API에서 Stores 읽기 (읽기 전용)
+// ═══════════════════════════════════════════
+function getTBMSStores() {
+  const url = TBMS_API + '?action=getSheet&sheet=Stores&apikey=' + encodeURIComponent(TBMS_KEY);
+  const resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true, followRedirects: true });
+  const json = JSON.parse(resp.getContentText());
+  if (json.error) return { error: json.error };
+  return { stores: json.rows || json };
+}
+
+// ═══════════════════════════════════════════
+//  TBMS API에서 Users 읽기 (읽기 전용)
+// ═══════════════════════════════════════════
+function getTBMSUsers() {
+  const url = TBMS_API + '?action=getSheet&sheet=Users&apikey=' + encodeURIComponent(TBMS_KEY);
+  const resp = UrlFetchApp.fetch(url, { muteHttpExceptions: true, followRedirects: true });
+  const json = JSON.parse(resp.getContentText());
+  if (json.error) return { error: json.error };
+  return { users: json.rows || json };
+}
+
+// ═══════════════════════════════════════════
+//  Daily Sales Summary (로컬 → Google Sheets)
+// ═══════════════════════════════════════════
+const SH_DAILY_SALES = 'DailySales';
+const DAILY_SALES_HEADERS = ['date','branchCode','branchName','totalOrders','cashTotal','cardTotal','grandTotal','openingFloat','savedAt'];
+
+function saveDailySummary(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SH_DAILY_SALES);
+  if (!sheet) {
+    sheet = ss.insertSheet(SH_DAILY_SALES);
+    sheet.appendRow(DAILY_SALES_HEADERS);
+    sheet.getRange(1, 1, 1, DAILY_SALES_HEADERS.length).setFontWeight('bold');
+  }
+  // Check for duplicate (same date + branchCode)
+  const rows = sheet.getDataRange().getValues();
+  for (let i = 1; i < rows.length; i++) {
+    if (rows[i][0] === data.date && rows[i][1] === data.branchCode) {
+      // Update existing row
+      sheet.getRange(i + 1, 1, 1, DAILY_SALES_HEADERS.length).setValues([[
+        data.date, data.branchCode, data.branchName || '',
+        data.totalOrders || 0, data.cashTotal || 0, data.cardTotal || 0,
+        data.grandTotal || 0, data.openingFloat || 0, new Date().toISOString()
+      ]]);
+      return { success: true, updated: true, date: data.date, branchCode: data.branchCode };
+    }
+  }
+  // Append new row
+  sheet.appendRow([
+    data.date, data.branchCode, data.branchName || '',
+    data.totalOrders || 0, data.cashTotal || 0, data.cardTotal || 0,
+    data.grandTotal || 0, data.openingFloat || 0, new Date().toISOString()
+  ]);
+  return { success: true, date: data.date, branchCode: data.branchCode };
+}
+
+function getDailySales(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SH_DAILY_SALES);
+  if (!sheet) return { sales: [] };
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length <= 1) return { sales: [] };
+  const headers = rows[0];
+  const from = e?.parameter?.from || '';
+  const to = e?.parameter?.to || '9999-12-31';
+  const branch = e?.parameter?.branch || '';
+  const sales = [];
+  for (let i = 1; i < rows.length; i++) {
+    const obj = {};
+    headers.forEach((h, j) => obj[h] = rows[i][j]);
+    if (obj.date >= from && obj.date <= to && (!branch || obj.branchCode === branch)) {
+      sales.push(obj);
+    }
+  }
+  return { sales };
 }
 
 function jsonOut(obj) {
@@ -252,7 +341,7 @@ function deleteCategory(catId) {
 }
 
 // ─── MenuItems ───
-const ITEM_HEADERS = ['id','catId','nameEn','nameKr','desc','price','image','thumbnail','dietary','isCombo','comboCount','hasTopping','toppingCount','btnColor','active','sortOrder'];
+const ITEM_HEADERS = ['id','catId','nameEn','nameKr','desc','price','driveId','dietary','isCombo','comboCount','hasTopping','toppingCount','btnColor','active','sortOrder'];
 
 function updateAllItems(items) {
   writeSheet(SH_ITEM, ITEM_HEADERS, items, (item, h) => {
@@ -335,52 +424,39 @@ function updateBranchPricing(pricing) {
  *   base64: '...(base64 encoded image data)...'
  * }
  *
- * 반환:
+ * 반환 (TBMS pattern — File ID only):
  * {
  *   success: true,
- *   imageUrl: 'https://drive.google.com/uc?export=view&id=xxx',
- *   thumbnailUrl: 'https://drive.google.com/uc?export=view&id=yyy',
- *   driveFileId: 'xxx',
- *   thumbFileId: 'yyy'
+ *   driveId: 'xxx'    // Google Drive File ID
  * }
+ * Client generates display URLs: lh3.googleusercontent.com/d/{driveId}=w{size}
  */
 function uploadImageToDrive(data) {
-  const { itemId, fileName, mimeType, base64 } = data;
+  const { itemId, fileName, mimeType, base64, thumbBase64 } = data;
   if (!base64 || !fileName) throw new Error('Missing image data or filename');
 
-  // 1) 원본 폴더 준비
+  // 1) Folder
   const folder = getOrCreateDriveFolder(DRIVE_FOLDER_NAME);
-  const thumbFolder = getOrCreateDriveFolder(THUMB_FOLDER_NAME);
 
-  // 2) 기존 같은 이름 파일 삭제 (덮어쓰기)
+  // 2) Delete existing file (overwrite)
   deleteFileByName(folder, itemId + '_' + fileName);
-  deleteFileByName(thumbFolder, itemId + '_thumb_' + fileName);
 
-  // 3) base64 → Blob → Drive 저장 (원본)
+  // 3) base64 → Blob → Drive (client already resized to 750px)
   const blob = Utilities.newBlob(Utilities.base64Decode(base64), mimeType, itemId + '_' + fileName);
   const file = folder.createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 
-  // 4) 썸네일 생성 (리사이즈)
-  const thumbBlob = createThumbnail(blob, mimeType, itemId + '_thumb_' + fileName);
-  const thumbFile = thumbFolder.createFile(thumbBlob);
-  thumbFile.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  const fileId = file.getId();
 
-  // 5) URL 생성
-  const imageUrl = 'https://drive.google.com/uc?export=view&id=' + file.getId();
-  const thumbnailUrl = 'https://drive.google.com/uc?export=view&id=' + thumbFile.getId();
-
-  // 6) MenuItems 시트에 URL 업데이트
+  // 4) Update MenuItems sheet — store File ID only (TBMS pattern)
   if (itemId) {
-    updateMenuItem({ id: itemId, image: imageUrl, thumbnail: thumbnailUrl });
+    updateMenuItem({ id: itemId, driveId: fileId });
   }
 
+  // 5) Return File ID — client generates display URLs as needed
   return {
     success: true,
-    imageUrl: imageUrl,
-    thumbnailUrl: thumbnailUrl,
-    driveFileId: file.getId(),
-    thumbFileId: thumbFile.getId(),
+    driveId: fileId,
   };
 }
 
@@ -522,34 +598,34 @@ function initializeSheets() {
 
   // ─── MenuItems (with image & thumbnail columns) ───
   const defaultItems = [
-    { id:'M001', catId:'kfood', nameEn:'Combo Bap', nameKr:'콤보밥', desc:'Two different choices of topping', price:9.55, image:'', thumbnail:'', dietary:'', isCombo:true, comboCount:2, hasTopping:false, toppingCount:0, btnColor:'#C0392B', active:true, sortOrder:1 },
-    { id:'M002', catId:'kfood', nameEn:'Tofu Bap', nameKr:'두부밥', desc:'Fried Tofu on Rice', price:7.45, image:'', thumbnail:'', dietary:'V', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#27AE60', active:true, sortOrder:2 },
-    { id:'M003', catId:'kfood', nameEn:'Chicken Teriyaki Bap', nameKr:'치킨데리야끼밥', desc:'Chicken Teriyaki on Rice', price:8.25, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E67E22', active:true, sortOrder:3 },
-    { id:'M004', catId:'kfood', nameEn:'KFC Bap', nameKr:'양념치킨밥', desc:'Korean Fried Chicken', price:8.25, image:'', thumbnail:'', dietary:'spicy', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E74C3C', active:true, sortOrder:4 },
-    { id:'M005', catId:'kfood', nameEn:'Kimchi Fried Rice', nameKr:'김치볶음밥', desc:'Kimchi Fried Rice with egg', price:7.45, image:'', thumbnail:'', dietary:'spicy', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#D35400', active:true, sortOrder:5 },
-    { id:'M006', catId:'kchicken', nameEn:'Fried Chicken Bap', nameKr:'후라이드치킨밥', desc:'Korean Fried Chicken', price:8.25, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#F39C12', active:true, sortOrder:1 },
-    { id:'M007', catId:'kchicken', nameEn:'Spicy Chicken Bap', nameKr:'매운치킨밥', desc:'Spicy Korean Fried Chicken', price:8.25, image:'', thumbnail:'', dietary:'spicy', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E74C3C', active:true, sortOrder:2 },
-    { id:'M008', catId:'kchicken', nameEn:'Soy Garlic Chicken', nameKr:'간장마늘치킨', desc:'Soy Garlic Glazed Chicken', price:8.25, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#8E44AD', active:true, sortOrder:3 },
-    { id:'M009', catId:'bbq', nameEn:'Beef Bulgogi Bap', nameKr:'소불고기밥', desc:'Korean BBQ Beef on Rice', price:8.75, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#C0392B', active:true, sortOrder:1 },
-    { id:'M010', catId:'bbq', nameEn:'Pork Bulgogi Bap', nameKr:'돼지불고기밥', desc:'Korean Spicy Pork Bulgogi', price:8.75, image:'', thumbnail:'', dietary:'spicy', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E74C3C', active:true, sortOrder:2 },
-    { id:'M011', catId:'bibimbap', nameEn:'Bibim Bap', nameKr:'비빔밥', desc:'Mixed Rice Bowl', price:7.95, image:'', thumbnail:'', dietary:'V', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#27AE60', active:true, sortOrder:1 },
-    { id:'M012', catId:'bibimbap', nameEn:'Bibim Bap + Topping', nameKr:'비빔밥+토핑', desc:'Bibim Bap + Choice of 1 Topping', price:9.95, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:true, toppingCount:1, btnColor:'#16A085', active:true, sortOrder:2 },
-    { id:'M013', catId:'noodle', nameEn:'Japchae', nameKr:'잡채', desc:'Korean Glass Noodles', price:7.45, image:'', thumbnail:'', dietary:'V', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#9B59B6', active:true, sortOrder:1 },
-    { id:'M014', catId:'noodle', nameEn:'Spicy Ramyeon', nameKr:'매운라면', desc:'Spicy Ramen Noodles', price:6.95, image:'', thumbnail:'', dietary:'spicy', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E74C3C', active:true, sortOrder:2 },
-    { id:'M015', catId:'sides', nameEn:'Chicken Mandu (5)', nameKr:'치킨만두 5개', desc:'Chicken Dumplings', price:4.50, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#F39C12', active:true, sortOrder:1 },
-    { id:'M016', catId:'sides', nameEn:'Kim Mari (5)', nameKr:'김말이 5개', desc:'Seaweed Roll Fries', price:3.50, image:'', thumbnail:'', dietary:'V', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#2980B9', active:true, sortOrder:2 },
-    { id:'M017', catId:'sides', nameEn:'Tteokbokki', nameKr:'떡볶이', desc:'Spicy Rice Cakes', price:4.50, image:'', thumbnail:'', dietary:'spicy,V', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E74C3C', active:true, sortOrder:3 },
-    { id:'M018', catId:'sides', nameEn:'Korean Pancake', nameKr:'파전', desc:'Vegetable Pancake', price:4.50, image:'', thumbnail:'', dietary:'V', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#1ABC9C', active:true, sortOrder:4 },
-    { id:'M019', catId:'sides', nameEn:'Fresh Kimchi', nameKr:'김치', desc:'Homemade Kimchi', price:2.00, image:'', thumbnail:'', dietary:'VG,spicy', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#C0392B', active:true, sortOrder:5 },
-    { id:'M020', catId:'drinks', nameEn:'Coca Cola', nameKr:'콜라', desc:'', price:1.50, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E74C3C', active:true, sortOrder:1 },
-    { id:'M021', catId:'drinks', nameEn:'Sprite', nameKr:'스프라이트', desc:'', price:1.50, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#2ECC71', active:true, sortOrder:2 },
-    { id:'M022', catId:'drinks', nameEn:'Water', nameKr:'물', desc:'', price:1.00, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#3498DB', active:true, sortOrder:3 },
-    { id:'M023', catId:'drinks', nameEn:'Korean Banana Milk', nameKr:'바나나우유', desc:'', price:2.00, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#F1C40F', active:true, sortOrder:4 },
-    { id:'M024', catId:'drinks', nameEn:'Iced Tea', nameKr:'아이스티', desc:'', price:2.00, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E67E22', active:true, sortOrder:5 },
-    { id:'M025', catId:'kids', nameEn:"Kid's Bap", nameKr:'키즈밥', desc:'Small portion for kids', price:5.45, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#DB2777', active:true, sortOrder:1 },
-    { id:'M026', catId:'kids', nameEn:"Kid's Combo", nameKr:'키즈콤보', desc:"Kid's Bap + Drink + Side", price:6.45, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#7C3AED', active:true, sortOrder:2 },
-    { id:'M027', catId:'kids', nameEn:'Corn Dog (2)', nameKr:'핫도그 2개', desc:'Korean Corn Dogs', price:4.50, image:'', thumbnail:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#F39C12', active:true, sortOrder:3 },
-    { id:'M028', catId:'kids', nameEn:'Honey Hotteok', nameKr:'꿀호떡', desc:'Sweet Pancake with honey', price:3.00, image:'', thumbnail:'', dietary:'V', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#D97706', active:true, sortOrder:4 },
+    { id:'M001', catId:'kfood', nameEn:'Combo Bap', nameKr:'콤보밥', desc:'Two different choices of topping', price:9.55, driveId:'', dietary:'', isCombo:true, comboCount:2, hasTopping:false, toppingCount:0, btnColor:'#C0392B', active:true, sortOrder:1 },
+    { id:'M002', catId:'kfood', nameEn:'Tofu Bap', nameKr:'두부밥', desc:'Fried Tofu on Rice', price:7.45, driveId:'', dietary:'V', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#27AE60', active:true, sortOrder:2 },
+    { id:'M003', catId:'kfood', nameEn:'Chicken Teriyaki Bap', nameKr:'치킨데리야끼밥', desc:'Chicken Teriyaki on Rice', price:8.25, driveId:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E67E22', active:true, sortOrder:3 },
+    { id:'M004', catId:'kfood', nameEn:'KFC Bap', nameKr:'양념치킨밥', desc:'Korean Fried Chicken', price:8.25, driveId:'', dietary:'spicy', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E74C3C', active:true, sortOrder:4 },
+    { id:'M005', catId:'kfood', nameEn:'Kimchi Fried Rice', nameKr:'김치볶음밥', desc:'Kimchi Fried Rice with egg', price:7.45, driveId:'', dietary:'spicy', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#D35400', active:true, sortOrder:5 },
+    { id:'M006', catId:'kchicken', nameEn:'Fried Chicken Bap', nameKr:'후라이드치킨밥', desc:'Korean Fried Chicken', price:8.25, driveId:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#F39C12', active:true, sortOrder:1 },
+    { id:'M007', catId:'kchicken', nameEn:'Spicy Chicken Bap', nameKr:'매운치킨밥', desc:'Spicy Korean Fried Chicken', price:8.25, driveId:'', dietary:'spicy', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E74C3C', active:true, sortOrder:2 },
+    { id:'M008', catId:'kchicken', nameEn:'Soy Garlic Chicken', nameKr:'간장마늘치킨', desc:'Soy Garlic Glazed Chicken', price:8.25, driveId:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#8E44AD', active:true, sortOrder:3 },
+    { id:'M009', catId:'bbq', nameEn:'Beef Bulgogi Bap', nameKr:'소불고기밥', desc:'Korean BBQ Beef on Rice', price:8.75, driveId:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#C0392B', active:true, sortOrder:1 },
+    { id:'M010', catId:'bbq', nameEn:'Pork Bulgogi Bap', nameKr:'돼지불고기밥', desc:'Korean Spicy Pork Bulgogi', price:8.75, driveId:'', dietary:'spicy', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E74C3C', active:true, sortOrder:2 },
+    { id:'M011', catId:'bibimbap', nameEn:'Bibim Bap', nameKr:'비빔밥', desc:'Mixed Rice Bowl', price:7.95, driveId:'', dietary:'V', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#27AE60', active:true, sortOrder:1 },
+    { id:'M012', catId:'bibimbap', nameEn:'Bibim Bap + Topping', nameKr:'비빔밥+토핑', desc:'Bibim Bap + Choice of 1 Topping', price:9.95, driveId:'', dietary:'', isCombo:false, comboCount:0, hasTopping:true, toppingCount:1, btnColor:'#16A085', active:true, sortOrder:2 },
+    { id:'M013', catId:'noodle', nameEn:'Japchae', nameKr:'잡채', desc:'Korean Glass Noodles', price:7.45, driveId:'', dietary:'V', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#9B59B6', active:true, sortOrder:1 },
+    { id:'M014', catId:'noodle', nameEn:'Spicy Ramyeon', nameKr:'매운라면', desc:'Spicy Ramen Noodles', price:6.95, driveId:'', dietary:'spicy', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E74C3C', active:true, sortOrder:2 },
+    { id:'M015', catId:'sides', nameEn:'Chicken Mandu (5)', nameKr:'치킨만두 5개', desc:'Chicken Dumplings', price:4.50, driveId:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#F39C12', active:true, sortOrder:1 },
+    { id:'M016', catId:'sides', nameEn:'Kim Mari (5)', nameKr:'김말이 5개', desc:'Seaweed Roll Fries', price:3.50, driveId:'', dietary:'V', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#2980B9', active:true, sortOrder:2 },
+    { id:'M017', catId:'sides', nameEn:'Tteokbokki', nameKr:'떡볶이', desc:'Spicy Rice Cakes', price:4.50, driveId:'', dietary:'spicy,V', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E74C3C', active:true, sortOrder:3 },
+    { id:'M018', catId:'sides', nameEn:'Korean Pancake', nameKr:'파전', desc:'Vegetable Pancake', price:4.50, driveId:'', dietary:'V', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#1ABC9C', active:true, sortOrder:4 },
+    { id:'M019', catId:'sides', nameEn:'Fresh Kimchi', nameKr:'김치', desc:'Homemade Kimchi', price:2.00, driveId:'', dietary:'VG,spicy', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#C0392B', active:true, sortOrder:5 },
+    { id:'M020', catId:'drinks', nameEn:'Coca Cola', nameKr:'콜라', desc:'', price:1.50, driveId:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E74C3C', active:true, sortOrder:1 },
+    { id:'M021', catId:'drinks', nameEn:'Sprite', nameKr:'스프라이트', desc:'', price:1.50, driveId:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#2ECC71', active:true, sortOrder:2 },
+    { id:'M022', catId:'drinks', nameEn:'Water', nameKr:'물', desc:'', price:1.00, driveId:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#3498DB', active:true, sortOrder:3 },
+    { id:'M023', catId:'drinks', nameEn:'Korean Banana Milk', nameKr:'바나나우유', desc:'', price:2.00, driveId:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#F1C40F', active:true, sortOrder:4 },
+    { id:'M024', catId:'drinks', nameEn:'Iced Tea', nameKr:'아이스티', desc:'', price:2.00, driveId:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#E67E22', active:true, sortOrder:5 },
+    { id:'M025', catId:'kids', nameEn:"Kid's Bap", nameKr:'키즈밥', desc:'Small portion for kids', price:5.45, driveId:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#DB2777', active:true, sortOrder:1 },
+    { id:'M026', catId:'kids', nameEn:"Kid's Combo", nameKr:'키즈콤보', desc:"Kid's Bap + Drink + Side", price:6.45, driveId:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#7C3AED', active:true, sortOrder:2 },
+    { id:'M027', catId:'kids', nameEn:'Corn Dog (2)', nameKr:'핫도그 2개', desc:'Korean Corn Dogs', price:4.50, driveId:'', dietary:'', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#F39C12', active:true, sortOrder:3 },
+    { id:'M028', catId:'kids', nameEn:'Honey Hotteok', nameKr:'꿀호떡', desc:'Sweet Pancake with honey', price:3.00, driveId:'', dietary:'V', isCombo:false, comboCount:0, hasTopping:false, toppingCount:0, btnColor:'#D97706', active:true, sortOrder:4 },
   ];
   updateAllItems(defaultItems);
 

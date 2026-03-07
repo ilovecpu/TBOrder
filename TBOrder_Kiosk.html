@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Order Kiosk v1.0 | 2026-03-06 -->
+<!-- The Bap Order Kiosk v1.4 | 2026-03-07 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -81,6 +81,16 @@
         }
         @media (min-width: 700px) {
             .branch-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        /* ── Loading spinner ── */
+        @keyframes kioskSpin { to { transform: rotate(360deg); } }
+        .branch-loading-spinner {
+            width: 48px; height: 48px; border: 5px solid #E5E7EB; border-top-color: #006AFF;
+            border-radius: 50%; animation: kioskSpin .8s linear infinite; margin: 0 auto 14px;
+        }
+        .branch-loading-msg {
+            grid-column: 1 / -1; text-align: center; padding: 40px 0; color: #9CA3AF; font-size: 16px;
         }
 
         .branch-card {
@@ -577,8 +587,8 @@
 
         .menu-item-image {
             width: 100%;
-            aspect-ratio: 4/3;
-            background: linear-gradient(135deg, #F5F5F5 0%, #E8E8E8 100%);
+            aspect-ratio: 1/1;
+            background: #fff;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -590,7 +600,8 @@
         .menu-item-image img {
             width: 100%;
             height: 100%;
-            object-fit: cover;
+            object-fit: contain;
+            background: #fff;
         }
 
         .image-skeleton {
@@ -1703,8 +1714,8 @@
         <div id="welcomeScreen" class="screen">
             <div class="welcome-inner">
                 <div class="welcome-header">
-                    <div class="welcome-logo"><img src="TBLOGO.png" alt="The Bap 밥"></div>
-                    <div class="welcome-tagline-kr">밥이보약</div>
+                    <div class="welcome-logo"><img src="TBLOGO.png" alt="The Bap"></div>
+                    <div class="welcome-tagline-kr"><img src="BOYAK.png" alt="The Bap" style="height:clamp(40px,6vw,80px);object-fit:contain;"></div>
                     <div class="welcome-tagline-en">K-Food on the Bap</div>
                     <div class="welcome-branch" id="welcomeBranch"></div>
                 </div>
@@ -1875,9 +1886,8 @@
         <!-- Customer Name Screen -->
         <div id="nameScreen" class="screen">
             <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:3vh 5vw;background:#F5F5F7;overflow-y:auto;">
-                <div style="font-size:clamp(24px,4vw,36px);font-weight:700;color:#333;margin-bottom:6px;">Your Name / 이름</div>
+                <div style="font-size:clamp(24px,4vw,36px);font-weight:700;color:#333;margin-bottom:6px;">Your Name</div>
                 <div style="font-size:clamp(13px,2vw,17px);color:#999;margin-bottom:2vh;">We'll call your name when your order is ready</div>
-                <div style="font-size:clamp(12px,1.8vw,15px);color:#999;margin-bottom:2vh;">주문이 준비되면 이름을 불러드립니다</div>
 
                 <input type="text" id="customerNameInput" placeholder="Enter your name..."
                     autocomplete="off" maxlength="20"
@@ -1927,7 +1937,7 @@
             <div class="confirmation-container">
                 <div class="checkmark">✓</div>
                 <div class="confirmation-title">Order Placed!</div>
-                <div class="confirmation-title-kr">주문 완료!</div>
+                <div class="confirmation-title-kr">Thank you!</div>
 
                 <div class="confirmation-order-number">
                     <div class="confirmation-order-label">Order Number</div>
@@ -1951,7 +1961,7 @@
                         Please choose at the counter!
                     </div>
                     <div style="font-size:14px;color:#856404;margin-top:4px;">
-                        음료와 스낵은 카운터에서 선택해주세요
+                        Available at the counter
                     </div>
                 </div>
 
@@ -1969,7 +1979,7 @@
                     cursor: pointer;
                     box-shadow: 0 6px 20px rgba(232, 93, 117, 0.4);
                     transition: all 0.2s ease;
-                ">🏠 New Order / 새 주문</button>
+                ">🏠 New Order</button>
 
                 <div class="confirmation-timer" style="margin-top:16px;">
                     <span>Auto return in </span>
@@ -2005,68 +2015,8 @@
 
     <script>
         // ========== CONFIGURATION DATA ==========
-        const BRANCHES = [
-            {
-                code: 'PAB',
-                name: 'Pick A Bap',
-                company: 'Pick A Bap Ltd',
-                companyNo: '11737355',
-                vatNo: '322 1464 42',
-                vatQuarter: 'A',
-                address: 'Unit 24, The Meads Shopping Center, Farnborough, Hampshire, GU14 7SJ',
-                phone: '0125 293 8822',
-                email: 'pickabap@gmail.com',
-                manager: 'Thir, Jems'
-            },
-            {
-                code: 'TBS',
-                name: 'The Bap Swindon',
-                company: 'The Bap Swindon Ltd',
-                companyNo: '13523669',
-                vatNo: '403 8392 06',
-                vatQuarter: 'C',
-                address: '12 Havelock Square, Swindon SN1 1LE',
-                phone: '0179 343 2237',
-                email: 'thebap2020@gmail.com',
-                manager: 'Sunny, Niraj'
-            },
-            {
-                code: 'TBR',
-                name: 'The Bap Reading',
-                company: 'The Bap Reading Ltd',
-                companyNo: '14762878',
-                vatNo: '446081987',
-                vatQuarter: 'C',
-                address: '23-24 Market Place, Reading, RG1 2DE',
-                phone: '0118 909 0071',
-                email: 'thebapReading@gmail.com',
-                manager: 'Ashok'
-            },
-            {
-                code: 'TBB',
-                name: 'The Bap Bristol',
-                company: 'The Bap Bristol Ltd',
-                companyNo: '16273308',
-                vatNo: '491116990',
-                vatQuarter: 'B',
-                address: '21 Queens Road, Clifton, Bristol, BS8 1QE',
-                phone: '0117 363 7784',
-                email: 'thebapBristol@gmail.com',
-                manager: 'Mukesh'
-            },
-            {
-                code: 'TBO',
-                name: 'The Bap Oxford',
-                company: 'Thebap Oxford Ltd',
-                companyNo: '12341234',
-                vatNo: '12341234',
-                vatQuarter: 'A',
-                address: '',
-                phone: '',
-                email: '',
-                manager: ''
-            }
-        ];
+        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbwsgxPV8Ak3rFh-_ZWioV3IEZ5sQIO3kE3VVue2XrrHVTYsYel-1rijLdf7WLy15Yzlhg/exec';
+        let BRANCHES = []; // loaded dynamically — no hardcoded fallback
 
         // ═══ Menu data loaded from server API ═══
         let CATEGORIES = [];
@@ -2091,7 +2041,7 @@
                     .map(i => ({
                         id: i.id, catId: i.catId, nameEn: i.nameEn, nameKr: i.nameKr,
                         desc: i.desc || '', price: i.price, dietary: i.dietary || [],
-                        image: i.image || '', isCombo: i.isCombo || false, comboCount: i.comboCount || 0,
+                        image: i.driveId || i.image || i.thumbnail || '', isCombo: i.isCombo || false, comboCount: i.comboCount || 0,
                         hasTopping: i.hasTopping || false, toppingCount: i.toppingCount || 0
                     }));
                 // Sauces
@@ -2306,17 +2256,27 @@
             });
         }
 
-        function getImageUrl(imageUrl, categoryId) {
-            if (!imageUrl) {
-                const category = CATEGORIES.find(c => c.id === categoryId);
-                const icon = category ? category.icon : '🍱';
-                return null;
+        function getImageUrl(idOrUrl, categoryId) {
+            if (!idOrUrl) return null;
+            // Already lh3 CDN URL
+            if (idOrUrl.includes('lh3.googleusercontent.com')) {
+                return idOrUrl.replace(/=w\d+/, '=w400');
             }
-            if (imageUrl.includes('drive.google.com')) {
-                const match = imageUrl.match(/id=([a-zA-Z0-9-_]+)/);
-                if (match) return `https://drive.google.com/thumbnail?id=${match[1]}&sz=w400`;
+            // Legacy: full Drive URL — extract file ID → lh3
+            if (idOrUrl.includes('drive.google.com') || idOrUrl.includes('http')) {
+                let id = '';
+                const m1 = idOrUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                const m2 = idOrUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                if (m1) id = m1[1];
+                else if (m2) id = m2[1];
+                if (id) return 'https://lh3.googleusercontent.com/d/' + id + '=w400';
+                return idOrUrl;
             }
-            return imageUrl;
+            // Bare File ID (TBMS pattern)
+            if (/^[a-zA-Z0-9_-]+$/.test(idOrUrl)) {
+                return 'https://lh3.googleusercontent.com/d/' + idOrUrl + '=w400';
+            }
+            return idOrUrl;
         }
 
         function renderImagePlaceholder(container, categoryId, itemName) {
@@ -2329,10 +2289,9 @@
         }
 
         // ========== STAFF BOOT LOGIC ==========
-        function initStaffBoot() {
+        function renderBranchCards() {
             const branchGrid = document.getElementById('branchGrid');
             branchGrid.innerHTML = '';
-
             BRANCHES.forEach(branch => {
                 const card = document.createElement('div');
                 card.className = 'branch-card';
@@ -2346,6 +2305,58 @@
                 });
                 branchGrid.appendChild(card);
             });
+        }
+
+        async function initStaffBoot() {
+            const branchGrid = document.getElementById('branchGrid');
+            // Show loading spinner
+            branchGrid.innerHTML = '<div class="branch-loading-msg"><div class="branch-loading-spinner"></div>Loading branches…</div>';
+
+            let loaded = false;
+
+            // 1) Try local server first
+            try {
+                const resp = await fetch('/api/menu');
+                if (resp.ok) {
+                    const data = await resp.json();
+                    if (data.branches && data.branches.length > 0) {
+                        BRANCHES = data.branches.filter(b => b.active !== false);
+                        renderBranchCards();
+                        loaded = true;
+                        console.log('[Kiosk] Branches loaded from local server:', BRANCHES.length);
+                    }
+                }
+            } catch(e) {}
+
+            // 2) Try TBMS API directly
+            if (!loaded) {
+                try {
+                    const url = GOOGLE_API + '?action=stores';
+                    const resp = await fetch(url, { redirect: 'follow' });
+                    const data = await resp.json();
+                    const stores = data.stores?.data || data.stores || [];
+                    if (stores.length > 0) {
+                        BRANCHES = stores
+                            .filter(s => s.active !== false && s.active !== 'false')
+                            .map(s => ({
+                                code: s.code || s.id, name: s.name,
+                                nameKr: s.nameKr || '', phone: String(s.phone || ''),
+                                company: s.company || '', companyNo: s.companyNo || '',
+                                vatNo: s.vatNo || '', vatQuarter: s.vatQuarter || '',
+                                address: s.address || '', email: s.email || '',
+                                manager: s.manager || '', active: true
+                            }));
+                        renderBranchCards();
+                        loaded = true;
+                        console.log('[Kiosk] Branches loaded from TBMS API:', BRANCHES.length);
+                    }
+                } catch(e) { console.log('[Kiosk] TBMS API error:', e.message); }
+            }
+
+            // 3) All sources failed
+            if (!loaded) {
+                branchGrid.innerHTML = '<div class="branch-loading-msg" style="color:#DC2626;"><div style="font-size:32px;margin-bottom:10px;">⚠️</div>Failed to load branches.<br>Check network connection.</div>';
+            }
         }
 
         function showPinModal(branch) {
@@ -2363,7 +2374,9 @@
                 key.onclick = (e) => {
                     playTapSound();
                     if (key.classList.contains('enter')) {
-                        if (pinInput === '0000') {
+                        const digits = (branch.phone || '').replace(/\D/g, '');
+                        const correctPin = digits.length >= 4 ? digits.slice(-4) : '0000';
+                        if (pinInput === correctPin) {
                             localStorage.setItem('tb_current_branch', branch.code);
                             AppState.currentBranch = branch.code;
                             pinModal.classList.remove('active');
@@ -2658,7 +2671,7 @@
             playTapSound();
             const item = AppState.selectedItem;
             if (!AppState.selectedSauce) {
-                tbAlert('Please select a sauce\n소스를 선택해주세요', 'Select Sauce', '🫙');
+                tbAlert('Please select a sauce', 'Select Sauce', '🫙');
                 return;
             }
 

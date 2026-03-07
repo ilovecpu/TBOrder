@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Admin v1.2 | 2026-03-06 -->
+<!-- The Bap Admin v1.9 | 2026-03-06 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -686,9 +686,9 @@
         /* MENU GRID */
         .menu-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-            gap: 16px;
-            margin-top: 16px;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
         }
 
         .menu-item-card {
@@ -697,38 +697,45 @@
             overflow: hidden;
             box-shadow: 0 1px 3px rgba(0,0,0,0.08);
             border: 1px solid #E0E0E0;
+            position: relative;
+        }
+        .menu-item-color-bar {
+            position: absolute; top: 0; left: 0; width: 100%; height: 5px;
         }
 
         .menu-item-image {
             width: 100%;
-            height: 160px;
+            aspect-ratio: 1/1;
             object-fit: cover;
             background: #F5F5F7;
         }
 
         .menu-item-body {
-            padding: 16px;
+            padding: 8px 10px;
         }
 
         .menu-item-name {
             font-weight: 600;
-            font-size: 15px;
-            margin-bottom: 4px;
+            font-size: 12px;
+            margin-bottom: 2px;
             color: #333;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .menu-item-name-kr {
             font-family: 'Noto Sans KR';
-            font-size: 13px;
+            font-size: 11px;
             color: #999;
-            margin-bottom: 8px;
+            margin-bottom: 4px;
         }
 
         .menu-item-price {
-            font-size: 16px;
+            font-size: 13px;
             font-weight: 700;
             color: #E85D75;
-            margin-bottom: 8px;
+            margin-bottom: 6px;
         }
 
         .menu-item-dietary {
@@ -852,9 +859,43 @@
             background: #f0f0f0; color: #555;
         }
         .tb-popup-btns .tb-btn-cancel:hover { background: #e0e0e0; }
+
+        /* Loading Overlay */
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.45);
+            z-index: 99999;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            gap: 16px;
+        }
+        .loading-overlay.active { display: flex; }
+        .loading-spinner {
+            width: 48px; height: 48px;
+            border: 4px solid rgba(255,255,255,0.3);
+            border-top: 4px solid #fff;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loading-text {
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            text-align: center;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+        }
     </style>
 </head>
 <body>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loading-spinner"></div>
+        <div class="loading-text" id="loadingText">Loading...</div>
+    </div>
     <!-- ═══ Custom Popup Container ═══ -->
     <div class="tb-popup-overlay" id="tbPopup">
         <div class="tb-popup">
@@ -865,6 +906,15 @@
         </div>
     </div>
     <script>
+    // ═══ Loading Overlay ═══
+    function showLoading(msg) {
+        document.getElementById('loadingText').textContent = msg || 'Loading...';
+        document.getElementById('loadingOverlay').classList.add('active');
+    }
+    function hideLoading() {
+        document.getElementById('loadingOverlay').classList.remove('active');
+    }
+
     // ═══ Custom Popup Utilities ═══
     function tbAlert(msg, title, icon) {
         return new Promise(resolve => {
@@ -921,61 +971,61 @@
     <div class="container" id="mainContainer" style="display: none;">
         <!-- SIDEBAR -->
         <div class="sidebar">
-            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v1.2</span></div>
+            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v1.9</span></div>
             <div class="nav-menu">
                 <div class="nav-item active" data-section="dashboard">
                     <div class="nav-icon">📊</div>
-                    <span>홈 Dashboard</span>
-                </div>
-                <div class="nav-item" data-section="branches">
-                    <div class="nav-icon">🏢</div>
-                    <span>지점관리 Branches</span>
-                </div>
-                <div class="nav-item" data-section="categories">
-                    <div class="nav-icon">📂</div>
-                    <span>카테고리 Categories</span>
+                    <span>Dashboard</span>
                 </div>
                 <div class="nav-item" data-section="menu">
                     <div class="nav-icon">🍜</div>
-                    <span>메뉴관리 Menu</span>
+                    <span>Menu Management</span>
                 </div>
                 <div class="nav-item" data-section="branchMenu">
                     <div class="nav-icon">📍</div>
-                    <span>지점별메뉴 Menu Settings</span>
+                    <span>Branch Menu</span>
+                </div>
+                <div class="nav-item" data-section="categories">
+                    <div class="nav-icon">📂</div>
+                    <span>Categories</span>
                 </div>
                 <div class="nav-item" data-section="sauces">
                     <div class="nav-icon">🔥</div>
-                    <span>소스관리 Sauces</span>
+                    <span>Sauce Management</span>
                 </div>
                 <div class="nav-item" data-section="allergens">
                     <div class="nav-icon">⚠️</div>
-                    <span>알레르겐 Allergens</span>
+                    <span>Allergens</span>
                 </div>
                 <div class="nav-item" data-section="nutrition">
                     <div class="nav-icon">📊</div>
-                    <span>영양정보 Nutrition</span>
+                    <span>Nutrition</span>
+                </div>
+                <div class="nav-item" data-section="branches">
+                    <div class="nav-icon">🏢</div>
+                    <span>Branches</span>
                 </div>
                 <div class="nav-item" data-section="orders">
                     <div class="nav-icon">📦</div>
-                    <span>주문현황 Orders</span>
+                    <span>Orders</span>
                 </div>
                 <div class="nav-item" data-section="sync">
                     <div class="nav-icon">☁️</div>
-                    <span>데이터동기화 Sync</span>
+                    <span>Sync</span>
                 </div>
                 <div class="nav-item" data-section="settings">
                     <div class="nav-icon">⚙️</div>
-                    <span>설정 Settings</span>
+                    <span>Settings</span>
                 </div>
             </div>
-            <div class="sidebar-footer">v1.2 | The Bap Group</div>
+            <div class="sidebar-footer">v1.9 | The Bap Group</div>
         </div>
 
         <!-- MAIN CONTENT -->
         <div class="main-content">
             <!-- TOP BAR -->
             <div class="topbar">
-                <div class="page-title" id="pageTitle">홈 Dashboard</div>
+                <div class="page-title" id="pageTitle">Dashboard</div>
                 <div class="topbar-right">
                     <div class="clock" id="clock">00:00:00</div>
                     <div class="status-indicator">
@@ -989,6 +1039,9 @@
             <div class="content-area">
                 <!-- DASHBOARD SECTION -->
                 <div class="content-section active" id="section-dashboard">
+                    <div style="display:flex; justify-content:flex-end; margin-bottom:12px;">
+                        <button class="btn" onclick="app.refreshDashboard()" style="background:#4CAF50; color:#fff; padding:8px 20px; border-radius:8px; font-size:14px;">🔄 Refresh</button>
+                    </div>
                     <div class="stats-grid">
                         <div class="stat-card">
                             <div class="stat-label">Total Orders</div>
@@ -1043,7 +1096,7 @@
 
                 <!-- CATEGORIES SECTION -->
                 <div class="content-section" id="section-categories">
-                    <h2 style="margin-bottom:16px">📂 카테고리 관리 Category Management</h2>
+                    <h2 style="margin-bottom:16px">📂 Category Management</h2>
                     <div style="margin-bottom: 20px;">
                         <button class="btn-primary" onclick="app.openCategoryForm()">+ Add Category</button>
                     </div>
@@ -1067,8 +1120,9 @@
 
                 <!-- MENU SECTION -->
                 <div class="content-section" id="section-menu">
-                    <div style="margin-bottom: 20px;">
+                    <div style="margin-bottom: 20px; display:flex; gap:10px; align-items:center;">
                         <button class="btn-primary" onclick="app.openMenuForm()">+ Add Menu Item</button>
+                        <button class="btn-secondary" onclick="app.saveMenuToServer()" style="background:#059669;color:#fff;border:none;">💾 Save to Server</button>
                     </div>
                     <div class="tabs" id="categoryTabs"></div>
                     <div id="menuContent" class="menu-grid"></div>
@@ -1094,7 +1148,7 @@
                         <thead>
                             <tr>
                                 <th>Name</th>
-                                <th>한글</th>
+                                <th>Korean</th>
                                 <th>Spice Level</th>
                                 <th>Description</th>
                                 <th>Allergens</th>
@@ -1357,6 +1411,16 @@
                     <input type="number" id="menuPrice" step="0.01" required>
                 </div>
                 <div class="form-group">
+                    <label>Button Colour</label>
+                    <div id="btnColorPicker" style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;max-width:300px"></div>
+                    <script>(function(){
+                        const colors=['#DC2626','#EF4444','#EA580C','#F59E0B','#D97706','#84CC16','#22C55E','#059669','#14B8A6','#06B6D4','#2563EB','#3B82F6','#6366F1','#7C3AED','#DB2777','#6B7280'];
+                        const el=document.getElementById('btnColorPicker');
+                        el.innerHTML=colors.map(c=>`<label style="cursor:pointer"><input type="radio" name="btnColor" value="${c}" style="display:none"><span class="color-dot" style="display:inline-block;width:26px;height:26px;border-radius:50%;background:${c};border:3px solid transparent;vertical-align:middle"></span></label>`).join('');
+                        el.querySelectorAll('input[name="btnColor"]').forEach(r=>{r.addEventListener('change',()=>{el.querySelectorAll('.color-dot').forEach(d=>d.style.borderColor='transparent');r.nextElementSibling.style.borderColor='#1F2937'})});
+                    })();</script>
+                </div>
+                <div class="form-group">
                     <label>Image (Upload or URL)</label>
                     <div style="display:flex;gap:8px;margin-bottom:8px">
                         <label class="btn-secondary" style="cursor:pointer;display:inline-flex;align-items:center;gap:4px;padding:8px 16px;border-radius:8px;font-size:13px">
@@ -1365,9 +1429,10 @@
                         </label>
                         <span style="color:#999;font-size:12px;line-height:36px">or paste URL below</span>
                     </div>
-                    <input type="text" id="menuImageUrl" placeholder="https://drive.google.com/uc?export=view&id=..." onchange="app.previewMenuImageUrl(this.value)">
+                    <input type="text" id="menuImageUrl" placeholder="Google Drive File ID or URL..." onchange="app.previewMenuImageUrl(this.value)">
                     <img id="menuImagePreview" class="image-preview" style="display:none;max-width:200px;max-height:150px;border-radius:8px;margin-top:8px;object-fit:cover">
                     <input type="hidden" id="menuImageBase64">
+                    <input type="hidden" id="menuThumbBase64">
                     <input type="hidden" id="menuImageFileName">
                     <input type="hidden" id="menuImageMimeType">
                 </div>
@@ -1474,7 +1539,7 @@
                     <input type="text" id="sauceName" required>
                 </div>
                 <div class="form-group">
-                    <label>한글 Name</label>
+                    <label>Korean Name</label>
                     <input type="text" id="sauceNameKr" required>
                 </div>
                 <div class="form-group">
@@ -1508,27 +1573,27 @@
         ];
 
         const DEFAULT_MENU = [
-            { id: 'M001', nameEn: 'Spicy Beef Bap', nameKr: '매운 쇠고기 밥', category: 'Baps', description: 'Tender beef with gochujang sauce', basePrice: 5.99, imageUrl: 'https://via.placeholder.com/300x200?text=Spicy+Beef', dietary: ['spicy'], isCombo: false, hasTopping: true, active: true },
-            { id: 'M002', nameEn: 'Chicken Bulgogi Bap', nameKr: '닭 불고기 밥', category: 'Baps', description: 'Korean marinated chicken', basePrice: 5.99, imageUrl: 'https://via.placeholder.com/300x200?text=Chicken+Bulgogi', dietary: [], isCombo: false, hasTopping: true, active: true },
-            { id: 'M003', nameEn: 'Vegetarian Bap', nameKr: '채식 밥', category: 'Baps', description: 'Mixed vegetables and tofu', basePrice: 4.99, imageUrl: 'https://via.placeholder.com/300x200?text=Vegetarian', dietary: ['vegetarian', 'vegan'], isCombo: false, hasTopping: true, active: true },
-            { id: 'M004', nameEn: 'Kimchi Pork Bap', nameKr: '김치 돼지고기 밥', category: 'Baps', description: 'Pork with kimchi', basePrice: 6.49, imageUrl: 'https://via.placeholder.com/300x200?text=Kimchi+Pork', dietary: ['spicy'], isCombo: false, hasTopping: true, active: true },
-            { id: 'M005', nameEn: 'Soft Shell Crab Bap', nameKr: '소프트 셸 크랩 밥', category: 'Baps', description: 'Crispy soft shell crab', basePrice: 7.99, imageUrl: 'https://via.placeholder.com/300x200?text=Crab', dietary: [], isCombo: false, hasTopping: false, active: true },
-            { id: 'M006', nameEn: 'Seafood Combo Bap', nameKr: '해산물 콤보 밥', category: 'Baps', description: 'Shrimp, squid, fish', basePrice: 8.49, imageUrl: 'https://via.placeholder.com/300x200?text=Seafood', dietary: [], isCombo: true, hasTopping: true, active: true },
-            { id: 'M007', nameEn: 'Tteokbokki Bap', nameKr: '떡볶이 밥', category: 'Baps', description: 'Spicy rice cake bap', basePrice: 5.49, imageUrl: 'https://via.placeholder.com/300x200?text=Tteokbokki', dietary: ['spicy', 'vegetarian'], isCombo: false, hasTopping: true, active: true },
-            { id: 'M008', nameEn: 'Korean Fried Chicken Bap', nameKr: '한국 튀김 닭 밥', category: 'Baps', description: 'Double fried chicken', basePrice: 6.99, imageUrl: 'https://via.placeholder.com/300x200?text=Fried+Chicken', dietary: ['spicy'], isCombo: false, hasTopping: true, active: true },
-            { id: 'M009', nameEn: 'Bibimbap', nameKr: '비빔밥', category: 'Baps', description: 'Mixed vegetables, egg, beef', basePrice: 6.49, imageUrl: 'https://via.placeholder.com/300x200?text=Bibimbap', dietary: ['vegetarian'], isCombo: false, hasTopping: true, active: true },
-            { id: 'S001', nameEn: 'Kimchi Fried Rice', nameKr: '김치 볶음밥', category: 'Sides', description: 'Spicy fried rice', basePrice: 3.99, imageUrl: 'https://via.placeholder.com/300x200?text=Kimchi+Rice', dietary: ['spicy', 'vegetarian'], isCombo: false, hasTopping: false, active: true },
-            { id: 'S002', nameEn: 'Edamame', nameKr: '에다마메', category: 'Sides', description: 'Steamed soybeans', basePrice: 2.99, imageUrl: 'https://via.placeholder.com/300x200?text=Edamame', dietary: ['vegan', 'vegetarian'], isCombo: false, hasTopping: false, active: true },
-            { id: 'S003', nameEn: 'Gyeran Mari', nameKr: '계란 마리', category: 'Sides', description: 'Rolled egg omelette', basePrice: 3.49, imageUrl: 'https://via.placeholder.com/300x200?text=Egg+Roll', dietary: ['vegetarian'], isCombo: false, hasTopping: false, active: true },
-            { id: 'S004', nameEn: 'Tempura Vegetables', nameKr: '튀김 야채', category: 'Sides', description: 'Crispy battered veg', basePrice: 3.99, imageUrl: 'https://via.placeholder.com/300x200?text=Tempura', dietary: ['vegetarian'], isCombo: false, hasTopping: false, active: true },
-            { id: 'S005', nameEn: 'Korean Corn Cheese', nameKr: '한국 옥수수 치즈', category: 'Sides', description: 'Sweet corn with cheese', basePrice: 4.49, imageUrl: 'https://via.placeholder.com/300x200?text=Corn+Cheese', dietary: ['vegetarian'], isCombo: false, hasTopping: false, active: true },
-            { id: 'D001', nameEn: 'Mango Lassi', nameKr: '망고 라씨', category: 'Drinks', description: 'Smooth mango yogurt drink', basePrice: 3.49, imageUrl: 'https://via.placeholder.com/300x200?text=Lassi', dietary: ['vegetarian'], isCombo: false, hasTopping: false, active: true },
-            { id: 'D002', nameEn: 'Yuzu Lemonade', nameKr: '유자 레모네이드', category: 'Drinks', description: 'Citrus refresher', basePrice: 2.99, imageUrl: 'https://via.placeholder.com/300x200?text=Yuzu', dietary: ['vegan', 'vegetarian'], isCombo: false, hasTopping: false, active: true },
-            { id: 'D003', nameEn: 'Korean Iced Tea', nameKr: '한국 아이스 티', category: 'Drinks', description: 'Traditional chilled tea', basePrice: 2.49, imageUrl: 'https://via.placeholder.com/300x200?text=Ice+Tea', dietary: ['vegan', 'vegetarian'], isCombo: false, hasTopping: false, active: true },
-            { id: 'D004', nameEn: 'Bubble Tea', nameKr: '버블 티', category: 'Drinks', description: 'With tapioca pearls', basePrice: 3.99, imageUrl: 'https://via.placeholder.com/300x200?text=Bubble+Tea', dietary: ['vegan', 'vegetarian'], isCombo: false, hasTopping: true, active: true },
-            { id: 'D005', nameEn: 'Horchata', nameKr: '오르차타', category: 'Drinks', description: 'Sweet rice milk drink', basePrice: 3.49, imageUrl: 'https://via.placeholder.com/300x200?text=Horchata', dietary: ['vegan', 'vegetarian'], isCombo: false, hasTopping: false, active: true },
-            { id: 'D006', nameEn: 'Ginger Shot', nameKr: '생강 샷', category: 'Drinks', description: 'Energizing ginger juice', basePrice: 2.99, imageUrl: 'https://via.placeholder.com/300x200?text=Ginger', dietary: ['vegan', 'vegetarian'], isCombo: false, hasTopping: false, active: true },
-            { id: 'D007', nameEn: 'Korean Coffee', nameKr: '한국 커피', category: 'Drinks', description: 'Rich Korean blend', basePrice: 3.49, imageUrl: 'https://via.placeholder.com/300x200?text=Coffee', dietary: ['vegan', 'vegetarian'], isCombo: false, hasTopping: false, active: true }
+            { id: 'M001', nameEn: 'Spicy Beef Bap', nameKr: '매운 쇠고기 밥', category: 'Baps', description: 'Tender beef with gochujang sauce', basePrice: 5.99, driveId: '', dietary: ['spicy'], isCombo: false, hasTopping: true, active: true },
+            { id: 'M002', nameEn: 'Chicken Bulgogi Bap', nameKr: '닭 불고기 밥', category: 'Baps', description: 'Korean marinated chicken', basePrice: 5.99, driveId: '', dietary: [], isCombo: false, hasTopping: true, active: true },
+            { id: 'M003', nameEn: 'Vegetarian Bap', nameKr: '채식 밥', category: 'Baps', description: 'Mixed vegetables and tofu', basePrice: 4.99, driveId: '', dietary: ['vegetarian', 'vegan'], isCombo: false, hasTopping: true, active: true },
+            { id: 'M004', nameEn: 'Kimchi Pork Bap', nameKr: '김치 돼지고기 밥', category: 'Baps', description: 'Pork with kimchi', basePrice: 6.49, driveId: '', dietary: ['spicy'], isCombo: false, hasTopping: true, active: true },
+            { id: 'M005', nameEn: 'Soft Shell Crab Bap', nameKr: '소프트 셸 크랩 밥', category: 'Baps', description: 'Crispy soft shell crab', basePrice: 7.99, driveId: '', dietary: [], isCombo: false, hasTopping: false, active: true },
+            { id: 'M006', nameEn: 'Seafood Combo Bap', nameKr: '해산물 콤보 밥', category: 'Baps', description: 'Shrimp, squid, fish', basePrice: 8.49, driveId: '', dietary: [], isCombo: true, hasTopping: true, active: true },
+            { id: 'M007', nameEn: 'Tteokbokki Bap', nameKr: '떡볶이 밥', category: 'Baps', description: 'Spicy rice cake bap', basePrice: 5.49, driveId: '', dietary: ['spicy', 'vegetarian'], isCombo: false, hasTopping: true, active: true },
+            { id: 'M008', nameEn: 'Korean Fried Chicken Bap', nameKr: '한국 튀김 닭 밥', category: 'Baps', description: 'Double fried chicken', basePrice: 6.99, driveId: '', dietary: ['spicy'], isCombo: false, hasTopping: true, active: true },
+            { id: 'M009', nameEn: 'Bibimbap', nameKr: '비빔밥', category: 'Baps', description: 'Mixed vegetables, egg, beef', basePrice: 6.49, driveId: '', dietary: ['vegetarian'], isCombo: false, hasTopping: true, active: true },
+            { id: 'S001', nameEn: 'Kimchi Fried Rice', nameKr: '김치 볶음밥', category: 'Sides', description: 'Spicy fried rice', basePrice: 3.99, driveId: '', dietary: ['spicy', 'vegetarian'], isCombo: false, hasTopping: false, active: true },
+            { id: 'S002', nameEn: 'Edamame', nameKr: '에다마메', category: 'Sides', description: 'Steamed soybeans', basePrice: 2.99, driveId: '', dietary: ['vegan', 'vegetarian'], isCombo: false, hasTopping: false, active: true },
+            { id: 'S003', nameEn: 'Gyeran Mari', nameKr: '계란 마리', category: 'Sides', description: 'Rolled egg omelette', basePrice: 3.49, driveId: '', dietary: ['vegetarian'], isCombo: false, hasTopping: false, active: true },
+            { id: 'S004', nameEn: 'Tempura Vegetables', nameKr: '튀김 야채', category: 'Sides', description: 'Crispy battered veg', basePrice: 3.99, driveId: '', dietary: ['vegetarian'], isCombo: false, hasTopping: false, active: true },
+            { id: 'S005', nameEn: 'Korean Corn Cheese', nameKr: '한국 옥수수 치즈', category: 'Sides', description: 'Sweet corn with cheese', basePrice: 4.49, driveId: '', dietary: ['vegetarian'], isCombo: false, hasTopping: false, active: true },
+            { id: 'D001', nameEn: 'Mango Lassi', nameKr: '망고 라씨', category: 'Drinks', description: 'Smooth mango yogurt drink', basePrice: 3.49, driveId: '', dietary: ['vegetarian'], isCombo: false, hasTopping: false, active: true },
+            { id: 'D002', nameEn: 'Yuzu Lemonade', nameKr: '유자 레모네이드', category: 'Drinks', description: 'Citrus refresher', basePrice: 2.99, driveId: '', dietary: ['vegan', 'vegetarian'], isCombo: false, hasTopping: false, active: true },
+            { id: 'D003', nameEn: 'Korean Iced Tea', nameKr: '한국 아이스 티', category: 'Drinks', description: 'Traditional chilled tea', basePrice: 2.49, driveId: '', dietary: ['vegan', 'vegetarian'], isCombo: false, hasTopping: false, active: true },
+            { id: 'D004', nameEn: 'Bubble Tea', nameKr: '버블 티', category: 'Drinks', description: 'With tapioca pearls', basePrice: 3.99, driveId: '', dietary: ['vegan', 'vegetarian'], isCombo: false, hasTopping: true, active: true },
+            { id: 'D005', nameEn: 'Horchata', nameKr: '오르차타', category: 'Drinks', description: 'Sweet rice milk drink', basePrice: 3.49, driveId: '', dietary: ['vegan', 'vegetarian'], isCombo: false, hasTopping: false, active: true },
+            { id: 'D006', nameEn: 'Ginger Shot', nameKr: '생강 샷', category: 'Drinks', description: 'Energizing ginger juice', basePrice: 2.99, driveId: '', dietary: ['vegan', 'vegetarian'], isCombo: false, hasTopping: false, active: true },
+            { id: 'D007', nameEn: 'Korean Coffee', nameKr: '한국 커피', category: 'Drinks', description: 'Rich Korean blend', basePrice: 3.49, driveId: '', dietary: ['vegan', 'vegetarian'], isCombo: false, hasTopping: false, active: true }
         ];
 
         const DEFAULT_SAUCES = [
@@ -1545,7 +1610,7 @@
         const ALLERGENS_LIST = ['Sesame', 'Soy', 'Egg', 'Peanuts', 'Tree Nuts', 'Milk', 'Gluten', 'Fish', 'Shellfish', 'Mustard', 'Celery', 'Lupin', 'Molluscs', 'Sulphites'];
 
         // ─── Google Apps Script API (직접 통신) ───
-        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbxMZ5PQbti-dKYUgJQJl3Yn0maegOwLyj3nIWL5Lsltx3jM8ZJ2v4CSGDp73BQq4VJ3WA/exec';
+        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbwFiI1apnEtPEkxqR1uesicIcRv9TAtG0Ew7wuz3ymTQCAxKrNwEPnwaDfMDJz1GcC60A/exec';
 
         // 원격 모드 감지 (GitHub Pages, file://, ?remote=true 등)
         function isRemote() {
@@ -1631,14 +1696,14 @@
                 if (isRemote()) {
                     banner.style.background = '#EFF6FF';
                     banner.style.color = '#1D4ED8';
-                    banner.innerHTML = '☁️ 원격 모드 — Google Sheets 직접 연결 (서버 불필요)';
+                    banner.innerHTML = '☁️ Remote Mode — Direct Google Sheets Connection (No Server Required)';
                     serverCard.style.display = 'none';
-                    document.getElementById('googleSyncDesc').textContent = '직접 Google Sheets와 동기화 (원격 모드)';
-                    console.log('[Admin] ☁️ 원격 모드 활성화 — Google API 직접 통신');
+                    document.getElementById('googleSyncDesc').textContent = 'Direct sync with Google Sheets (Remote Mode)';
+                    console.log('[Admin] ☁️ Remote mode active — Direct Google API');
                 } else {
                     banner.style.background = '#F0FDF4';
                     banner.style.color = '#166534';
-                    banner.innerHTML = '🖥️ 로컬 모드 — 서버 연결됨 (' + location.host + ')';
+                    banner.innerHTML = '🖥️ Local Mode — Server Connected (' + location.host + ')';
                     console.log('[Admin] 🖥️ 로컬 모드 — 서버 경유 통신');
                 }
             },
@@ -1804,7 +1869,7 @@
                 if (this.currentSection === 'orders') {
                     this.renderOrders();
                 }
-                this.showToast(`📋 새 주문: ${order.orderNumber}`, 'success');
+                this.showToast(`📋 New Order: ${order.orderNumber}`, 'success');
             },
 
             updateLiveOrderStatus(orderNumber, status) {
@@ -1816,10 +1881,35 @@
                 }
             },
 
+            async loadTBMSStores() {
+                try {
+                    const data = await googleGet('stores');
+                    if (data && data.stores) {
+                        const stores = (data.stores.data || data.stores).map(s => ({
+                            id: s.id, code: s.code || s.id, name: s.name,
+                            company: s.company, companyNo: String(s.companyNo || ''),
+                            vatNo: String(s.vatNo || ''), vatQuarter: s.vatQuarter || '',
+                            address: s.address || '', phone: String(s.phone || ''),
+                            email: s.email || '', manager: s.manager || '',
+                            memo: s.memo || '', active: s.active !== false && s.active !== 'false'
+                        }));
+                        localStorage.setItem('tb_branches', JSON.stringify(stores));
+                        console.log('TBMS Stores loaded:', stores.length);
+                        return stores;
+                    }
+                } catch(e) { console.error('TBMS Stores load failed:', e); }
+                return null;
+            },
+
             async loadAllData() {
                 const pinStored = localStorage.getItem('tb_admin_pin');
                 if (pinStored) this.currentPin = pinStored;
 
+                try {
+                // TBMS에서 지점 데이터 가져오기 (원격 모드 — 백그라운드)
+                if (isRemote()) {
+                    await this.loadTBMSStores();
+                }
                 if (!localStorage.getItem('tb_branches')) {
                     localStorage.setItem('tb_branches', JSON.stringify(DEFAULT_BRANCHES));
                 }
@@ -1845,9 +1935,9 @@
                     this.initializeBranchPricing();
                 }
 
-                // 메뉴 데이터 로딩: 원격→Google API, 로컬→서버
+                // 메뉴 데이터 로딩 (백그라운드 — PIN 화면 뒤에서)
                 try {
-                    await this.pullMenuFromServer();
+                    await this.pullMenuFromServer(true);
                     console.log('[Admin] Menu loaded from ' + (isRemote() ? 'Google Sheets' : 'server'));
                 } catch (e) {
                     console.log('[Admin] API not available, using localStorage defaults');
@@ -1859,6 +1949,7 @@
                 this.renderMenu();
                 this.renderSauces();
                 this.populateBranchSelectors();
+                } catch(e) { console.log('[Admin] loadAllData error:', e); }
             },
 
             initializeAllergens() {
@@ -1915,17 +2006,17 @@
                 this.currentSection = section;
 
                 const titles = {
-                    dashboard: '홈 Dashboard',
-                    branches: '지점관리 Branch Management',
-                    categories: '카테고리 Category Management',
-                    menu: '메뉴관리 Menu Management',
-                    branchMenu: '지점별메뉴 Branch Menu Settings',
-                    sauces: '소스관리 Sauce Management',
-                    allergens: '알레르겐 Allergen Management',
-                    nutrition: '영양정보 Nutrition Management',
-                    orders: '주문현황 Order Monitor',
-                    sync: '데이터동기화 Google Sheets Sync',
-                    settings: '설정 Settings'
+                    dashboard: 'Dashboard',
+                    menu: 'Menu Management',
+                    branchMenu: 'Branch Menu',
+                    categories: 'Categories',
+                    sauces: 'Sauce Management',
+                    allergens: 'Allergens',
+                    nutrition: 'Nutrition',
+                    branches: 'Branch Management',
+                    orders: 'Order Monitor',
+                    sync: 'Google Sheets Sync',
+                    settings: 'Settings'
                 };
 
                 document.getElementById('pageTitle').textContent = titles[section];
@@ -1948,6 +2039,37 @@
                 const now = new Date();
                 const time = now.toLocaleTimeString('en-GB', { hour12: false });
                 document.getElementById('clock').textContent = time;
+            },
+
+            async refreshDashboard() {
+                showLoading('Refreshing dashboard...');
+                try {
+                    // TBMS 지점 데이터 갱신
+                    await this.loadTBMSStores();
+                    // 메뉴 데이터 갱신
+                    if (isRemote()) {
+                        const data = await googleGet('menu');
+                        if (data && data.categories) {
+                            localStorage.setItem('tb_categories', JSON.stringify(data.categories || []));
+                            localStorage.setItem('tb_menuItems', JSON.stringify(data.items || []));
+                            localStorage.setItem('tb_sauces', JSON.stringify(data.sauces || []));
+                            localStorage.setItem('tb_branchPricing', JSON.stringify(data.branchPricing || []));
+                        }
+                    } else {
+                        const resp = await fetch('/api/menu');
+                        const data = await resp.json();
+                        if (data.categories) {
+                            localStorage.setItem('tb_categories', JSON.stringify(data.categories || []));
+                            localStorage.setItem('tb_menuItems', JSON.stringify(data.items || []));
+                            localStorage.setItem('tb_sauces', JSON.stringify(data.sauces || []));
+                            localStorage.setItem('tb_branchPricing', JSON.stringify(data.branchPricing || []));
+                        }
+                    }
+                    this.updateDashboard();
+                    this.showToast('Dashboard refreshed!', 'success');
+                } catch (e) {
+                    this.showToast('Refresh failed: ' + e.message, 'error');
+                } finally { hideLoading(); }
             },
 
             updateDashboard() {
@@ -2276,21 +2398,54 @@
                 this.showToast('Category deleted', 'success');
             },
 
-            // ═══════ IMAGE UPLOAD ═══════
-            previewMenuImage(input) {
+            // ═══════ IMAGE UPLOAD WITH RESIZE ═══════
+            resizeImage(dataUrl, maxSize, quality) {
+                return new Promise((resolve) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        let w = img.width, h = img.height;
+                        if (w > maxSize || h > maxSize) {
+                            if (w > h) { h = Math.round(h * maxSize / w); w = maxSize; }
+                            else { w = Math.round(w * maxSize / h); h = maxSize; }
+                        }
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w; canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.fillStyle = '#FFFFFF';
+                        ctx.fillRect(0, 0, w, h);
+                        ctx.drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', quality));
+                    };
+                    img.src = dataUrl;
+                });
+            },
+
+            async previewMenuImage(input) {
                 if (!input.files || !input.files[0]) return;
                 const file = input.files[0];
                 const reader = new FileReader();
-                reader.onload = (e) => {
+                reader.onload = async (e) => {
+                    const original = e.target.result;
+                    // Resize: main=750px @0.8, thumbnail=200px @0.6
+                    const mainDataUrl = await this.resizeImage(original, 750, 0.8);
+                    const thumbDataUrl = await this.resizeImage(original, 200, 0.6);
+
                     const preview = document.getElementById('menuImagePreview');
-                    preview.src = e.target.result;
+                    preview.src = mainDataUrl;
                     preview.style.display = 'block';
-                    // Store base64 for upload
-                    const base64 = e.target.result.split(',')[1]; // remove data:image/...;base64, prefix
-                    document.getElementById('menuImageBase64').value = base64;
-                    document.getElementById('menuImageFileName').value = file.name;
-                    document.getElementById('menuImageMimeType').value = file.type;
+
+                    // Store resized base64 for upload
+                    document.getElementById('menuImageBase64').value = mainDataUrl.split(',')[1];
+                    document.getElementById('menuImageFileName').value = file.name.replace(/\.\w+$/, '.jpg');
+                    document.getElementById('menuImageMimeType').value = 'image/jpeg';
                     document.getElementById('menuImageUrl').value = '(uploading on save...)';
+                    // Store thumbnail separately
+                    document.getElementById('menuThumbBase64').value = thumbDataUrl.split(',')[1];
+
+                    const origKB = Math.round(original.length * 0.75 / 1024);
+                    const mainKB = Math.round(mainDataUrl.length * 0.75 / 1024);
+                    const thumbKB = Math.round(thumbDataUrl.length * 0.75 / 1024);
+                    console.log(`[Image] Original: ${origKB}KB → Main: ${mainKB}KB, Thumb: ${thumbKB}KB`);
                 };
                 reader.readAsDataURL(file);
             },
@@ -2298,26 +2453,28 @@
             previewMenuImageUrl(url) {
                 if (!url || url.startsWith('(')) return;
                 const preview = document.getElementById('menuImagePreview');
-                preview.src = url;
+                preview.src = this.driveImgUrl(url, 400);
                 preview.style.display = url ? 'block' : 'none';
                 // Clear file upload data
                 document.getElementById('menuImageBase64').value = '';
+                document.getElementById('menuThumbBase64').value = '';
                 document.getElementById('menuImageFileName').value = '';
                 document.getElementById('menuImageMimeType').value = '';
             },
 
-            async uploadImageToGoogle(itemId, base64, fileName, mimeType) {
-                // Upload to Google Drive via Apps Script (직접 통신)
+            async uploadImageToGoogle(itemId, base64, fileName, mimeType, thumbBase64) {
+                // Single upload: main + thumb in one API call
                 try {
-                    const result = await googlePost({
+                    const payload = {
                         action: 'uploadImage',
                         itemId: itemId,
                         fileName: fileName,
                         mimeType: mimeType,
                         base64: base64,
-                    });
+                    };
+                    if (thumbBase64) payload.thumbBase64 = thumbBase64;
+                    const result = await googlePost(payload);
                     if (result.success) {
-                        this.showToast('Image uploaded to Google Drive!', 'success');
                         return result;
                     } else {
                         throw new Error(result.error || 'Upload failed');
@@ -2328,43 +2485,80 @@
                 }
             },
 
+            // Convert driveId or legacy Drive URL to fast-loading lh3 URL
+            driveImgUrl(idOrUrl, size) {
+                if (!idOrUrl) return '';
+                // Already lh3 format
+                if (idOrUrl.includes('lh3.googleusercontent.com')) {
+                    return size ? idOrUrl.replace(/=w\d+/, '=w' + size) : idOrUrl;
+                }
+                // Legacy: full Drive URL — extract file ID
+                if (idOrUrl.includes('drive.google.com') || idOrUrl.includes('http')) {
+                    let id = '';
+                    const m1 = idOrUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+                    const m2 = idOrUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                    if (m1) id = m1[1];
+                    else if (m2) id = m2[1];
+                    if (id) return 'https://lh3.googleusercontent.com/d/' + id + '=w' + (size || 400);
+                    return idOrUrl;
+                }
+                // Bare File ID (TBMS pattern) — just alphanumeric + _ + -
+                if (/^[a-zA-Z0-9_-]+$/.test(idOrUrl)) {
+                    return 'https://lh3.googleusercontent.com/d/' + idOrUrl + '=w' + (size || 400);
+                }
+                return idOrUrl;
+            },
+
             // MENU
             renderMenu() {
                 const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
-                const categories = [...new Set(items.map(i => i.category))];
+                // Use saved categories list first, fallback to extracting from items
+                const savedCats = JSON.parse(localStorage.getItem('tb_categories') || '[]');
+                let categories;
+                if (savedCats.length > 0) {
+                    categories = savedCats
+                        .filter(c => c.active !== false)
+                        .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
+                        .map(c => ({ id: c.id, name: c.nameEn || c.name || c.id }));
+                } else {
+                    categories = [...new Set(items.map(i => i.category))].map(c => ({ id: c, name: c }));
+                }
 
                 const tabsContainer = document.getElementById('categoryTabs');
                 tabsContainer.innerHTML = categories.map((cat, idx) => `
-                    <button class="tab-btn ${idx === 0 ? 'active' : ''}" onclick="app.filterMenuByCategory('${cat}')">${cat}</button>
+                    <button class="tab-btn ${idx === 0 ? 'active' : ''}" onclick="app.filterMenuByCategory('${cat.id}')">${cat.name}</button>
                 `).join('');
 
-                this.filterMenuByCategory(categories[0] || 'Baps');
+                this.filterMenuByCategory(categories[0]?.id || 'kfood');
             },
 
-            filterMenuByCategory(category) {
+            filterMenuByCategory(categoryId) {
                 const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
-                const filtered = items.filter(i => i.category === category);
+                const filtered = items.filter(i => (i.category || i.catId) === categoryId);
 
                 document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-                document.querySelector(`[onclick="app.filterMenuByCategory('${category}')"]`).classList.add('active');
+                const activeBtn = document.querySelector(`[onclick="app.filterMenuByCategory('${categoryId}')"]`);
+                if (activeBtn) activeBtn.classList.add('active');
 
                 const content = document.getElementById('menuContent');
-                content.innerHTML = filtered.map(item => `
+                content.innerHTML = filtered.map(item => {
+                    const cardImg = app.driveImgUrl(item.driveId || item.imageUrl, 200);
+                    return `
                     <div class="menu-item-card">
-                        ${item.imageUrl ? `<img src="${item.imageUrl}" class="menu-item-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
-                        <div class="menu-item-placeholder" style="${item.imageUrl ? 'display:none;' : 'display:flex;'} width:100%; height:120px; background:#F5F5F5; border-radius:8px 8px 0 0; align-items:center; justify-content:center; font-size:48px;">🍱</div>
+                        ${item.btnColor ? `<div class="menu-item-color-bar" style="background:${item.btnColor}"></div>` : ''}
+                        ${cardImg ? `<img src="${cardImg}" class="menu-item-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">` : ''}
+                        <div class="menu-item-placeholder" style="${cardImg ? 'display:none;' : 'display:flex;'} width:100%; aspect-ratio:1/1; background:#F5F5F5; border-radius:8px 8px 0 0; align-items:center; justify-content:center; font-size:32px;">🍱</div>
                         <div class="menu-item-body">
-                            <div class="menu-item-name">${item.nameEn}</div>
+                            <div class="menu-item-name" title="${item.nameEn}">${item.nameEn}</div>
                             <div class="menu-item-name-kr">${item.nameKr}</div>
                             <div class="menu-item-price">£${item.basePrice.toFixed(2)}</div>
-                            <div class="menu-item-dietary">${item.dietary.map(d => `<span style="background: #F0F0F0; padding: 2px 6px; border-radius: 3px; font-size: 11px; margin-right: 4px;">${d}</span>`).join('')}</div>
-                            <div class="menu-item-actions">
-                                <button class="btn-secondary btn-small" onclick="app.editMenuItem('${item.id}')">Edit</button>
-                                <button class="btn-danger btn-small" onclick="app.deleteMenuItem('${item.id}')">Delete</button>
+                            <div class="menu-item-actions" style="display:flex;gap:4px;">
+                                <button class="btn-secondary btn-small" style="font-size:11px;padding:3px 8px;" onclick="app.editMenuItem('${item.id}')">Edit</button>
+                                <button class="btn-danger btn-small" style="font-size:11px;padding:3px 8px;" onclick="app.deleteMenuItem('${item.id}')">Del</button>
                             </div>
                         </div>
                     </div>
-                `).join('');
+                `}).join('');
             },
 
             openMenuForm() {
@@ -2386,11 +2580,18 @@
                 document.getElementById('menuCategory').value = item.category;
                 document.getElementById('menuDescription').value = item.description || '';
                 document.getElementById('menuPrice').value = item.basePrice;
-                document.getElementById('menuImageUrl').value = item.imageUrl;
+                document.getElementById('menuImageUrl').value = item.driveId || item.imageUrl || '';
 
-                if (item.imageUrl) {
-                    document.getElementById('menuImagePreview').src = item.imageUrl;
+                if (item.driveId || item.imageUrl) {
+                    document.getElementById('menuImagePreview').src = this.driveImgUrl(item.driveId || item.imageUrl, 400);
                     document.getElementById('menuImagePreview').style.display = 'block';
+                }
+
+                // Set button colour
+                document.querySelectorAll('#btnColorPicker input[name="btnColor"]').forEach(r => { r.checked = false; r.nextElementSibling.style.borderColor = 'transparent'; });
+                if (item.btnColor) {
+                    const colorRadio = document.querySelector('#btnColorPicker input[value="' + item.btnColor + '"]');
+                    if (colorRadio) { colorRadio.checked = true; colorRadio.nextElementSibling.style.borderColor = '#1F2937'; }
                 }
 
                 document.getElementById('menuVegan').checked = item.dietary.includes('vegan');
@@ -2405,6 +2606,7 @@
             },
 
             async saveMenuItem() {
+                // Gather form data before closing
                 const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
 
                 const dietary = [];
@@ -2414,24 +2616,12 @@
                 if (document.getElementById('menuSpicy').checked) dietary.push('spicy');
 
                 const itemId = this.editingMenuId || 'M' + Date.now();
-                let imageUrl = document.getElementById('menuImageUrl').value;
-                let thumbnailUrl = '';
+                let driveId = document.getElementById('menuImageUrl').value;
 
-                // Handle image upload if a file was selected
                 const base64 = document.getElementById('menuImageBase64').value;
-                if (base64) {
-                    this.showToast('Uploading image to Google Drive...', 'info');
-                    const uploadResult = await this.uploadImageToGoogle(
-                        itemId,
-                        base64,
-                        document.getElementById('menuImageFileName').value,
-                        document.getElementById('menuImageMimeType').value
-                    );
-                    if (uploadResult) {
-                        imageUrl = uploadResult.imageUrl;
-                        thumbnailUrl = uploadResult.thumbnailUrl;
-                    }
-                }
+                const thumbBase64 = document.getElementById('menuThumbBase64').value;
+                const fileName = document.getElementById('menuImageFileName').value;
+                const mimeType = document.getElementById('menuImageMimeType').value;
 
                 const itemData = {
                     id: itemId,
@@ -2440,20 +2630,36 @@
                     category: document.getElementById('menuCategory').value,
                     description: document.getElementById('menuDescription').value,
                     basePrice: parseFloat(document.getElementById('menuPrice').value),
-                    imageUrl: imageUrl,
-                    thumbnailUrl: thumbnailUrl,
+                    driveId: driveId,
                     dietary: dietary,
                     isCombo: document.getElementById('menuCombo').checked,
                     hasTopping: document.getElementById('menuTopping').checked,
-                    active: document.getElementById('menuActive').checked
+                    active: document.getElementById('menuActive').checked,
+                    btnColor: (document.querySelector('#btnColorPicker input[name="btnColor"]:checked') || {}).value || ''
                 };
+
+                // Close popup immediately
+                this.closeMenuModal();
+
+                // Upload image: single API call, returns driveId only
+                if (base64) {
+                    showLoading('Uploading image...');
+                    try {
+                        const result = await this.uploadImageToGoogle(itemId, base64, fileName, mimeType, thumbBase64);
+                        if (result && result.driveId) {
+                            itemData.driveId = result.driveId;
+                        }
+                    } catch(e) {
+                        console.error('[Image] Upload error:', e);
+                    } finally { hideLoading(); }
+                }
 
                 if (this.editingMenuId) {
                     const index = items.findIndex(i => i.id === this.editingMenuId);
                     if (index >= 0) {
-                        // Preserve existing image URLs if no new image
-                        if (!base64 && items[index].thumbnailUrl) {
-                            itemData.thumbnailUrl = items[index].thumbnailUrl;
+                        // Preserve existing driveId if no new image uploaded
+                        if (!base64 && items[index].driveId) {
+                            itemData.driveId = items[index].driveId;
                         }
                         items[index] = itemData;
                     }
@@ -2467,13 +2673,12 @@
 
                 // Clear upload fields
                 document.getElementById('menuImageBase64').value = '';
+                document.getElementById('menuThumbBase64').value = '';
                 document.getElementById('menuImageFileName').value = '';
                 document.getElementById('menuImageMimeType').value = '';
 
-                this.closeMenuModal();
                 this.renderMenu();
                 this.showToast('Menu item saved', 'success');
-                // Auto-sync to server so all clients update
                 this.autoSyncToServer();
             },
 
@@ -2501,6 +2706,7 @@
             closeMenuModal() {
                 document.getElementById('menuModal').classList.remove('active');
                 document.getElementById('menuForm').reset();
+                document.querySelectorAll('#btnColorPicker .color-dot').forEach(d => d.style.borderColor = 'transparent');
             },
 
             // BRANCH MENU SETTINGS
@@ -2811,16 +3017,17 @@
                     return;
                 }
 
+                showLoading('Loading order history...');
                 try {
                     const res = await fetch(`/api/orders?date=${this.viewingDate}`);
                     const data = await res.json();
                     this.historyOrders = data.orders || [];
                     this.renderOrders();
                     this.updateOrdersSummary(this.historyOrders);
-                    this.showToast(`📁 ${this.viewingDate}: ${this.historyOrders.length}건`, 'info');
+                    this.showToast(`📁 ${this.viewingDate}: ${this.historyOrders.length} orders`, 'info');
                 } catch (e) {
                     this.showToast('Failed to load history', 'error');
-                }
+                } finally { hideLoading(); }
             },
 
             getDisplayOrders() {
@@ -3000,7 +3207,7 @@
                     nameKr: item.nameKr || '',
                     desc: item.description || item.desc || '',
                     price: item.basePrice || item.price || 0,
-                    image: item.imageUrl || item.image || '',
+                    driveId: item.driveId || item.imageUrl || item.image || '',
                     dietary: item.dietary || [],
                     isCombo: item.isCombo || false,
                     comboCount: item.comboCount || 2,
@@ -3011,49 +3218,55 @@
                     sortOrder: idx + 1
                 }));
 
+                // Include branches for POS/Kiosk consumption
+                const branches = JSON.parse(localStorage.getItem('tb_branches') || '[]').map(b => ({
+                    code: b.code || b.id, name: b.name, nameKr: b.nameKr || '', phone: String(b.phone || ''), active: b.active !== false
+                }));
+
                 return {
                     categories: JSON.parse(localStorage.getItem('tb_categories') || 'null') || undefined,
                     items: serverItems,
                     sauces: sauces,
-                    branchPricing: pricing
+                    branchPricing: pricing,
+                    branches: branches
                 };
+            },
+
+            // Save menu (called from Menu Management page button)
+            async saveMenuToServer() {
+                await this.pushMenuToServer();
             },
 
             // Push local menu to server (local) or Google API (remote)
             async pushMenuToServer() {
+                showLoading(isRemote() ? 'Saving to Google Sheets...' : 'Saving to server...');
                 try {
                     const payload = this.buildMenuPayload();
                     if (isRemote()) {
-                        this.showSyncStatus('Google Sheets에 메뉴 저장 중...', 'info');
                         await googlePost({ action: 'updateMenu', ...payload });
-                        this.showSyncStatus('Google Sheets에 저장 완료!', 'success');
-                        this.showToast('Google Sheets에 저장됨', 'success');
+                        this.showToast('Saved to Google Sheets', 'success');
                     } else {
-                        this.showSyncStatus('Pushing menu to server...', 'info');
                         const resp = await fetch('/api/menu', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ action: 'updateAll', ...payload })
                         });
                         if (!resp.ok) throw new Error('Server error: ' + resp.status);
-                        this.showSyncStatus('Menu pushed to server successfully!', 'success');
-                        this.showToast('Menu pushed to server', 'success');
+                        this.showToast('Menu saved to server', 'success');
                     }
                 } catch (err) {
-                    this.showSyncStatus('Push failed: ' + err.message, 'error');
-                    this.showToast('Push failed: ' + err.message, 'error');
-                }
+                    this.showToast('Save failed: ' + err.message, 'error');
+                } finally { hideLoading(); }
             },
 
             // Pull menu from server (local) or Google API (remote) → update localStorage
-            async pullMenuFromServer() {
+            async pullMenuFromServer(silent) {
+                if (!silent) showLoading(isRemote() ? 'Loading menu from Google Sheets...' : 'Loading menu from server...');
                 try {
                     let data;
                     if (isRemote()) {
-                        this.showSyncStatus('Google Sheets에서 메뉴 가져오는 중...', 'info');
                         data = await googleGet('menu');
                     } else {
-                        this.showSyncStatus('Pulling menu from server...', 'info');
                         const resp = await fetch('/api/menu');
                         if (!resp.ok) throw new Error('Server error: ' + resp.status);
                         data = await resp.json();
@@ -3071,8 +3284,7 @@
                             desc: i.desc || '',
                             basePrice: i.price,
                             price: i.price,
-                            imageUrl: i.image || '',
-                            image: i.image || '',
+                            driveId: i.driveId || i.image || i.thumbnail || '',
                             dietary: i.dietary || [],
                             isCombo: i.isCombo || false,
                             comboCount: i.comboCount || 2,
@@ -3096,12 +3308,10 @@
                     // Re-render
                     this.renderMenu();
                     this.renderSauces();
-                    this.showSyncStatus('Menu pulled from server!', 'success');
-                    this.showToast('Menu updated from server', 'success');
+                    if (!silent) this.showToast('Menu loaded', 'success');
                 } catch (err) {
-                    this.showSyncStatus('Pull failed: ' + err.message, 'error');
-                    this.showToast('Pull failed: ' + err.message, 'error');
-                }
+                    if (!silent) this.showToast('Load failed: ' + err.message, 'error');
+                } finally { if (!silent) hideLoading(); }
             },
 
             // Broadcast menu update to all clients via WebSocket
@@ -3122,13 +3332,11 @@
             // Google Sheets sync — 원격 모드에선 직접 통신, 로컬에선 서버 경유
             async syncToGoogle() {
                 try {
-                    this.showSyncStatus('Google Sheets에 저장 중...', 'info');
+                    showLoading('Pushing to Google Sheets...');
                     const payload = this.buildMenuPayload();
                     if (isRemote()) {
-                        // 원격: 직접 Google API 호출
                         await googlePost({ action: 'updateMenu', ...payload });
                     } else {
-                        // 로컬: 서버 경유
                         await this.pushMenuToServer();
                         const resp = await fetch('/api/menu', {
                             method: 'POST',
@@ -3139,22 +3347,18 @@
                         const result = await resp.json();
                         if (result.error) throw new Error(result.error);
                     }
-                    this.showSyncStatus('Google Sheets 저장 완료!', 'success');
-                    this.showToast('Google Sheets에 저장됨', 'success');
+                    this.showToast('Saved to Google Sheets', 'success');
                 } catch (err) {
-                    this.showSyncStatus('Google sync failed: ' + err.message, 'error');
                     this.showToast('Google sync failed: ' + err.message, 'error');
-                }
+                } finally { hideLoading(); }
             },
 
             async syncFromGoogle() {
+                showLoading('Loading from Google Sheets...');
                 try {
-                    this.showSyncStatus('Google Sheets에서 가져오는 중...', 'info');
                     if (isRemote()) {
-                        // 원격: 직접 Google API에서 pull
-                        await this.pullMenuFromServer(); // 이미 isRemote() 분기 있음
+                        await this.pullMenuFromServer();
                     } else {
-                        // 로컬: 서버에게 Google에서 pull 요청
                         const resp = await fetch('/api/menu', {
                             method: 'POST',
                             headers: { 'Content-Type': 'application/json' },
@@ -3165,12 +3369,10 @@
                         if (result.error) throw new Error(result.error);
                         await this.pullMenuFromServer();
                     }
-                    this.showSyncStatus('Google Sheets에서 가져오기 완료!', 'success');
-                    this.showToast('Google Sheets에서 메뉴 업데이트됨', 'success');
+                    this.showToast('Menu updated from Google Sheets', 'success');
                 } catch (err) {
-                    this.showSyncStatus('Google pull failed: ' + err.message, 'error');
                     this.showToast('Google pull failed: ' + err.message, 'error');
-                }
+                } finally { hideLoading(); }
             },
 
             // Auto-sync: 메뉴 변경 시 자동 저장 (원격→Google, 로컬→서버)

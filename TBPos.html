@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap POS v1.0 | 2026-03-06 -->
+<!-- The Bap POS v1.7 | 2026-03-07 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -49,49 +49,88 @@ button { font-family: inherit; cursor: pointer; }
 .screen { display: none; height: 100%; }
 .screen.active { display: flex; }
 
-/* ═══════════ LOGIN SCREEN ═══════════ */
+/* ═══════════ LOGIN SCREEN — 13" touch optimised ═══════════ */
 .login-screen {
     flex-direction: column; align-items: center; justify-content: center;
-    background: #fff;
+    background: #F8F9FA;
 }
-.login-logo { margin-bottom: 20px; }
-.login-logo img { width: clamp(140px, 25vw, 260px); height: auto; }
-.login-title { font-size: clamp(13px, 1.8vw, 17px); color: #6B7280; margin-bottom: 24px; }
+.login-header {
+    text-align: center; margin-bottom: clamp(12px, 2vh, 24px);
+}
+.login-header img { width: clamp(80px, 12vw, 140px); height: auto; margin-bottom: 4px; }
+.login-header h2 { font-size: clamp(14px, 1.6vw, 18px); font-weight: 600; color: #6B7280; margin: 0; }
+
+.login-body {
+    display: flex; gap: clamp(20px, 4vw, 48px); align-items: stretch;
+    width: 80%; max-width: 960px;
+    background: #fff; border-radius: 16px; padding: clamp(16px, 3vh, 32px) clamp(20px, 3vw, 40px);
+    box-shadow: 0 2px 12px rgba(0,0,0,.06);
+}
+
+/* ── Left: Branch grid (compact) ── */
+.login-left { flex: 0 0 auto; display: flex; flex-direction: column; width: 35%; }
+.login-left-title { font-size: 14px; font-weight: 700; color: #374151; margin-bottom: 12px; }
 .login-branch-select {
-    display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;
-    max-width: 520px; margin-bottom: 24px;
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px;
 }
 .login-branch-btn {
-    padding: 14px 22px; border: 2px solid #E5E7EB; border-radius: 12px;
-    background: #fff; color: #374151; font-size: clamp(13px, 1.4vw, 16px); font-weight: 600;
-    transition: all .2s; min-width: 140px; text-align: center;
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    padding: 0; border: 2px solid #E5E7EB; border-radius: 12px;
+    background: #fff; color: #374151; font-weight: 600;
+    font-size: clamp(11px, 1.2vw, 14px);
+    transition: all .15s; text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    aspect-ratio: 1 / 1; min-height: 0;
 }
+.login-branch-btn:active { transform: scale(.95); }
 .login-branch-btn:hover { border-color: #006AFF; box-shadow: 0 2px 8px rgba(0,106,255,.12); }
-.login-branch-btn.selected { border-color: #006AFF; background: #EFF6FF; color: #006AFF; }
-.login-branch-btn small { display: block; font-size: 11px; color: #9CA3AF; margin-top: 2px; }
+.login-branch-btn.selected { border-color: #fff !important; box-shadow: 0 0 0 3px #006AFF, 0 4px 12px rgba(0,0,0,.2); transform: scale(1.03); }
+.login-branch-btn small { display: block; font-size: 11px; color: #9CA3AF; margin-top: 3px; }
 
-.login-pin-area { display: none; text-align: center; }
-.login-pin-area.show { display: block; }
-.login-pin-label { font-size: 14px; color: #6B7280; margin-bottom: 14px; }
-.login-pin-display {
-    width: 200px; margin: 0 auto 16px; padding: 14px; background: #F9FAFB; border: 2px solid #E5E7EB;
-    border-radius: 12px; font-size: 32px; font-weight: 700; letter-spacing: 12px;
-    text-align: center; color: #006AFF; min-height: 56px;
+/* ── Divider ── */
+.login-divider { width: 1px; background: #E5E7EB; flex-shrink: 0; }
+
+/* ── Right: PIN pad (larger) ── */
+.login-right { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+
+.login-branch-info { text-align: center; margin-bottom: 16px; }
+.login-branch-name { font-size: clamp(18px, 2.2vw, 26px); font-weight: 700; color: #374151; }
+.login-branch-date { font-size: 13px; color: #9CA3AF; margin-top: 4px; }
+
+/* ── Loading spinner ── */
+@keyframes spinAnim { to { transform: rotate(360deg); } }
+.branch-loading-spinner {
+    width: 36px; height: 36px; border: 4px solid #E5E7EB; border-top-color: #006AFF;
+    border-radius: 50%; animation: spinAnim .8s linear infinite; margin: 0 auto 10px;
 }
+
+.login-pin-area { text-align: center; }
+.login-pin-area.show { display: block; }
+.login-pin-label { font-size: 14px; font-weight: 600; color: #374151; margin-bottom: 10px; }
+.login-pin-display {
+    display: flex; gap: 8px; justify-content: center; margin: 0 auto 14px;
+}
+.login-pin-dot {
+    width: 18px; height: 18px; border-radius: 50%;
+    border: 2px solid #D1D5DB; background: #fff;
+    transition: all .15s;
+}
+.login-pin-dot.filled { background: #006AFF; border-color: #006AFF; }
 .login-numpad {
-    display: grid; grid-template-columns: repeat(3, 72px); gap: 8px;
-    justify-content: center;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
+    width: 100%; max-width: 280px;
 }
 .login-numpad button {
-    height: 56px; border: 1px solid #E5E7EB; border-radius: 12px;
-    background: #fff; color: #1F2937; font-size: 22px; font-weight: 600;
-    transition: all .12s; box-shadow: 0 1px 2px rgba(0,0,0,.05);
+    aspect-ratio: 1 / 1; border: 1px solid #E5E7EB; border-radius: 14px;
+    background: #fff; color: #1F2937; font-size: clamp(22px, 2.5vw, 30px); font-weight: 600;
+    transition: all .12s; box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    -webkit-tap-highlight-color: transparent;
 }
-.login-numpad button:active { background: #006AFF; color: #fff; }
-.login-numpad .key-clear { color: #DC2626; font-size: 14px; font-weight: 700; }
+.login-numpad button:active { background: #006AFF; color: #fff; transform: scale(.93); }
+.login-numpad .key-clear { color: #DC2626; font-size: 13px; font-weight: 700; }
 .login-numpad .key-ok { background: #006AFF; color: #fff; font-size: 14px; font-weight: 700; }
-.login-skip { margin-top: 14px; color: #9CA3AF; font-size: 12px; }
+.login-numpad .key-ok:active { background: #0052CC; }
+.login-skip { margin-top: 10px; color: #9CA3AF; font-size: 12px; border: none; background: none; }
 .login-skip:hover { color: #6B7280; }
 
 /* ═══════════ MAIN MENU SCREEN ═══════════ */
@@ -184,28 +223,28 @@ button { font-family: inherit; cursor: pointer; }
 .order-menu-grid::-webkit-scrollbar { width: 5px; }
 .order-menu-grid::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 4px; }
 
-/* Clean white card-style menu buttons (Square look) */
+/* Clean white card-style menu buttons (Square look) — compact v1.3 */
 .menu-btn {
-    border: 1px solid #E5E7EB; border-radius: 12px; padding: 0; overflow: hidden;
-    font-size: clamp(12px, 1.3vw, 14px); font-weight: 600; cursor: pointer;
-    transition: all .15s; text-align: center; color: #1F2937;
-    min-height: clamp(70px, 10vh, 100px);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    border: 1px solid #E5E7EB; border-radius: 8px; padding: 0; overflow: hidden;
+    font-size: clamp(13px, 1.4vw, 16px); font-weight: 600; cursor: pointer;
+    transition: all .15s; text-align: left; color: #1F2937;
+    min-height: clamp(48px, 6vh, 64px);
+    display: flex; flex-direction: row; align-items: center;
     background: #fff;
     box-shadow: 0 1px 3px rgba(0,0,0,.04);
     line-height: 1.3;
 }
-.menu-btn.has-img { padding: 0; justify-content: flex-start; }
+.menu-btn.has-img { padding: 0; }
 .menu-btn.has-img .menu-btn-img {
-    width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 12px 12px 0 0;
+    width: 54px; height: 54px; min-width: 54px; object-fit: cover; border-radius: 8px 0 0 8px;
     background: #F3F4F6;
 }
-.menu-btn.has-img .menu-btn-info { padding: 6px 8px 8px; width: 100%; }
-.menu-btn:not(.has-img) { padding: 12px 8px; }
+.menu-btn.has-img .menu-btn-info { padding: 4px 8px; flex: 1; min-width: 0; }
+.menu-btn:not(.has-img) { padding: 8px 10px; }
 .menu-btn:hover { border-color: #006AFF; box-shadow: 0 2px 8px rgba(0,106,255,.1); transform: translateY(-1px); }
 .menu-btn:active { transform: scale(.97); background: #F9FAFB; }
-.menu-btn .price-tag { font-size: 12px; font-weight: 700; color: #006AFF; margin-top: 4px; }
-.menu-btn .name-kr { font-size: 10px; font-weight: 400; color: #9CA3AF; margin-top: 2px; }
+.menu-btn .menu-name { font-size: clamp(13px, 1.4vw, 16px); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.menu-btn .price-tag { font-size: 11px; font-weight: 600; color: #006AFF; margin-top: 1px; }
 
 /* Bottom action bar */
 .order-bottom-bar {
@@ -621,32 +660,81 @@ button { font-family: inherit; cursor: pointer; }
         <div class="tb-popup-btns" id="tbPopupBtns"></div>
     </div>
 </div>
+<!-- ═══════════ PIN PROMPT POPUP ═══════════ -->
+<div class="tb-popup-overlay" id="pinPopup">
+    <div class="tb-popup" style="max-width:340px">
+        <div class="tb-popup-icon" id="pinPopupIcon">🔒</div>
+        <div class="tb-popup-title" id="pinPopupTitle">Enter PIN</div>
+        <div style="display:flex;gap:6px;justify-content:center;margin:12px 0 8px">
+            <div class="login-pin-dot" id="pp0"></div><div class="login-pin-dot" id="pp1"></div>
+            <div class="login-pin-dot" id="pp2"></div><div class="login-pin-dot" id="pp3"></div>
+        </div>
+        <div id="pinPromptErr" style="color:#DC2626;font-size:13px;min-height:20px;margin-bottom:8px;text-align:center"></div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:220px;margin:0 auto 12px">
+            <button class="tb-btn-ok" style="padding:12px;font-size:18px" onclick="pinPromptKey('1')">1</button>
+            <button class="tb-btn-ok" style="padding:12px;font-size:18px" onclick="pinPromptKey('2')">2</button>
+            <button class="tb-btn-ok" style="padding:12px;font-size:18px" onclick="pinPromptKey('3')">3</button>
+            <button class="tb-btn-ok" style="padding:12px;font-size:18px" onclick="pinPromptKey('4')">4</button>
+            <button class="tb-btn-ok" style="padding:12px;font-size:18px" onclick="pinPromptKey('5')">5</button>
+            <button class="tb-btn-ok" style="padding:12px;font-size:18px" onclick="pinPromptKey('6')">6</button>
+            <button class="tb-btn-ok" style="padding:12px;font-size:18px" onclick="pinPromptKey('7')">7</button>
+            <button class="tb-btn-ok" style="padding:12px;font-size:18px" onclick="pinPromptKey('8')">8</button>
+            <button class="tb-btn-ok" style="padding:12px;font-size:18px" onclick="pinPromptKey('9')">9</button>
+            <button class="tb-btn-cancel" style="padding:12px;font-size:13px;font-weight:700;color:#DC2626" onclick="pinPromptKey('clear')">CLR</button>
+            <button class="tb-btn-ok" style="padding:12px;font-size:18px" onclick="pinPromptKey('0')">0</button>
+            <button class="tb-btn-ok" style="padding:12px;font-size:13px;background:#059669" onclick="pinPromptKey('ok')">OK</button>
+        </div>
+        <div class="tb-popup-btns"><button class="tb-btn-cancel" onclick="pinPromptKey('cancel')">Cancel</button></div>
+    </div>
+</div>
 <div class="toast-container" id="toastContainer"></div>
 
 <!-- ═══════════ SCREEN: LOGIN ═══════════ -->
 <div class="screen login-screen active" id="screenLogin">
-    <div class="login-logo"><img src="TBLOGO.png" alt="The Bap"></div>
-    <div class="login-title">POS System — Select Branch</div>
-    <div class="login-branch-select" id="loginBranchGrid"></div>
-    <div class="login-pin-area" id="loginPinArea">
-        <div class="login-pin-label">Enter Staff PIN</div>
-        <div class="login-pin-display" id="loginPinDisplay"></div>
-        <div class="login-numpad">
-            <button onclick="pinInput(1)">1</button><button onclick="pinInput(2)">2</button><button onclick="pinInput(3)">3</button>
-            <button onclick="pinInput(4)">4</button><button onclick="pinInput(5)">5</button><button onclick="pinInput(6)">6</button>
-            <button onclick="pinInput(7)">7</button><button onclick="pinInput(8)">8</button><button onclick="pinInput(9)">9</button>
-            <button class="key-clear" onclick="pinClear()">CLEAR</button>
-            <button onclick="pinInput(0)">0</button>
-            <button class="key-ok" onclick="pinEnter()">OK</button>
+    <div class="login-header">
+        <img src="TBLOGO.png" alt="The Bap">
+        <h2>POS System</h2>
+    </div>
+    <div class="login-body">
+        <div class="login-left">
+            <div class="login-left-title">Select Branch</div>
+            <div class="login-branch-select" id="loginBranchGrid"></div>
         </div>
-        <div class="login-skip" onclick="pinSkip()">Skip PIN (Demo)</div>
+        <div class="login-divider"></div>
+        <div class="login-right">
+            <div class="login-branch-info" id="loginBranchInfo">
+                <div class="login-branch-name" id="loginBranchName">Select a branch</div>
+                <div class="login-branch-date" id="loginBranchDate"></div>
+            </div>
+            <div class="login-pin-area show" id="loginPinArea">
+                <div class="login-pin-label">Branch PIN</div>
+                <div class="login-pin-display" id="loginPinDisplay">
+                    <div class="login-pin-dot" id="dot0"></div>
+                    <div class="login-pin-dot" id="dot1"></div>
+                    <div class="login-pin-dot" id="dot2"></div>
+                    <div class="login-pin-dot" id="dot3"></div>
+                </div>
+                <div class="login-numpad">
+                    <button onclick="pinInput(1)">1</button><button onclick="pinInput(2)">2</button><button onclick="pinInput(3)">3</button>
+                    <button onclick="pinInput(4)">4</button><button onclick="pinInput(5)">5</button><button onclick="pinInput(6)">6</button>
+                    <button onclick="pinInput(7)">7</button><button onclick="pinInput(8)">8</button><button onclick="pinInput(9)">9</button>
+                    <button class="key-clear" onclick="pinClear()">CLEAR</button>
+                    <button onclick="pinInput(0)">0</button>
+                    <button class="key-ok" onclick="pinEnter()">OK</button>
+                </div>
+                <button class="login-skip" onclick="pinSkip()">Skip PIN (Demo)</button>
+            </div>
+        </div>
+    </div>
+    <div style="text-align:center;padding:10px 0 0;color:#B0B0B0;font-size:11px;line-height:1.6;">
+        v1.7 &nbsp;|&nbsp; © 2026 The Bap. All rights reserved. &nbsp;|&nbsp; Program by DJ Kim
     </div>
 </div>
 
 <!-- ═══════════ SCREEN: MAIN MENU ═══════════ -->
 <div class="screen main-menu-screen" id="screenMainMenu">
     <div class="main-menu-header">
-        <div class="main-menu-header-title">The Bap POS <span style="font-size:10px;color:#9CA3AF;font-weight:400">v1.0</span></div>
+        <div class="main-menu-header-title">The Bap POS <span style="font-size:10px;color:#9CA3AF;font-weight:400">v1.1</span></div>
         <div class="main-menu-header-branch" id="mainMenuBranch">TBS</div>
         <div class="main-menu-header-spacer"></div>
         <div class="main-menu-header-time" id="mainMenuTime">12:00:00</div>
@@ -660,20 +748,11 @@ button { font-family: inherit; cursor: pointer; }
             <div class="main-menu-btn takings" onclick="gotoTakings()">
                 <div class="btn-icon">📊</div>TAKINGS
             </div>
-            <div class="main-menu-btn open-till" onclick="gotoRegister()">
+            <div class="main-menu-btn open-till" onclick="openCashDrawer()">
                 <div class="btn-icon">💰</div>OPEN TILL
             </div>
             <div class="main-menu-btn orders" onclick="gotoOrders()">
                 <div class="btn-icon">📋</div>ALL ORDERS
-            </div>
-            <div class="main-menu-btn switch-user" onclick="switchUser()">
-                <div class="btn-icon">👤</div>SWITCH USER
-            </div>
-            <div class="main-menu-btn settings" onclick="gotoSettings()">
-                <div class="btn-icon">⚙️</div>SETTINGS
-            </div>
-            <div class="main-menu-btn close-btn" onclick="closePOS()">
-                <div class="btn-icon">🚪</div>CLOSE
             </div>
         </div>
     </div>
@@ -808,6 +887,7 @@ button { font-family: inherit; cursor: pointer; }
             <button class="takings-sub-tab" data-view="by_payment" onclick="switchTakingsView('by_payment')">By Payment</button>
             <button class="takings-sub-tab" data-view="by_item" onclick="switchTakingsView('by_item')">Sales Analysis</button>
             <button class="takings-sub-tab" data-view="vat" onclick="switchTakingsView('vat')">VAT Report</button>
+            <button class="takings-sub-tab" data-view="register" onclick="switchTakingsView('register')">Cash Register</button>
         </div>
         <div class="takings-content" id="takingsContent"></div>
     </div>
@@ -830,19 +910,10 @@ button { font-family: inherit; cursor: pointer; }
     <div class="orders-list-body" id="ordersListBody"></div>
 </div>
 
-<!-- ═══════════ SCREEN: REGISTER ═══════════ -->
-<div class="screen register-screen" id="screenRegister">
-    <div class="register-header">
-        <div class="register-header-title">CASH REGISTER</div>
-        <div class="register-header-spacer"></div>
-        <button class="register-back-btn" onclick="gotoMainMenu()">Back to Menu</button>
-    </div>
-    <div class="register-body" id="registerBody"></div>
-</div>
 
 <!-- ═══════════ RECEIPT (hidden, for printing) ═══════════ -->
 <div class="receipt-print" id="receiptPrint" style="display:none">
-    <div class="r-logo">The Bap 더밥</div>
+    <div class="r-logo">The Bap</div>
     <div class="r-sub" id="receiptBranch">Swindon</div>
     <div class="r-line"></div>
     <div class="r-row"><span>Date:</span><span id="receiptDate"></span></div>
@@ -862,7 +933,7 @@ button { font-family: inherit; cursor: pointer; }
     <div class="r-row" id="receiptChangeRow"><span>Change:</span><span id="receiptChange"></span></div>
     <div class="r-line"></div>
     <div class="r-center" style="margin-top:8px;font-size:10px">Thank you for visiting The Bap!</div>
-    <div class="r-center" style="font-size:10px">밥이보약 — K-Food on the Bap</div>
+    <div class="r-center" style="font-size:10px">K-Food on the Bap</div>
 </div>
 
 <button class="fullscreen-btn" onclick="toggleFullscreen()" title="Fullscreen">⛶</button>
@@ -891,12 +962,15 @@ const POS = {
     completedOrders: [], // for takings
 };
 
-const BRANCHES = [
-    { code: 'PAB', name: 'PAB Kitchen', nameKr: '팝 키친' },
-    { code: 'TBS', name: 'The Bap Swindon', nameKr: '더밥 스윈던' },
-    { code: 'TBR', name: 'The Bap Reading', nameKr: '더밥 레딩' },
-    { code: 'TBB', name: 'The Bap Bristol', nameKr: '더밥 브리스톨' },
-];
+// TBMS Google Apps Script API (same as admin)
+const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbwsgxPV8Ak3rFh-_ZWioV3IEZ5sQIO3kE3VVue2XrrHVTYsYel-1rijLdf7WLy15Yzlhg/exec';
+
+// Branches loaded dynamically from TBMS/server; fallback if offline
+let BRANCHES = []; // loaded dynamically — no hardcoded fallback
+
+// Branch card colours (soft pastel gradient for 13" touch display)
+const BRANCH_COLORS_DARK  = ['#2e7d32','#1976d2','#7b1fa2','#e65100','#00897b','#c62828','#4527a0','#00796b','#d84315','#303f9f'];
+const BRANCH_COLORS_LIGHT = ['#81c784','#64b5f6','#ce93d8','#ffb74d','#80cbc4','#ef9a9a','#b39ddb','#80cbc4','#ff8a65','#9fa8da'];
 
 // Menu colors for buttons (cycle through)
 const BTN_COLORS = [
@@ -904,6 +978,26 @@ const BTN_COLORS = [
     '#1ABC9C','#16A085','#27AE60','#2ECC71','#F39C12','#E67E22',
     '#D35400','#C0392B','#7F8C8D','#2C3E50',
 ];
+
+// ─── Drive Image URL helper (TBMS pattern: bare File ID → lh3 CDN) ───
+function driveImgUrl(idOrUrl, size) {
+    if (!idOrUrl) return '';
+    if (idOrUrl.includes('lh3.googleusercontent.com')) {
+        return size ? idOrUrl.replace(/=w\d+/, '=w' + size) : idOrUrl;
+    }
+    if (idOrUrl.includes('drive.google.com') || idOrUrl.includes('http')) {
+        let id = '';
+        const m1 = idOrUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+        const m2 = idOrUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+        if (m1) id = m1[1]; else if (m2) id = m2[1];
+        if (id) return 'https://lh3.googleusercontent.com/d/' + id + '=w' + (size || 400);
+        return idOrUrl;
+    }
+    if (/^[a-zA-Z0-9_-]+$/.test(idOrUrl)) {
+        return 'https://lh3.googleusercontent.com/d/' + idOrUrl + '=w' + (size || 400);
+    }
+    return idOrUrl;
+}
 
 // ─── Menu Data (loaded from server API or static file) ───
 async function loadMenuFromAPI() {
@@ -918,6 +1012,11 @@ async function loadMenuFromAPI() {
             const activeCats = (data.categories || []).filter(c => c.active !== false).sort((a,b) => (a.sortOrder||0) - (b.sortOrder||0));
             if (activeCats.length > 0 && !POS.currentCategory) {
                 POS.currentCategory = activeCats[0].id;
+            }
+            // Update branches from server data if available
+            if (data.branches && data.branches.length > 0) {
+                BRANCHES = data.branches.filter(b => b.active !== false);
+                console.log('[POS] Branches loaded from server:', BRANCHES.length);
             }
             console.log('[POS] Menu loaded from', src, ':', data.categories?.length, 'categories,', data.items?.length, 'items');
             return data;
@@ -1048,10 +1147,124 @@ function gotoPayment() {
     document.getElementById('btnPrintTwo').disabled = true;
     document.getElementById('btnPrintOne').disabled = true;
 }
-function gotoTakings() { showScreen('screenTakings'); renderTakings(); }
+// ═══════════════════════════════════════════
+//  PIN PROMPT POPUP (separate overlay from tbPopup)
+// ═══════════════════════════════════════════
+let POS_USERS = []; // loaded from TBMS — users with pin, role
+
+let _pinResolve = null;
+let _pinBuf = '';
+
+function pinPromptKey(v) {
+    const errEl = document.getElementById('pinPromptErr');
+    if (errEl) errEl.textContent = '';
+    if (v === 'cancel') {
+        document.getElementById('pinPopup').classList.remove('active');
+        if (_pinResolve) { _pinResolve(false); _pinResolve = null; }
+    } else if (v === 'clear') {
+        _pinBuf = ''; updatePinPromptDots();
+    } else if (v === 'ok') {
+        if (_pinResolve) { _pinResolve(_pinBuf); _pinResolve = null; }
+        document.getElementById('pinPopup').classList.remove('active');
+    } else if (_pinBuf.length < 4) {
+        _pinBuf += v; updatePinPromptDots();
+    }
+}
+
+function updatePinPromptDots() {
+    for (let i = 0; i < 4; i++) {
+        const d = document.getElementById('pp' + i);
+        if (d) d.classList.toggle('filled', i < _pinBuf.length);
+    }
+}
+
+function tbPromptPin(title, icon) {
+    return new Promise(resolve => {
+        _pinBuf = '';
+        _pinResolve = resolve;
+        document.getElementById('pinPopupTitle').textContent = title || 'Enter PIN';
+        document.getElementById('pinPopupIcon').textContent = icon || '🔒';
+        document.getElementById('pinPromptErr').textContent = '';
+        updatePinPromptDots();
+        document.getElementById('pinPopup').classList.add('active');
+    });
+}
+
+// ─── Load TBMS Users (admin, Senior Manager roles) ───
+async function loadTBMSUsers() {
+    // 1) Try local server
+    try {
+        const resp = await fetch('/api/menu');
+        if (resp.ok) {
+            const data = await resp.json();
+            if (data.users && data.users.length > 0) {
+                POS_USERS = data.users;
+                console.log('[POS] Users loaded from server:', POS_USERS.length);
+                return;
+            }
+        }
+    } catch(e) {}
+    // 2) Try TBMS API directly
+    try {
+        const url = GOOGLE_API + '?action=users';
+        const resp = await fetch(url, { redirect: 'follow' });
+        const data = await resp.json();
+        const users = data.users?.data || data.users || [];
+        if (users.length > 0) {
+            POS_USERS = users;
+            console.log('[POS] Users loaded from TBMS API:', POS_USERS.length);
+        }
+    } catch(e) { console.log('[POS] Users load error:', e.message); }
+}
+
+// ─── Check PIN against users with allowed roles ───
+function checkUserPin(pin, allowedRoles) {
+    // normalize: "senior_manager" / "Senior Manager" / "senior-manager" → "seniormanager"
+    const norm = s => s.toLowerCase().replace(/[_\-\s]+/g, '');
+    const roles = allowedRoles.map(norm);
+    return POS_USERS.find(u => {
+        const uPin = String(u.password || u.pin || '').trim();
+        const uRole = norm(String(u.role || ''));
+        return uPin === pin && roles.some(r => uRole === r);
+    });
+}
+
+async function gotoTakings() {
+    const entered = await tbPromptPin('Manager PIN Required', '📊');
+    if (entered === false) return;
+    const user = checkUserPin(entered, ['admin', 'senior manager']);
+    if (!user) { toast('Access denied — Admin or Senior Manager PIN required', 'error'); return; }
+    toast(`Welcome ${user.name || user.id}`, 'success');
+    showScreen('screenTakings'); renderTakings();
+}
 function gotoOrders() { showScreen('screenOrders'); renderAllOrders(); }
-function gotoRegister() { showScreen('screenRegister'); renderRegister(); }
-function gotoSettings() { tbAlert('Settings screen coming soon. Use Admin panel (/admin) for menu and branch management.', 'Settings', '⚙️'); }
+// ─── OPEN TILL = physically open cash drawer via POS printer ───
+async function openCashDrawer() {
+    const entered = await tbPromptPin('Branch PIN Required', '💰');
+    if (entered === false) return;
+    const branch = BRANCHES.find(b => b.code === POS.branch);
+    const digits = (branch?.phone || '').replace(/\D/g, '');
+    const correctPin = digits.length >= 4 ? digits.slice(-4) : null;
+    if (correctPin && entered !== correctPin) {
+        toast('Wrong PIN', 'error'); return;
+    }
+    // Send ESC/POS command to open cash drawer
+    // Standard kick pulse: ESC p 0 25 250 (pin 2) or ESC p 1 25 250 (pin 5)
+    try {
+        const resp = await fetch('/api/open-drawer', { method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ branch: POS.branch })
+        });
+        if (resp.ok) {
+            toast('Cash drawer opened', 'success');
+        } else {
+            toast('Drawer command sent (printer not connected)', 'info');
+        }
+    } catch(e) {
+        // Fallback: just confirm action
+        toast('Cash drawer open command sent', 'info');
+    }
+}
 
 async function switchUser() {
     const ok = await tbConfirm('Switch to a different user?', 'Switch User', '👤');
@@ -1059,9 +1272,8 @@ async function switchUser() {
     if (POS.ws) POS.ws.close();
     POS.pin = ''; POS.cart = []; POS.selectedCartIdx = -1; POS.orders = [];
     showScreen('screenLogin');
-    document.getElementById('loginPinArea').classList.remove('show');
     document.querySelectorAll('.login-branch-btn').forEach(b => b.classList.remove('selected'));
-    document.getElementById('loginPinDisplay').textContent = '';
+    updatePinDots();
 }
 async function closePOS() {
     const ok = await tbConfirm('Close the POS system?', 'Close', '🚪');
@@ -1071,11 +1283,67 @@ async function closePOS() {
 // ═══════════════════════════════════════════
 //  LOGIN
 // ═══════════════════════════════════════════
-function initLogin() {
+function renderBranchGrid(loading) {
     const grid = document.getElementById('loginBranchGrid');
-    grid.innerHTML = BRANCHES.map(b =>
-        `<button class="login-branch-btn" data-code="${b.code}" onclick="selectBranch('${b.code}')">${b.name}<small>${b.nameKr}</small></button>`
-    ).join('');
+    if (loading || BRANCHES.length === 0) {
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:32px 0;color:#9CA3AF;font-size:14px;">
+            <div class="branch-loading-spinner"></div>Loading branches…</div>`;
+        return;
+    }
+    grid.innerHTML = BRANCHES.map((b, i) => {
+        const ci = i % BRANCH_COLORS_DARK.length;
+        const dark = BRANCH_COLORS_DARK[ci];
+        const light = BRANCH_COLORS_LIGHT[ci];
+        return `<button class="login-branch-btn" data-code="${b.code}" style="background:linear-gradient(145deg,${light},${dark});color:#fff;border-color:transparent;" onclick="selectBranch('${b.code}')">${b.name}<small style="color:rgba(255,255,255,.75)">${b.nameKr || ''}</small></button>`;
+    }).join('');
+}
+async function initLogin() {
+    renderBranchGrid(true); // show "Loading…" — no hardcoded buttons
+    loadTBMSUsers(); // load users in background (non-blocking)
+    let loaded = false;
+
+    // 1) Try local server first (fastest)
+    try {
+        const resp = await fetch('/api/menu');
+        if (resp.ok) {
+            const data = await resp.json();
+            if (data.branches && data.branches.length > 0) {
+                BRANCHES = data.branches.filter(b => b.active !== false);
+                renderBranchGrid();
+                loaded = true;
+                console.log('[POS] Branches loaded from local server:', BRANCHES.length);
+            }
+        }
+    } catch(e) {}
+
+    // 2) If local didn't have branches, try TBMS API directly (no Push needed)
+    if (!loaded) {
+        try {
+            const url = GOOGLE_API + '?action=stores';
+            const resp = await fetch(url, { redirect: 'follow' });
+            const data = await resp.json();
+            const stores = data.stores?.data || data.stores || [];
+            if (stores.length > 0) {
+                BRANCHES = stores
+                    .filter(s => s.active !== false && s.active !== 'false')
+                    .map(s => ({
+                        code: s.code || s.id, name: s.name,
+                        nameKr: s.nameKr || '', phone: String(s.phone || ''),
+                        active: true
+                    }));
+                renderBranchGrid();
+                loaded = true;
+                console.log('[POS] Branches loaded from TBMS API:', BRANCHES.length);
+            }
+        } catch(e) { console.log('[POS] TBMS API error:', e.message); }
+    }
+
+    // 3) If all sources failed, show error message
+    if (!loaded) {
+        const grid = document.getElementById('loginBranchGrid');
+        grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:32px 0;color:#DC2626;font-size:14px;">
+            <div style="margin-bottom:8px;font-size:24px;">⚠️</div>Failed to load branches.<br>Check network connection.</div>`;
+    }
 }
 
 function selectBranch(code) {
@@ -1083,23 +1351,46 @@ function selectBranch(code) {
     const b = BRANCHES.find(x => x.code === code);
     POS.branchName = b ? b.name : code;
     document.querySelectorAll('.login-branch-btn').forEach(el => el.classList.toggle('selected', el.dataset.code === code));
-    document.getElementById('loginPinArea').classList.add('show');
+    // Update branch info display
+    document.getElementById('loginBranchName').textContent = POS.branchName + ' Login';
+    const now = new Date();
+    const dd = String(now.getDate()).padStart(2,'0');
+    const mm = String(now.getMonth()+1).padStart(2,'0');
+    const yyyy = now.getFullYear();
+    document.getElementById('loginBranchDate').textContent = 'Date : ' + dd + '/' + mm + '/' + yyyy;
     POS.pin = '';
-    document.getElementById('loginPinDisplay').textContent = '';
+    updatePinDots();
 }
 
+function updatePinDots() {
+    for (let i = 0; i < 4; i++) {
+        const dot = document.getElementById('dot' + i);
+        if (dot) dot.classList.toggle('filled', i < POS.pin.length);
+    }
+}
 function pinInput(n) {
     if (POS.pin.length >= 4) return;
     POS.pin += n;
-    document.getElementById('loginPinDisplay').textContent = '●'.repeat(POS.pin.length);
-    if (POS.pin.length === 4) setTimeout(pinEnter, 300);
+    updatePinDots();
 }
-function pinClear() { POS.pin = ''; document.getElementById('loginPinDisplay').textContent = ''; }
+function pinClear() { POS.pin = ''; updatePinDots(); }
 function pinEnter() {
     if (!POS.branch) { toast('Select a branch first', 'error'); return; }
     if (POS.pin.length < 4) { toast('Enter 4-digit PIN', 'error'); return; }
-    POS.staffId = 'staff_' + POS.pin;
-    POS.staffName = 'Staff ' + POS.pin;
+    // Verify PIN = last 4 digits of branch phone number
+    const branch = BRANCHES.find(b => b.code === POS.branch);
+    if (branch && branch.phone) {
+        const digits = branch.phone.replace(/\D/g, '');
+        const correctPin = digits.slice(-4);
+        if (POS.pin !== correctPin) {
+            toast('Wrong PIN', 'error');
+            POS.pin = '';
+            updatePinDots();
+            return;
+        }
+    }
+    POS.staffId = 'staff_' + POS.branch;
+    POS.staffName = branch ? branch.name : POS.branch;
     startPOS();
 }
 function pinSkip() {
@@ -1118,8 +1409,30 @@ async function startPOS() {
     toast('Loading menu...', 'info');
     await loadMenuFromAPI();
     renderCategoryTabs();
+    // Restore register & completed orders from server
+    await restoreRegisterFromServer();
+    await restoreCompletedOrdersFromServer();
     connectWebSocket();
     showScreen('screenMainMenu');
+}
+
+async function restoreCompletedOrdersFromServer() {
+    try {
+        const today = new Date().toISOString().slice(0, 10);
+        const resp = await fetch(`/api/orders?date=${today}`);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        const orders = data.orders || data || [];
+        // Only restore orders for this branch, from POS source
+        const branchOrders = orders.filter(o => o.branchCode === POS.branch);
+        if (branchOrders.length > 0) {
+            POS.completedOrders = branchOrders;
+            POS.dailyOrderCount = branchOrders.length;
+            console.log('[POS] Restored', branchOrders.length, 'completed orders from server');
+        }
+    } catch (e) {
+        console.warn('[POS] Orders restore failed:', e.message);
+    }
 }
 
 // ═══════════════════════════════════════════
@@ -1128,11 +1441,13 @@ async function startPOS() {
 function connectWebSocket() {
     const host = location.hostname || 'localhost';
     const port = location.port || '8080';
+    POS.wsReady = false;
     POS.ws = new WebSocket(`ws://${host}:${port}`);
     POS.ws.onopen = () => {
         POS.connected = true; updateConnDots(true);
         POS.ws.send(JSON.stringify({ type: 'register', clientType: 'pos', branchCode: POS.branch }));
-        toast('Connected', 'success');
+        // Suppress toasts for first 2 seconds (initial order sync)
+        setTimeout(() => { POS.wsReady = true; }, 2000);
     };
     POS.ws.onclose = () => {
         POS.connected = false; updateConnDots(false);
@@ -1158,7 +1473,7 @@ function handleWSMessage(msg) {
             const order = msg.order;
             if (order.branchCode && order.branchCode !== POS.branch) break;
             POS.orders.push(order);
-            toast(`New order ${order.orderNumber} — ${fp(order.total)}`, 'info');
+            if (POS.wsReady) toast(`New order ${order.orderNumber} — ${fp(order.total)}`, 'info');
             if (POS.currentScreen === 'screenOrders') renderAllOrders();
             break;
         }
@@ -1188,6 +1503,28 @@ function handleWSMessage(msg) {
             }
             break;
         }
+        case 'day_reset': {
+            // Another POS ran EOD, reset our state too
+            POS.completedOrders = [];
+            POS.orders = [];
+            POS.dailyOrderCount = 0;
+            if (POS.currentScreen === 'screenOrders') renderAllOrders();
+            break;
+        }
+        case 'eod_complete': {
+            toast('End of Day complete — daily summary saved to Google Sheets', 'success');
+            // Reset local state for new day
+            POS.completedOrders = [];
+            POS.dailyOrderCount = 0;
+            POS.register = { isOpen: false, openingFloat: 0, cashSales: 0, cardSales: 0, transactions: [] };
+            if (POS.currentScreen === 'screenTakings') renderTakings();
+            if (POS.currentScreen === 'screenOrders') renderAllOrders();
+            break;
+        }
+        case 'eod_error': {
+            toast('EOD error: ' + (msg.error || 'Unknown error'), 'error');
+            break;
+        }
         case 'pong': break;
     }
 }
@@ -1215,20 +1552,18 @@ function renderOrderMenu() {
     el.innerHTML = items.map((item, i) => {
         const color = item.btnColor || BTN_COLORS[i % BTN_COLORS.length];
         const price = getItemPrice(item);
-        const thumb = item.thumbnail || item.image || '';
+        const thumb = driveImgUrl(item.driveId || item.thumbnail || item.image || '', 100);
         if (thumb) {
-            return `<button class="menu-btn has-img" style="border-left:4px solid ${color}" onclick="addToOrder('${item.id}')">
+            return `<button class="menu-btn has-img" style="border-left:8px solid ${color}" onclick="addToOrder('${item.id}')">
                 <img class="menu-btn-img" src="${thumb}" alt="${item.nameEn}" loading="lazy" onerror="this.style.display='none'">
                 <div class="menu-btn-info">
-                    ${item.nameEn}
-                    <span class="name-kr">${item.nameKr}</span>
+                    <span class="menu-name">${item.nameEn}</span>
                     <span class="price-tag">${fp(price)}</span>
                 </div>
             </button>`;
         }
-        return `<button class="menu-btn" style="border-left:4px solid ${color}" onclick="addToOrder('${item.id}')">
-            ${item.nameEn}
-            <span class="name-kr">${item.nameKr}</span>
+        return `<button class="menu-btn" style="border-left:8px solid ${color}" onclick="addToOrder('${item.id}')">
+            <span class="menu-name">${item.nameEn}</span>
             <span class="price-tag">${fp(price)}</span>
         </button>`;
     }).join('');
@@ -1529,6 +1864,9 @@ function completePayment(printCount) {
     else if (payMethod === 'card') POS.register.cardSales += total;
     POS.register.transactions.push({ time: now.toLocaleTimeString('en-GB'), method: payMethod, amount: total, orderNum });
 
+    // Sync register to server after payment
+    syncRegisterToServer();
+
     // Print receipt
     if (printCount > 0) printReceipt(orderData, printCount);
 
@@ -1674,6 +2012,36 @@ function renderTakings() {
                 </tbody>
             </table>
         `;
+    } else if (takingsView === 'register') {
+        const r = POS.register;
+        const regTotalSales = r.cashSales + r.cardSales;
+        const expectedCash = r.openingFloat + r.cashSales;
+        if (!r.isOpen) {
+            el.innerHTML = `
+                <div class="register-card"><h3>Cash Register — CLOSED</h3>
+                    <p style="color:#9CA3AF;margin-bottom:16px">Open the register to start tracking cash</p>
+                </div>
+                <button class="register-btn open" onclick="openRegister()">OPEN REGISTER</button>
+                <button class="register-btn eod" onclick="endOfDay()" style="margin-top:12px;background:#4A1D96;color:#fff">END OF DAY</button>
+            `;
+        } else {
+            el.innerHTML = `
+                <div class="register-card"><h3>Cash Register — OPEN</h3>
+                    <div class="register-row"><span class="label">Opening Float</span><span class="val green">${fp(r.openingFloat)}</span></div>
+                    <div class="register-row"><span class="label">Cash Sales</span><span class="val green">${fp(r.cashSales)}</span></div>
+                    <div class="register-row"><span class="label">Card Sales</span><span class="val">${fp(r.cardSales)}</span></div>
+                    <div class="register-row"><span class="label">Total Sales</span><span class="val green">${fp(regTotalSales)}</span></div>
+                    <div class="register-row"><span class="label">Expected Cash in Till</span><span class="val green">${fp(expectedCash)}</span></div>
+                </div>
+                <div class="register-card"><h3>Recent Transactions</h3>
+                    ${r.transactions.length === 0 ? '<div style="color:#6B7280">No transactions yet</div>' :
+                        r.transactions.slice(-10).reverse().map(t =>
+                            `<div class="register-row"><span class="label">${t.time} — ${t.orderNum}</span><span class="val${t.method==='cash'?' green':''}">${t.method.toUpperCase()} ${fp(t.amount)}</span></div>`
+                        ).join('')}
+                </div>
+                <button class="register-btn close" onclick="closeRegister()">CLOSE REGISTER</button>
+            `;
+        }
     }
 }
 
@@ -1736,6 +2104,7 @@ function payOrderCash(orderNum) {
     POS.register.cashSales += o.total;
     POS.register.transactions.push({ time: new Date().toLocaleTimeString('en-GB'), method: 'cash', amount: o.total, orderNum });
     wsSend({ type: 'order_status', orderNumber: orderNum, status: o.status, paymentStatus: 'paid', paymentMethod: 'cash' });
+    syncRegisterToServer();
     toast(`${orderNum} paid by Cash`, 'success');
     renderAllOrders();
 }
@@ -1747,69 +2116,117 @@ function payOrderCard(orderNum) {
     POS.register.cardSales += o.total;
     POS.register.transactions.push({ time: new Date().toLocaleTimeString('en-GB'), method: 'card', amount: o.total, orderNum });
     wsSend({ type: 'order_status', orderNumber: orderNum, status: o.status, paymentStatus: 'paid', paymentMethod: 'card' });
+    syncRegisterToServer();
     toast(`${orderNum} paid by Card`, 'success');
     renderAllOrders();
 }
 
 // ═══════════════════════════════════════════
-//  CASH REGISTER
+//  CASH REGISTER — Server Sync
 // ═══════════════════════════════════════════
-function renderRegister() {
-    const el = document.getElementById('registerBody');
-    const r = POS.register;
-    const totalSales = r.cashSales + r.cardSales;
-    const expectedCash = r.openingFloat + r.cashSales;
+async function syncRegisterToServer() {
+    try {
+        const r = POS.register;
+        await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                branchCode: POS.branch,
+                branchName: POS.branchName,
+                isOpen: r.isOpen,
+                openingFloat: r.openingFloat,
+                cashSales: r.cashSales,
+                cardSales: r.cardSales,
+                transactions: r.transactions,
+                openedAt: r.openedAt || null,
+                closedAt: r.closedAt || null,
+            })
+        });
+        console.log('[Register] synced to server');
+    } catch (e) {
+        console.warn('[Register] sync failed:', e.message);
+    }
+}
 
-    if (!r.isOpen) {
-        el.innerHTML = `
-            <div class="register-card"><h3>Cash Register — CLOSED</h3>
-                <p style="color:#9CA3AF;margin-bottom:16px">Open the till to start accepting cash payments</p>
-            </div>
-            <button class="register-btn open" onclick="openRegister()">OPEN TILL</button>
-        `;
-    } else {
-        el.innerHTML = `
-            <div class="register-card"><h3>Cash Register — OPEN</h3>
-                <div class="register-row"><span class="label">Opening Float</span><span class="val green">${fp(r.openingFloat)}</span></div>
-                <div class="register-row"><span class="label">Cash Sales</span><span class="val green">${fp(r.cashSales)}</span></div>
-                <div class="register-row"><span class="label">Card Sales</span><span class="val">${fp(r.cardSales)}</span></div>
-                <div class="register-row"><span class="label">Total Sales</span><span class="val green">${fp(totalSales)}</span></div>
-                <div class="register-row"><span class="label">Expected Cash in Till</span><span class="val green">${fp(expectedCash)}</span></div>
-            </div>
-            <div class="register-card"><h3>Recent Transactions</h3>
-                ${r.transactions.length === 0 ? '<div style="color:#6B7280">No transactions yet</div>' :
-                    r.transactions.slice(-10).reverse().map(t =>
-                        `<div class="register-row"><span class="label">${t.time} — ${t.orderNum}</span><span class="val${t.method==='cash'?' green':''}">${t.method.toUpperCase()} ${fp(t.amount)}</span></div>`
-                    ).join('')}
-            </div>
-            <button class="register-btn close" onclick="closeRegister()">CLOSE TILL</button>
-        `;
+async function restoreRegisterFromServer() {
+    try {
+        const today = new Date().toISOString().slice(0, 10);
+        const resp = await fetch(`/api/register?date=${today}`);
+        if (!resp.ok) return;
+        const data = await resp.json();
+        if (data && data.branchCode === POS.branch) {
+            POS.register.isOpen = !!data.isOpen;
+            POS.register.openingFloat = data.openingFloat || 0;
+            POS.register.cashSales = data.cashSales || 0;
+            POS.register.cardSales = data.cardSales || 0;
+            POS.register.transactions = data.transactions || [];
+            POS.register.openedAt = data.openedAt || null;
+            POS.register.closedAt = data.closedAt || null;
+            console.log('[Register] restored from server — isOpen:', POS.register.isOpen);
+        }
+    } catch (e) {
+        console.warn('[Register] restore failed:', e.message);
     }
 }
 
 async function openRegister() {
-    const val = await tbInput('Enter opening float amount', 'Open Till', '💰', '50.00');
-    if (val === null) return;
     POS.register.isOpen = true;
-    POS.register.openingFloat = parseFloat(val) || 0;
+    POS.register.openingFloat = 100;
     POS.register.cashSales = 0;
     POS.register.cardSales = 0;
     POS.register.transactions = [];
-    renderRegister();
-    toast('Till opened', 'success');
+    POS.register.openedAt = new Date().toISOString();
+    POS.register.closedAt = null;
+    await syncRegisterToServer();
+    renderTakings();
+    toast('Register opened', 'success');
 }
 
 async function closeRegister() {
-    const ok = await tbConfirm('Close the till? You will see a summary.', 'Close Till', '💰');
+    const ok = await tbConfirm('Close the register? You will see a summary.', 'Close Register', '💰');
     if (!ok) return;
     const r = POS.register;
     const expectedCash = r.openingFloat + r.cashSales;
     await tbAlert(
         `Opening Float: ${fp(r.openingFloat)}\nCash Sales: ${fp(r.cashSales)}\nCard Sales: ${fp(r.cardSales)}\nTotal Sales: ${fp(r.cashSales + r.cardSales)}\nExpected Cash: ${fp(expectedCash)}`,
-        'Till Closed — Summary', '📊'
+        'Register Closed — Summary', '📊'
     );
     r.isOpen = false;
-    renderRegister();
+    r.closedAt = new Date().toISOString();
+    await syncRegisterToServer();
+    renderTakings();
+}
+
+// ═══════════════════════════════════════════
+//  END OF DAY (EOD)
+// ═══════════════════════════════════════════
+async function endOfDay() {
+    if (POS.register.isOpen) {
+        toast('Please close the register first before End of Day', 'error');
+        return;
+    }
+    const orders = POS.completedOrders;
+    if (orders.length === 0) {
+        toast('No orders today — nothing to submit', 'info');
+        return;
+    }
+    const cashTotal = orders.filter(o => o.paymentMethod === 'cash').reduce((s, o) => s + o.total, 0);
+    const cardTotal = orders.filter(o => o.paymentMethod === 'card').reduce((s, o) => s + o.total, 0);
+    const grandTotal = cashTotal + cardTotal;
+    const summaryText = `Orders: ${orders.length}\nCash: ${fp(cashTotal)}\nCard: ${fp(cardTotal)}\nTotal: ${fp(grandTotal)}\n\nThis will save the daily summary to Google Sheets.`;
+    const ok = await tbConfirm(summaryText, 'End of Day', '🌙');
+    if (!ok) return;
+
+    // Send EOD via WebSocket → server handles Google Sheets
+    wsSend({
+        type: 'end_of_day',
+        branchCode: POS.branch,
+        branchName: POS.branchName,
+        date: new Date().toISOString().slice(0, 10),
+        openingFloat: POS.register.openingFloat
+    });
+
+    toast('End of Day submitted — daily summary sent to Google Sheets', 'success');
 }
 
 // ═══════════════════════════════════════════

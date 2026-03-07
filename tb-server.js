@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * ════════════════════════════════════════════════════════════
- *  🍚 The Bap (더밥) — TBOrder Local Server v1.1
- *  Last Updated: 2026-03-06
+ *  🍚 The Bap (더밥) — TBOrder Local Server v1.3
+ *  Last Updated: 2026-03-07
  * ════════════════════════════════════════════════════════════
  *
  *  역할:
@@ -64,7 +64,8 @@ if (STRIPE_SECRET_KEY) {
 }
 
 const PORT = parseInt(process.env.TB_PORT) || 8080;
-const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbxMZ5PQbti-dKYUgJQJl3Yn0maegOwLyj3nIWL5Lsltx3jM8ZJ2v4CSGDp73BQq4VJ3WA/exec';
+const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbzBrKnJg4ypsgDjP9HA6n7k23HgsG1IECGtJUwdy6Wx_n64QcihwxaEzLNOc4EmWtZHsQ/exec';
+const GOOGLE_API = process.env.GOOGLE_API || 'https://script.google.com/macros/s/AKfycbwsgxPV8Ak3rFh-_ZWioV3IEZ5sQIO3kE3VVue2XrrHVTYsYel-1rijLdf7WLy15Yzlhg/exec';
 
 // ─── 메뉴 데이터 로드/캐시 ───
 const MENU_FILE = path.join(__dirname, 'data', 'menu.json');
@@ -232,6 +233,52 @@ function saveOrders() {
 let dailyOrders = loadOrders(getTodayStr());
 let dailyStartTime = new Date().toISOString();
 console.log(`  📂 저장된 주문 ${dailyOrders.length}건 로드 (${getTodayStr()})`);
+
+// ─── Register (Cash Till) 데이터 파일 저장 ───
+function getRegisterFilePath(dateStr) {
+  return path.join(DATA_DIR, `register_${dateStr}.json`);
+}
+
+function loadRegister(dateStr) {
+  const filePath = getRegisterFilePath(dateStr);
+  try {
+    if (fs.existsSync(filePath)) {
+      return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    }
+  } catch (e) {
+    console.error(`  ⚠️ Register 파일 로드 실패 (${dateStr}):`, e.message);
+  }
+  return null;
+}
+
+function saveRegister(data) {
+  const dateStr = data.date || getTodayStr();
+  const filePath = getRegisterFilePath(dateStr);
+  try {
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+    console.log(`  💰 Register 저장: ${dateStr} (${data.branchCode || '?'})`);
+  } catch (e) {
+    console.error('  ⚠️ Register 파일 저장 실패:', e.message);
+  }
+}
+
+// ─── Daily Summary 계산 ───
+function calcDailySummary(dateStr) {
+  const orders = (dateStr === getTodayStr()) ? dailyOrders : loadOrders(dateStr);
+  const reg = loadRegister(dateStr);
+  const cashOrders = orders.filter(o => o.paymentMethod === 'cash');
+  const cardOrders = orders.filter(o => o.paymentMethod === 'card');
+  return {
+    date: dateStr,
+    branchCode: orders[0]?.branchCode || reg?.branchCode || '',
+    branchName: orders[0]?.branchName || reg?.branchName || '',
+    totalOrders: orders.length,
+    cashTotal: cashOrders.reduce((s, o) => s + (o.total || 0), 0),
+    cardTotal: cardOrders.reduce((s, o) => s + (o.total || 0), 0),
+    grandTotal: orders.reduce((s, o) => s + (o.total || 0), 0),
+    openingFloat: reg?.openingFloat || 0
+  };
+}
 
 // ─── MIME Types ───
 const MIME_TYPES = {
@@ -417,13 +464,67 @@ function handleMessage(clientId, rawData) {
 
     case 'end_of_day': {
       console.log(`  🌙 [마감] 총 ${dailyOrders.length}건`);
+      const eodDate = msg.date || getTodayStr();
+      const summary = calcDailySummary(eodDate);
+      // Override with POS-provided branch info & float
+      if (msg.branchCode) summary.branchCode = msg.branchCode;
+      if (msg.branchName) summary.branchName = msg.branchName;
+      if (msg.openingFloat !== undefined) summary.openingFloat = msg.openingFloat;
+
+      // Send summary to POS client
       sendTo(clientId, {
         type: 'eod_summary',
         totalOrders: dailyOrders.length,
         orders: dailyOrders,
+        summary: summary,
         startTime: dailyStartTime,
         endTime: new Date().toISOString()
       });
+
+      // Save daily summary to Google Sheets (with redirect follow)
+      const postData = JSON.stringify({ action: 'saveDailySummary', data: summary });
+      function postToSheets(url, attempt) {
+        if (attempt > 5) { sendTo(clientId, { type: 'eod_error', error: 'Too many redirects' }); return; }
+        const https = require('https');
+        const gUrl = new URL(url);
+        const options = {
+          hostname: gUrl.hostname, path: gUrl.pathname + gUrl.search,
+          method: 'POST', headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) }
+        };
+        const gReq = https.request(options, (gRes) => {
+          if (gRes.statusCode >= 300 && gRes.statusCode < 400 && gRes.headers.location) {
+            // Follow redirect with GET (Google Apps Script pattern)
+            const rUrl = new URL(gRes.headers.location);
+            https.get(rUrl.href, (r2) => {
+              let d = '';
+              r2.on('data', c => d += c);
+              r2.on('end', () => {
+                console.log(`  ☁️  Daily summary → Google Sheets 저장 완료`);
+                sendTo(clientId, { type: 'eod_complete', summary });
+              });
+            }).on('error', e => {
+              console.log(`  ⚠️ Daily summary redirect 실패: ${e.message}`);
+              sendTo(clientId, { type: 'eod_error', error: e.message });
+            });
+            gRes.resume();
+            return;
+          }
+          let d = '';
+          gRes.on('data', c => d += c);
+          gRes.on('end', () => {
+            console.log(`  ☁️  Daily summary → Google Sheets 저장 완료`);
+            sendTo(clientId, { type: 'eod_complete', summary });
+          });
+        });
+        gReq.on('error', e => {
+          console.log(`  ⚠️ Daily summary 전송 실패: ${e.message}`);
+          sendTo(clientId, { type: 'eod_error', error: e.message });
+        });
+        gReq.write(postData);
+        gReq.end();
+      }
+      postToSheets(GOOGLE_API, 0);
+
       dailyOrders = [];
       dailyStartTime = new Date().toISOString();
       saveOrders();
@@ -509,6 +610,71 @@ const server = http.createServer(async (req, res) => {
   if (url === '/api/ip') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ ip: LOCAL_IP, port: PORT, wsUrl: `ws://${LOCAL_IP}:${PORT}` }));
+    return;
+  }
+
+  // ─── Register (Cash Till) API ───
+  if (url === '/api/register' && req.method === 'GET') {
+    const urlParams = new URL(req.url, `http://localhost:${PORT}`).searchParams;
+    const dateStr = urlParams.get('date') || getTodayStr();
+    const reg = loadRegister(dateStr);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ date: dateStr, register: reg }));
+    return;
+  }
+
+  if (url === '/api/register' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        data.date = data.date || getTodayStr();
+        data.updatedAt = new Date().toISOString();
+        saveRegister(data);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // ─── Daily Summary API ───
+  if (url === '/api/daily-summary') {
+    const urlParams = new URL(req.url, `http://localhost:${PORT}`).searchParams;
+    const dateStr = urlParams.get('date') || getTodayStr();
+    const summary = calcDailySummary(dateStr);
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(summary));
+    return;
+  }
+
+  // ─── Export API (date range) ───
+  if (url === '/api/export') {
+    const urlParams = new URL(req.url, `http://localhost:${PORT}`).searchParams;
+    const from = urlParams.get('from');
+    const to = urlParams.get('to') || getTodayStr();
+    try {
+      const files = fs.readdirSync(DATA_DIR).filter(f => f.startsWith('orders_') && f.endsWith('.json'));
+      const result = [];
+      files.forEach(f => {
+        const d = f.replace('orders_', '').replace('.json', '');
+        if ((!from || d >= from) && d <= to) {
+          const orders = loadOrders(d);
+          const reg = loadRegister(d);
+          result.push({ date: d, orders, register: reg, summary: calcDailySummary(d) });
+        }
+      });
+      result.sort((a, b) => a.date.localeCompare(b.date));
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ from: from || result[0]?.date, to, days: result }));
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
     return;
   }
 
@@ -607,6 +773,7 @@ const server = http.createServer(async (req, res) => {
           if (src.items) menuCache.items = src.items;
           if (src.sauces) menuCache.sauces = src.sauces;
           if (src.branchPricing) menuCache.branchPricing = src.branchPricing;
+          if (src.branches) menuCache.branches = src.branches;
         } else if (action === 'addItem' && data.item) {
           menuCache.items.push(data.item);
         } else if (action === 'updateItem' && data.item) {
