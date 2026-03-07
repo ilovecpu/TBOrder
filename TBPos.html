@@ -423,6 +423,40 @@ button { font-family: inherit; cursor: pointer; }
 .payment-bottom-btn.print-one { background: #059669; }
 .payment-bottom-btn:disabled { opacity: .35; pointer-events: none; }
 
+/* ═══════════ SETTINGS SCREEN ═══════════ */
+.settings-screen { flex-direction: column; background: #F5F5F5; }
+.settings-header {
+    height: 52px; background: #fff; border-bottom: 1px solid #E5E7EB;
+    display: flex; align-items: center; padding: 0 16px; gap: 12px; flex-shrink: 0;
+}
+.settings-header-title { font-size: 16px; font-weight: 700; color: #1F2937; }
+.settings-body { flex: 1; overflow-y: auto; padding: 16px; }
+.settings-card {
+    background: #fff; border-radius: 12px; padding: 20px; margin-bottom: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+}
+.settings-card h3 { font-size: 15px; font-weight: 700; color: #1F2937; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+.settings-row { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #F3F4F6; }
+.settings-row:last-child { border-bottom: none; }
+.settings-row .label { font-size: 13px; color: #6B7280; }
+.settings-row .val { font-size: 13px; font-weight: 600; color: #1F2937; text-align: right; max-width: 60%; word-break: break-all; }
+.settings-row .val.green { color: #059669; }
+.settings-row .val.blue { color: #2563EB; }
+.settings-row .val.red { color: #DC2626; }
+.settings-client-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 500;
+    background: #F3F4F6; margin: 2px;
+}
+.settings-client-badge.pos { background: #DBEAFE; color: #1D4ED8; }
+.settings-client-badge.kiosk { background: #D1FAE5; color: #065F46; }
+.settings-client-badge.kitchen { background: #FEF3C7; color: #92400E; }
+.settings-refresh-btn {
+    padding: 8px 16px; border: none; border-radius: 8px;
+    background: #006AFF; color: #fff; font-size: 13px; font-weight: 600; cursor: pointer;
+}
+.settings-refresh-btn:hover { background: #0052CC; }
+
 /* ═══════════ TAKINGS SCREEN ═══════════ */
 .takings-screen {
     flex-direction: column; background: #F5F5F5;
@@ -726,15 +760,15 @@ button { font-family: inherit; cursor: pointer; }
             </div>
         </div>
     </div>
-    <div style="text-align:center;padding:10px 0 0;color:#B0B0B0;font-size:11px;line-height:1.6;">
-        v1.7 &nbsp;|&nbsp; © 2026 The Bap. All rights reserved. &nbsp;|&nbsp; Program by DJ Kim
+    <div style="text-align:center;padding:10px 0 0;color:#B0B0B0;font-size:11px;line-height:1.6;" id="loginFooter">
+        POS v1.7 <span id="loginServerVer"></span>&nbsp;|&nbsp; © 2026 The Bap. All rights reserved. &nbsp;|&nbsp; Program by DJ Kim
     </div>
 </div>
 
 <!-- ═══════════ SCREEN: MAIN MENU ═══════════ -->
 <div class="screen main-menu-screen" id="screenMainMenu">
     <div class="main-menu-header">
-        <div class="main-menu-header-title">The Bap POS <span style="font-size:10px;color:#9CA3AF;font-weight:400">v1.1</span></div>
+        <div class="main-menu-header-title">The Bap POS <span style="font-size:10px;color:#9CA3AF;font-weight:400">v1.7</span></div>
         <div class="main-menu-header-branch" id="mainMenuBranch">TBS</div>
         <div class="main-menu-header-spacer"></div>
         <div class="main-menu-header-time" id="mainMenuTime">12:00:00</div>
@@ -753,6 +787,9 @@ button { font-family: inherit; cursor: pointer; }
             </div>
             <div class="main-menu-btn orders" onclick="gotoOrders()">
                 <div class="btn-icon">📋</div>ALL ORDERS
+            </div>
+            <div class="main-menu-btn settings" onclick="gotoSettings()">
+                <div class="btn-icon">⚙️</div>SETTINGS
             </div>
         </div>
     </div>
@@ -910,6 +947,19 @@ button { font-family: inherit; cursor: pointer; }
     <div class="orders-list-body" id="ordersListBody"></div>
 </div>
 
+
+<!-- ═══════════ SCREEN: SETTINGS ═══════════ -->
+<div class="screen settings-screen" id="screenSettings">
+    <div class="settings-header">
+        <div class="settings-header-title">SETTINGS</div>
+        <div style="flex:1"></div>
+        <button class="settings-refresh-btn" onclick="loadServerInfo()">Refresh</button>
+        <button class="takings-back-btn" onclick="gotoMainMenu()">Back to Menu</button>
+    </div>
+    <div class="settings-body" id="settingsBody">
+        <div style="text-align:center;padding:40px;color:#9CA3AF">Loading server info...</div>
+    </div>
+</div>
 
 <!-- ═══════════ RECEIPT (hidden, for printing) ═══════════ -->
 <div class="receipt-print" id="receiptPrint" style="display:none">
@@ -1314,6 +1364,15 @@ async function initLogin() {
                 console.log('[POS] Branches loaded from local server:', BRANCHES.length);
             }
         }
+        // Fetch server version for login footer
+        try {
+            const si = await fetch('/api/server-info');
+            if (si.ok) {
+                const info = await si.json();
+                const el = document.getElementById('loginServerVer');
+                if (el) el.textContent = '| Server v' + info.serverVersion + ' (' + info.nodeVersion + ') ';
+            }
+        } catch(e2) {}
     } catch(e) {}
 
     // 2) If local didn't have branches, try TBMS API directly (no Push needed)
@@ -2227,6 +2286,129 @@ async function endOfDay() {
     });
 
     toast('End of Day submitted — daily summary sent to Google Sheets', 'success');
+}
+
+// ═══════════════════════════════════════════
+//  SETTINGS — Server Info
+// ═══════════════════════════════════════════
+let _serverInfo = null;
+
+async function gotoSettings() {
+    const entered = await tbPromptPin('Manager PIN Required', '⚙️');
+    if (entered === false) return;
+    const user = checkUserPin(entered, ['admin', 'senior manager']);
+    if (!user) { toast('Access denied — Admin or Senior Manager PIN required', 'error'); return; }
+    toast(`Welcome ${user.name || user.id}`, 'success');
+    showScreen('screenSettings');
+    loadServerInfo();
+}
+
+async function loadServerInfo() {
+    const el = document.getElementById('settingsBody');
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:#9CA3AF"><div class="branch-loading-spinner"></div>Loading server info...</div>';
+    try {
+        const resp = await fetch('/api/server-info');
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        _serverInfo = await resp.json();
+        renderSettings();
+    } catch (e) {
+        el.innerHTML = `<div style="text-align:center;padding:40px;color:#DC2626">Failed to load server info<br><small>${e.message}</small></div>`;
+    }
+}
+
+function fmtUptime(sec) {
+    const d = Math.floor(sec / 86400);
+    const h = Math.floor((sec % 86400) / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    let str = '';
+    if (d > 0) str += d + 'd ';
+    if (h > 0) str += h + 'h ';
+    str += m + 'm ' + s + 's';
+    return str;
+}
+
+function fmtBytes(bytes) {
+    if (bytes >= 1073741824) return (bytes / 1073741824).toFixed(1) + ' GB';
+    if (bytes >= 1048576) return (bytes / 1048576).toFixed(0) + ' MB';
+    return (bytes / 1024).toFixed(0) + ' KB';
+}
+
+function renderSettings() {
+    const el = document.getElementById('settingsBody');
+    const s = _serverInfo;
+    if (!s) { el.innerHTML = '<div style="text-align:center;color:#9CA3AF;padding:40px">No data</div>'; return; }
+
+    const ipsHtml = s.ips.map(ip =>
+        `<div class="settings-row"><span class="label">${ip.interface}</span><span class="val blue">${ip.address}</span></div>`
+    ).join('');
+
+    const clientsHtml = s.connectedClients.length === 0
+        ? '<div style="color:#9CA3AF;font-size:13px">No clients connected</div>'
+        : s.connectedClients.map(c => {
+            const typeClass = (c.type || '').includes('pos') ? 'pos' : (c.type || '').includes('kiosk') || (c.type || '').includes('order') ? 'kiosk' : (c.type || '').includes('kitchen') ? 'kitchen' : '';
+            return `<span class="settings-client-badge ${typeClass}">#${c.id} ${(c.type || 'unknown').toUpperCase()} ${c.branch || ''} <small>${c.ip || ''}</small></span>`;
+          }).join('');
+
+    const dataHtml = s.dataFiles.length === 0
+        ? '<div style="color:#9CA3AF;font-size:13px">No data files</div>'
+        : s.dataFiles.map(f => `<div style="font-size:12px;color:#6B7280;padding:2px 0">📄 ${f}</div>`).join('');
+
+    el.innerHTML = `
+        <div class="settings-card">
+            <h3>🖥️ Server</h3>
+            <div class="settings-row"><span class="label">Server Version</span><span class="val">v${s.serverVersion}</span></div>
+            <div class="settings-row"><span class="label">Node.js</span><span class="val">${s.nodeVersion}</span></div>
+            <div class="settings-row"><span class="label">Platform</span><span class="val">${s.platform} (${s.arch})</span></div>
+            <div class="settings-row"><span class="label">Hostname</span><span class="val">${s.hostname}</span></div>
+            <div class="settings-row"><span class="label">Port</span><span class="val blue">${s.port}</span></div>
+            <div class="settings-row"><span class="label">Uptime</span><span class="val green">${fmtUptime(s.uptimeSeconds)}</span></div>
+            <div class="settings-row"><span class="label">Started</span><span class="val">${new Date(s.startTime).toLocaleString('en-GB')}</span></div>
+        </div>
+
+        <div class="settings-card">
+            <h3>🌐 Network (IP Addresses)</h3>
+            ${ipsHtml}
+            <div class="settings-row" style="margin-top:8px;padding-top:12px;border-top:2px solid #E5E7EB">
+                <span class="label">POS URL</span>
+                <span class="val blue">http://${s.ips[0]?.address || 'localhost'}:${s.port}/pos</span>
+            </div>
+            <div class="settings-row">
+                <span class="label">Kiosk URL</span>
+                <span class="val blue">http://${s.ips[0]?.address || 'localhost'}:${s.port}/order</span>
+            </div>
+            <div class="settings-row">
+                <span class="label">Kitchen URL</span>
+                <span class="val blue">http://${s.ips[0]?.address || 'localhost'}:${s.port}/kitchen</span>
+            </div>
+        </div>
+
+        <div class="settings-card">
+            <h3>💾 System</h3>
+            <div class="settings-row"><span class="label">CPU Cores</span><span class="val">${s.cpus}</span></div>
+            <div class="settings-row"><span class="label">Total Memory</span><span class="val">${fmtBytes(s.totalMemory)}</span></div>
+            <div class="settings-row"><span class="label">Free Memory</span><span class="val green">${fmtBytes(s.freeMemory)}</span></div>
+        </div>
+
+        <div class="settings-card">
+            <h3>📡 Connected Clients (${s.connectedClients.length})</h3>
+            <div style="display:flex;flex-wrap:wrap;gap:4px">${clientsHtml}</div>
+        </div>
+
+        <div class="settings-card">
+            <h3>📊 Today's Data</h3>
+            <div class="settings-row"><span class="label">Daily Orders</span><span class="val green">${s.dailyOrders}</span></div>
+        </div>
+
+        <div class="settings-card">
+            <h3>📁 Data Files</h3>
+            ${dataHtml}
+        </div>
+
+        <div style="text-align:center;padding:12px;color:#9CA3AF;font-size:11px">
+            The Bap POS v1.7 | Server v${s.serverVersion} | ${s.nodeVersion}
+        </div>
+    `;
 }
 
 // ═══════════════════════════════════════════

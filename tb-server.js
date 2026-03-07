@@ -64,6 +64,8 @@ if (STRIPE_SECRET_KEY) {
 }
 
 const PORT = parseInt(process.env.TB_PORT) || 8080;
+const SERVER_VERSION = '1.3';
+const SERVER_START_TIME = new Date().toISOString();
 const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbzBrKnJg4ypsgDjP9HA6n7k23HgsG1IECGtJUwdy6Wx_n64QcihwxaEzLNOc4EmWtZHsQ/exec';
 const GOOGLE_API = process.env.GOOGLE_API || 'https://script.google.com/macros/s/AKfycbwsgxPV8Ak3rFh-_ZWioV3IEZ5sQIO3kE3VVue2XrrHVTYsYel-1rijLdf7WLy15Yzlhg/exec';
 
@@ -578,6 +580,43 @@ const server = http.createServer(async (req, res) => {
       uptime: process.uptime(),
       clients: getClientSummary(),
       dailyOrders: dailyOrders.length
+    }));
+    return;
+  }
+
+  if (url === '/api/server-info') {
+    const nets = os.networkInterfaces();
+    const ips = [];
+    for (const name of Object.keys(nets)) {
+      for (const net of nets[name]) {
+        if (net.family === 'IPv4' && !net.internal) {
+          ips.push({ interface: name, address: net.address });
+        }
+      }
+    }
+    const uptimeSec = Math.floor((Date.now() - new Date(SERVER_START_TIME).getTime()) / 1000);
+    const wsClients = [];
+    clients.forEach((c, id) => {
+      wsClients.push({ id, type: c.type, branch: c.branch, connectedAt: c.connectedAt, ip: c.ip });
+    });
+    const dataFiles = fs.existsSync(DATA_DIR) ? fs.readdirSync(DATA_DIR).filter(f => f.endsWith('.json')) : [];
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({
+      serverVersion: SERVER_VERSION,
+      nodeVersion: process.version,
+      platform: os.platform(),
+      hostname: os.hostname(),
+      arch: os.arch(),
+      totalMemory: os.totalmem(),
+      freeMemory: os.freemem(),
+      cpus: os.cpus().length,
+      port: PORT,
+      ips: ips,
+      startTime: SERVER_START_TIME,
+      uptimeSeconds: uptimeSec,
+      connectedClients: wsClients,
+      dailyOrders: dailyOrders.length,
+      dataFiles: dataFiles,
     }));
     return;
   }
