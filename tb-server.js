@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * ════════════════════════════════════════════════════════════
- *  🍚 The Bap (더밥) — TBOrder Local Server v1.5
- *  Last Updated: 2026-03-07
+ *  🍚 The Bap (더밥) — TBOrder Local Server v1.9
+ *  Last Updated: 2026-03-10
  * ════════════════════════════════════════════════════════════
  *
  *  역할:
@@ -63,10 +63,14 @@ if (STRIPE_SECRET_KEY) {
   console.log('     카드 결제 없이 주문만 가능합니다.');
 }
 
+// ─── ESC/POS 프린터 모듈 ───
+const printer = require('./tb-printer');
+
 const PORT = parseInt(process.env.TB_PORT) || 8080;
-const SERVER_VERSION = '1.5';
+const BRANCH_CODE = process.env.TB_BRANCH || 'TB';   // 지점코드: TB, PAB 등 (실행: TB_BRANCH=PAB node tb-server.js)
+const SERVER_VERSION = '1.9';
 const SERVER_START_TIME = new Date().toISOString();
-const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbzBrKnJg4ypsgDjP9HA6n7k23HgsG1IECGtJUwdy6Wx_n64QcihwxaEzLNOc4EmWtZHsQ/exec';
+const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbwzRdh2grvGlE1YKH58lEYXf9XrchkGQJGDslzx80OfkRkKcbHRk-pguJd74cGpfrpBUQ/exec';
 const GOOGLE_API = process.env.GOOGLE_API || 'https://script.google.com/macros/s/AKfycbwzRdh2grvGlE1YKH58lEYXf9XrchkGQJGDslzx80OfkRkKcbHRk-pguJd74cGpfrpBUQ/exec';
 
 // ─── 메뉴 데이터 로드/캐시 ───
@@ -200,8 +204,31 @@ let clientIdCounter = 0;
 // ─── 주문 데이터 파일 저장 ───
 const DATA_DIR = path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+const END_SALES_DIR = path.join(DATA_DIR, 'end_sales');
+if (!fs.existsSync(END_SALES_DIR)) fs.mkdirSync(END_SALES_DIR, { recursive: true });
 
-function getOrderFilePath(dateStr) {
+// Auto-recover last_end_sales.json from end_sales_log.json if missing
+(function recoverLastEndSales() {
+  const lePath = path.join(DATA_DIR, 'last_end_sales.json');
+  if (fs.existsSync(lePath)) return; // already exists
+  const logPath = path.join(DATA_DIR, 'end_sales_log.json');
+  if (!fs.existsSync(logPath)) return; // no log either
+  try {
+    const log = JSON.parse(fs.readFileSync(logPath, 'utf8'));
+    if (!Array.isArray(log) || log.length === 0) return;
+    const data = {};
+    log.forEach(e => { if (e.branchCode && e.periodTo) data[e.branchCode] = e.periodTo; });
+    fs.writeFileSync(lePath, JSON.stringify(data, null, 2), 'utf8');
+    console.log('[Server] last_end_sales.json recovered from log:', data);
+  } catch (e) { console.warn('[Server] last_end_sales recovery failed:', e.message); }
+})();
+
+function getMonthlyOrderFilePath(monthStr) {
+  return path.join(DATA_DIR, `orders_${monthStr}.json`); // orders_2026-03.json
+}
+
+// 하위호환: 기존 일별 파일 경로
+function getLegacyOrderFilePath(dateStr) {
   return path.join(DATA_DIR, `orders_${dateStr}.json`);
 }
 
@@ -209,55 +236,159 @@ function getTodayStr() {
   return new Date().toISOString().split('T')[0]; // 'YYYY-MM-DD'
 }
 
+function getMonthStr(dateStr) {
+  return dateStr.slice(0, 7); // 'YYYY-MM'
+}
+
+// 월별 파일에서 특정 날짜 주문 로드
 function loadOrders(dateStr) {
-  const filePath = getOrderFilePath(dateStr);
+  const monthStr = getMonthStr(dateStr);
+  const monthFile = getMonthlyOrderFilePath(monthStr);
   try {
-    if (fs.existsSync(filePath)) {
-      const raw = fs.readFileSync(filePath, 'utf8');
-      return JSON.parse(raw);
+    if (fs.existsSync(monthFile)) {
+      const data = JSON.parse(fs.readFileSync(monthFile, 'utf8'));
+      return data[dateStr] || [];
     }
   } catch (e) {
-    console.error(`  ⚠️ 주문 파일 로드 실패 (${dateStr}):`, e.message);
+    console.error(`  ⚠️ 월별 주문 파일 로드 실패 (${monthStr}):`, e.message);
   }
+  // 하위호환: 기존 일별 파일 확인
+  const legacyFile = getLegacyOrderFilePath(dateStr);
+  try {
+    if (fs.existsSync(legacyFile)) {
+      const orders = JSON.parse(fs.readFileSync(legacyFile, 'utf8'));
+      console.log(`  📦 레거시 일별 파일 → 월별 마이그레이션: ${dateStr}`);
+      saveOrdersForDate(dateStr, orders);
+      // 마이그레이션 후 일별 파일 삭제
+      fs.unlinkSync(legacyFile);
+      return orders;
+    }
+  } catch (e) {}
   return [];
 }
 
-function saveOrders() {
-  const filePath = getOrderFilePath(getTodayStr());
+// 특정 날짜의 주문을 월별 파일에 저장
+function saveOrdersForDate(dateStr, orders) {
+  const monthStr = getMonthStr(dateStr);
+  const monthFile = getMonthlyOrderFilePath(monthStr);
+  let data = {};
   try {
-    fs.writeFileSync(filePath, JSON.stringify(dailyOrders, null, 2), 'utf8');
+    if (fs.existsSync(monthFile)) {
+      data = JSON.parse(fs.readFileSync(monthFile, 'utf8'));
+    }
+  } catch (e) {}
+  data[dateStr] = orders;
+  fs.writeFileSync(monthFile, JSON.stringify(data, null, 2), 'utf8');
+}
+
+// ─── 날짜 추적 (자정 자동 전환용) ───
+let currentDateStr = getTodayStr();
+
+function saveOrders() {
+  try {
+    saveOrdersForDate(currentDateStr, dailyOrders);
   } catch (e) {
     console.error('  ⚠️ 주문 파일 저장 실패:', e.message);
   }
 }
+
+// ★ 자정 자동 날짜 전환 — EOD 없이도 데이터 안전하게 분리
+function checkDateRollover() {
+  const now = getTodayStr();
+  if (now !== currentDateStr) {
+    console.log('');
+    console.log(`  🌅 ═══ 날짜 전환 감지: ${currentDateStr} → ${now} ═══`);
+
+    // 1) 어제 데이터를 월별 파일에 확실히 저장
+    try {
+      saveOrdersForDate(currentDateStr, dailyOrders);
+      console.log(`    💾 ${currentDateStr} 주문 ${dailyOrders.length}건 저장 완료`);
+    } catch (e) {
+      console.error(`    ⚠️ ${currentDateStr} 저장 실패:`, e.message);
+    }
+
+    // 2) 날짜 업데이트 & 오늘 주문 로드 (이미 존재하면)
+    const prevDate = currentDateStr;
+    currentDateStr = now;
+    dailyOrders = loadOrders(now);
+    console.log(`    📂 ${now} 주문 ${dailyOrders.length}건 로드`);
+
+    // 3) 시작 시간 리셋
+    dailyStartTime = new Date().toISOString();
+
+    // 4) 연결된 클라이언트에 날짜 전환 알림
+    broadcastMsg({
+      type: 'day_reset',
+      previousDate: prevDate,
+      newDate: now,
+      message: `날짜 전환: ${prevDate} → ${now}`
+    });
+    console.log(`    📡 클라이언트에 day_reset 전송`);
+    console.log(`  🌅 ═══ 날짜 전환 완료 ═══`);
+    console.log('');
+  }
+}
+
+// 매 30초마다 날짜 전환 확인
+setInterval(checkDateRollover, 30 * 1000);
 
 // 시작 시 오늘 주문 로드
 let dailyOrders = loadOrders(getTodayStr());
 let dailyStartTime = new Date().toISOString();
 console.log(`  📂 저장된 주문 ${dailyOrders.length}건 로드 (${getTodayStr()})`);
 
-// ─── Register (Cash Till) 데이터 파일 저장 ───
-function getRegisterFilePath(dateStr) {
+// ─── Register (Cash Till) 데이터 — 월별 파일 저장 ───
+function getMonthlyRegisterFilePath(monthStr) {
+  return path.join(DATA_DIR, `register_${monthStr}.json`); // register_2026-03.json
+}
+
+// 하위호환: 기존 일별 파일 경로
+function getLegacyRegisterFilePath(dateStr) {
   return path.join(DATA_DIR, `register_${dateStr}.json`);
 }
 
 function loadRegister(dateStr) {
-  const filePath = getRegisterFilePath(dateStr);
+  const monthStr = getMonthStr(dateStr);
+  const monthFile = getMonthlyRegisterFilePath(monthStr);
   try {
-    if (fs.existsSync(filePath)) {
-      return JSON.parse(fs.readFileSync(filePath, 'utf8'));
+    if (fs.existsSync(monthFile)) {
+      const data = JSON.parse(fs.readFileSync(monthFile, 'utf8'));
+      return data[dateStr] || null;
     }
   } catch (e) {
-    console.error(`  ⚠️ Register 파일 로드 실패 (${dateStr}):`, e.message);
+    console.error(`  ⚠️ 월별 Register 파일 로드 실패 (${monthStr}):`, e.message);
   }
+  // 하위호환: 기존 일별 파일 확인
+  const legacyFile = getLegacyRegisterFilePath(dateStr);
+  try {
+    if (fs.existsSync(legacyFile)) {
+      const reg = JSON.parse(fs.readFileSync(legacyFile, 'utf8'));
+      console.log(`  📦 레거시 Register 일별 → 월별 마이그레이션: ${dateStr}`);
+      saveRegisterForDate(dateStr, reg);
+      fs.unlinkSync(legacyFile);
+      return reg;
+    }
+  } catch (e) {}
   return null;
+}
+
+function saveRegisterForDate(dateStr, data) {
+  const monthStr = getMonthStr(dateStr);
+  const monthFile = getMonthlyRegisterFilePath(monthStr);
+  let allData = {};
+  try {
+    if (fs.existsSync(monthFile)) {
+      allData = JSON.parse(fs.readFileSync(monthFile, 'utf8'));
+    }
+  } catch (e) {}
+  allData[dateStr] = data;
+  fs.writeFileSync(monthFile, JSON.stringify(allData, null, 2), 'utf8');
 }
 
 function saveRegister(data) {
   const dateStr = data.date || getTodayStr();
-  const filePath = getRegisterFilePath(dateStr);
   try {
-    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+    saveRegisterForDate(dateStr, data);
     console.log(`  💰 Register 저장: ${dateStr} (${data.branchCode || '?'})`);
   } catch (e) {
     console.error('  ⚠️ Register 파일 저장 실패:', e.message);
@@ -304,12 +435,13 @@ const ROUTES = {
   '/kitchen': 'TBKitchen_Kiosk.html',
   '/admin': 'TBMain_Kiosk.html',
   '/pos': 'TBPos.html',
+  '/display': 'TBCustomerDisplay.html',
   '/test': 'test.html',
 };
 
 // ─── 유틸리티 ───
 function getClientSummary() {
-  const summary = { order: 0, kitchen: 0, admin: 0, pos: 0, test: 0 };
+  const summary = { order: 0, kitchen: 0, admin: 0, pos: 0, customer_display: 0, test: 0 };
   clients.forEach(c => {
     if (c.type && summary[c.type] !== undefined) summary[c.type]++;
   });
@@ -358,12 +490,13 @@ function handleMessage(clientId, rawData) {
   switch (msg.type) {
     case 'register': {
       client.type = msg.clientType;
-      client.branch = msg.branchCode || '';
-      console.log(`  ✅ [${(msg.clientType || '?').toUpperCase()}] ${client.branch || 'no-branch'} 등록 (ID: ${clientId})`);
+      client.branch = BRANCH_CODE;  // 서버 지점코드 강제 적용
+      console.log(`  ✅ [${(msg.clientType || '?').toUpperCase()}] ${BRANCH_CODE} 등록 (ID: ${clientId})`);
       sendTo(clientId, {
         type: 'registered',
         clientId,
         serverIP: LOCAL_IP,
+        branchCode: BRANCH_CODE,
         connectedClients: getClientSummary(),
         dailyOrderCount: dailyOrders.length
       });
@@ -374,9 +507,10 @@ function handleMessage(clientId, rawData) {
       }, clientId);
 
       // 주방/관리자/POS가 새로 연결되면 기존 주문 전송
-      if ((msg.clientType === 'kitchen' || msg.clientType === 'admin' || msg.clientType === 'pos') && dailyOrders.length > 0) {
+      // 같은 서버 = 같은 지점이므로 branch 필터 불필요
+      if ((msg.clientType === 'kitchen' || msg.clientType === 'admin' || msg.clientType === 'pos' || msg.clientType === 'customer_display') && dailyOrders.length > 0) {
         // 주방: 완료되지 않은 주문만 / 관리자,POS: 전부
-        const ordersToSend = msg.clientType === 'kitchen'
+        const ordersToSend = (msg.clientType === 'kitchen' || msg.clientType === 'customer_display')
           ? dailyOrders.filter(o => o.status !== 'done' && o.status !== 'completed')
           : dailyOrders;
         console.log(`    📦 기존 주문 ${ordersToSend.length}/${dailyOrders.length}건 전송 → #${clientId} (${msg.clientType})`);
@@ -393,11 +527,31 @@ function handleMessage(clientId, rawData) {
         console.error('    ⚠️ 주문 데이터 없음');
         break;
       }
-      console.log(`  📋 [주문] ${order.orderNumber} (${order.branchCode || '?'}) — £${order.total}`);
+
+      // branchCode가 없으면 서버 기본값 사용
+      if (!order.branchCode) order.branchCode = BRANCH_CODE;
+
+      // ★ 주문 저장 전 날짜 전환 체크 (자정 직후 주문이 어제 파일에 들어가는 것 방지)
+      checkDateRollover();
+
+      // ★ 서버 중앙 주문번호 발급 — POS/키오스크 번호 충돌 방지
+      const prefix = order.branchCode || BRANCH_CODE;
+      const existingNums = dailyOrders.map(o => {
+        const m = (o.orderNumber || '').match(/-(\d+)$/);
+        return m ? parseInt(m[1]) : 0;
+      });
+      const nextNum = (existingNums.length > 0 ? Math.max(...existingNums) : 0) + 1;
+      const newOrderNumber = `${prefix}-${String(nextNum).padStart(3, '0')}`;
+      if (order.orderNumber !== newOrderNumber) {
+        console.log(`    🔢 주문번호 재발급: ${order.orderNumber} → ${newOrderNumber}`);
+      }
+      order.orderNumber = newOrderNumber;
+
+      console.log(`  📋 [주문] ${order.orderNumber} (${BRANCH_CODE}) — £${order.total}`);
       dailyOrders.push({ ...order, receivedAt: new Date().toISOString() });
       saveOrders();
 
-      // 주방 + 관리자 + POS에게 전달
+      // 같은 서버의 모든 클라이언트에게 전달 (같은 지점이므로 branch 필터 불필요)
       const skipKitchen = !!order.skipKitchen;
       let sentCount = 0;
       clients.forEach((c, id) => {
@@ -419,6 +573,10 @@ function handleMessage(clientId, rawData) {
           sendTo(id, { type: 'new_order', order });
           console.log(`    → POS #${id} 전달 완료`);
         }
+        if (c.type === 'customer_display') {
+          sendTo(id, { type: 'new_order', order });
+          console.log(`    → Display #${id} 전달 완료`);
+        }
       });
       if (sentCount === 0 && !skipKitchen) {
         console.log(`    ⚠️ 연결된 주방이 없음! (현재: ${[...clients.values()].map(c => c.type || '?').join(',')})`);
@@ -427,18 +585,30 @@ function handleMessage(clientId, rawData) {
     }
 
     case 'order_status': {
-      console.log(`  🔄 [상태] ${msg.orderNumber} → ${msg.status}`);
+      console.log(`  🔄 [상태] ${msg.orderNumber} → ${msg.status}${msg.paymentStatus ? ' (pay:' + msg.paymentStatus + ')' : ''}`);
       const found = dailyOrders.find(o => o.orderNumber === msg.orderNumber);
       if (found) {
         found.status = msg.status;
         found.statusUpdatedAt = new Date().toISOString();
+        if (msg.paymentStatus) found.paymentStatus = msg.paymentStatus;
+        if (msg.paymentMethod) found.paymentMethod = msg.paymentMethod;
+        if (msg.amountPaid !== undefined) found.amountPaid = msg.amountPaid;
+        if (msg.staff) found.staff = msg.staff;
+        if (msg.pickedUp) found.pickedUp = true;
         saveOrders();
       }
-      broadcastMsg({
+      // Broadcast status + full order data to all clients
+      const statusMsg = {
         type: 'order_status',
         orderNumber: msg.orderNumber,
         status: msg.status
-      }, clientId);
+      };
+      if (msg.paymentStatus) statusMsg.paymentStatus = msg.paymentStatus;
+      if (msg.paymentMethod) statusMsg.paymentMethod = msg.paymentMethod;
+      if (msg.pickedUp) statusMsg.pickedUp = true;
+      // ★ 서버의 full order 데이터 첨부 (Kitchen이 주문을 놓쳤을 때 대비)
+      if (found) statusMsg.order = found;
+      broadcastMsg(statusMsg, clientId);
       break;
     }
 
@@ -550,7 +720,7 @@ function handleMessage(clientId, rawData) {
         // Past date — load, filter, save back
         const pastOrders = loadOrders(delDate).filter(o => o.orderNumber !== orderNum);
         try {
-          fs.writeFileSync(getOrderFilePath(delDate), JSON.stringify(pastOrders, null, 2), 'utf8');
+          saveOrdersForDate(delDate, pastOrders);
         } catch (e) { console.error(`  ⚠️ 과거 주문 삭제 저장 실패 (${delDate}):`, e.message); }
       }
       broadcastMsg({ type: 'order_deleted', orderNumber: orderNum, date: delDate }, clientId);
@@ -567,7 +737,7 @@ function handleMessage(clientId, rawData) {
         // Past date — overwrite with empty
         console.log(`  🗑️ [전체삭제] ${clearDate} 주문 삭제`);
         try {
-          fs.writeFileSync(getOrderFilePath(clearDate), JSON.stringify([], null, 2), 'utf8');
+          saveOrdersForDate(clearDate, []);
         } catch (e) { console.error(`  ⚠️ 과거 주문 전체삭제 실패 (${clearDate}):`, e.message); }
       }
       broadcastMsg({ type: 'orders_cleared', date: clearDate }, clientId);
@@ -576,12 +746,44 @@ function handleMessage(clientId, rawData) {
 
     case 'end_sales': {
       console.log(`  💰 [END SALES] ${msg.branchName || msg.branchCode} — Grand Total: £${(msg.grandTotal || 0).toFixed(2)}`);
-      // Append to end_sales_log.json
+      const esTimestamp = new Date().toISOString();
+      const esId = `ES-${msg.branchCode}-${esTimestamp.replace(/[:.]/g, '-')}`;
+
+      // 1. Save full END Sales record as individual file (for TBMS access)
+      const fullRecord = {
+        id: esId,
+        timestamp: esTimestamp,
+        branchCode: msg.branchCode,
+        branchName: msg.branchName,
+        periodFrom: msg.periodFrom,
+        periodTo: msg.periodTo,
+        summary: {
+          totalOrders: msg.totalOrders,
+          cashTotal: msg.cashTotal,
+          cardTotal: msg.cardTotal,
+          grandTotal: msg.grandTotal,
+          cashCustomers: msg.cashCustomers,
+          cardCustomers: msg.cardCustomers,
+          vatTotal: msg.vatTotal,
+          vatBreakdown: msg.vatBreakdown,
+          cashInDrawer: 100 + (msg.cashTotal || 0)
+        },
+        itemBreakdown: msg.itemBreakdown || [],
+        orders: msg.orders || [],
+        staff: msg.staff || null
+      };
+      try {
+        fs.writeFileSync(path.join(END_SALES_DIR, `${esId}.json`), JSON.stringify(fullRecord, null, 2), 'utf8');
+        console.log(`  💾 END Sales full record saved: ${esId}.json`);
+      } catch (e) { console.error('  ⚠️ END Sales record write failed:', e.message); }
+
+      // 2. Append summary to end_sales_log.json (index for quick queries)
       const logPath = path.join(DATA_DIR, 'end_sales_log.json');
       let log = [];
       try { if (fs.existsSync(logPath)) log = JSON.parse(fs.readFileSync(logPath, 'utf8')); } catch (e) {}
       log.push({
-        timestamp: new Date().toISOString(),
+        id: esId,
+        timestamp: esTimestamp,
         branchCode: msg.branchCode, branchName: msg.branchName,
         periodFrom: msg.periodFrom, periodTo: msg.periodTo,
         totalOrders: msg.totalOrders,
@@ -591,15 +793,15 @@ function handleMessage(clientId, rawData) {
       });
       try { fs.writeFileSync(logPath, JSON.stringify(log, null, 2), 'utf8'); } catch (e) { console.error('  ⚠️ end_sales_log write failed:', e.message); }
 
-      // Update register file with lastEndSalesAt
-      const regDate = getTodayStr();
-      const regPath = path.join(DATA_DIR, `register_${regDate}.json`);
+      // Save lastEndSalesAt persistently (per branch, survives reboot/day change)
+      const leFilePath = path.join(DATA_DIR, 'last_end_sales.json');
       try {
-        let regData = {};
-        if (fs.existsSync(regPath)) regData = JSON.parse(fs.readFileSync(regPath, 'utf8'));
-        regData.lastEndSalesAt = msg.periodTo;
-        fs.writeFileSync(regPath, JSON.stringify(regData, null, 2), 'utf8');
-      } catch (e) { console.error('  ⚠️ register lastEndSalesAt update failed:', e.message); }
+        let leData = {};
+        if (fs.existsSync(leFilePath)) leData = JSON.parse(fs.readFileSync(leFilePath, 'utf8'));
+        leData[msg.branchCode] = msg.periodTo;
+        fs.writeFileSync(leFilePath, JSON.stringify(leData, null, 2), 'utf8');
+        console.log(`  💾 lastEndSalesAt saved for ${msg.branchCode}: ${msg.periodTo}`);
+      } catch (e) { console.error('  ⚠️ last_end_sales.json write failed:', e.message); }
 
       // Send to Google Sheets (saveEndSales action)
       try {
@@ -680,6 +882,7 @@ const server = http.createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
       serverVersion: SERVER_VERSION,
+      branchCode: BRANCH_CODE,
       nodeVersion: process.version,
       platform: os.platform(),
       hostname: os.hostname(),
@@ -698,6 +901,179 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ─── Printer Config ───
+  const PRINTER_CONFIG_FILE = path.join(DATA_DIR, 'printer-config.json');
+  const POS_SETTINGS_FILE = path.join(DATA_DIR, 'pos-settings.json');
+
+  // ─── POS Settings (persistent) ───
+  if (url === '/api/pos-settings' && req.method === 'GET') {
+    try {
+      const settings = fs.existsSync(POS_SETTINGS_FILE) ? JSON.parse(fs.readFileSync(POS_SETTINGS_FILE, 'utf8')) : {};
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(settings));
+    } catch (e) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({}));
+    }
+    return;
+  }
+
+  if (url === '/api/pos-settings' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const settings = JSON.parse(body);
+        fs.writeFileSync(POS_SETTINGS_FILE, JSON.stringify(settings, null, 2));
+        console.log('[POS Settings] Saved:', JSON.stringify(settings));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url === '/api/printer-config' && req.method === 'GET') {
+    try {
+      const cfg = fs.existsSync(PRINTER_CONFIG_FILE) ? JSON.parse(fs.readFileSync(PRINTER_CONFIG_FILE, 'utf8')) : {};
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(cfg));
+    } catch (e) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({}));
+    }
+    return;
+  }
+
+  if (url === '/api/printer-config' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const cfg = JSON.parse(body);
+        fs.writeFileSync(PRINTER_CONFIG_FILE, JSON.stringify(cfg, null, 2));
+        console.log('[Printer] Config saved:', JSON.stringify(cfg));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // ─── Direct Print API ───
+  if (url === '/api/print' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const data = JSON.parse(body);
+        const cfgRaw = fs.existsSync(PRINTER_CONFIG_FILE) ? fs.readFileSync(PRINTER_CONFIG_FILE, 'utf8') : '{}';
+        const cfg = JSON.parse(cfgRaw);
+
+        if (!cfg.ip && !cfg.device) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Printer not configured. Go to Settings > Printer Setup.' }));
+          return;
+        }
+
+        let escData = '';
+        if (data.type === 'receipt') {
+          const branchName = data.branchName || cfg.branchName || '';
+          escData = printer.buildOrderReceipt(data.order, branchName);
+        } else if (data.type === 'report') {
+          escData = printer.buildReportReceipt(data.report);
+        } else if (data.type === 'daily_report') {
+          const d = data.data || {};
+          escData = printer.buildReportReceipt({
+            branchName: d.branchName || '',
+            title: 'DAILY REPORT',
+            from: d.periodFrom || '',
+            to: d.periodTo || '',
+            totalOrders: d.totalOrders || 0,
+            cashCount: d.cashCustomers || 0,
+            cardCount: d.cardCustomers || 0,
+            cashTotal: d.cashTotal || 0,
+            cardTotal: d.cardTotal || 0,
+            grandTotal: d.grandTotal || 0,
+            vatBreakdown: (d.vatData && d.vatData.byRate) || [],
+            totalVat: (d.vatData && d.vatData.totalVat) || 0
+          });
+        } else if (data.type === 'open_drawer') {
+          escData = printer.buildOpenDrawer();
+        } else {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Unknown print type: ' + data.type }));
+          return;
+        }
+
+        // Print multiple copies
+        const copies = data.copies || 1;
+        for (let i = 0; i < copies; i++) {
+          await printer.sendToPrinter(cfg, escData);
+        }
+
+        console.log(`[Printer] ${data.type} printed (${copies}x) → ${cfg.ip || cfg.device}`);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, copies, target: cfg.ip || cfg.device }));
+      } catch (e) {
+        console.error('[Printer] Error:', e.message);
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // ─── Printer Test ───
+  if (url === '/api/printer-test' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        let testCfg = JSON.parse(body);
+        // If no ip/device in body, use saved config
+        if (!testCfg.ip && !testCfg.device) {
+          const cfgRaw = fs.existsSync(PRINTER_CONFIG_FILE) ? fs.readFileSync(PRINTER_CONFIG_FILE, 'utf8') : '{}';
+          testCfg = JSON.parse(cfgRaw);
+        }
+        if (!testCfg.ip && !testCfg.device) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'No printer configured. Save config first.' }));
+          return;
+        }
+        // Build test print
+        let d = printer.CMD.INIT;
+        d += printer.CMD.ALIGN_CENTER + printer.CMD.SIZE_DOUBLE + printer.CMD.BOLD_ON;
+        d += 'PRINTER TEST' + printer.CMD.FEED;
+        d += printer.CMD.SIZE_NORMAL + printer.CMD.BOLD_OFF;
+        d += 'The Bap POS' + printer.CMD.FEED;
+        d += printer.CMD.DASHES + printer.CMD.FEED;
+        d += 'Connection: OK' + printer.CMD.FEED;
+        d += `Target: ${testCfg.ip || testCfg.device}` + printer.CMD.FEED;
+        d += `Time: ${new Date().toLocaleString('en-GB')}` + printer.CMD.FEED;
+        d += printer.CMD.DASHES + printer.CMD.FEED;
+        d += 'If you can read this,' + printer.CMD.FEED;
+        d += 'the printer is working!' + printer.CMD.FEED;
+        d += printer.CMD.FEED + printer.CMD.FEED + printer.CMD.FEED;
+        d += printer.CMD.CUT;
+
+        await printer.sendToPrinter(testCfg, d);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
   if (url === '/api/orders') {
     // ?date=YYYY-MM-DD 로 과거 주문 조회 가능
     const urlParams = new URL(req.url, `http://localhost:${PORT}`).searchParams;
@@ -713,7 +1089,21 @@ const server = http.createServer(async (req, res) => {
   if (url === '/api/orders/dates') {
     try {
       const files = fs.readdirSync(DATA_DIR).filter(f => f.startsWith('orders_') && f.endsWith('.json'));
-      const dates = files.map(f => f.replace('orders_', '').replace('.json', '')).sort().reverse();
+      let allDates = [];
+      files.forEach(f => {
+        const name = f.replace('orders_', '').replace('.json', '');
+        if (name.length === 7) {
+          // 월별 파일 (orders_2026-03.json) — 안의 날짜 키들 추출
+          try {
+            const data = JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf8'));
+            allDates = allDates.concat(Object.keys(data));
+          } catch (e) {}
+        } else {
+          // 레거시 일별 파일 (orders_2026-03-10.json)
+          allDates.push(name);
+        }
+      });
+      const dates = [...new Set(allDates)].sort().reverse();
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ dates }));
     } catch (e) {
@@ -730,19 +1120,32 @@ const server = http.createServer(async (req, res) => {
     const branch = urlParams.get('branch');
     let allOrders = [];
     try {
-      const files = fs.readdirSync(DATA_DIR).filter(f => f.startsWith('orders_') && f.endsWith('.json')).sort();
       const sinceDate = since ? since.slice(0, 10) : '0000-00-00';
+      const sinceMonth = sinceDate.slice(0, 7);
+      const files = fs.readdirSync(DATA_DIR).filter(f => f.startsWith('orders_') && f.endsWith('.json')).sort();
       for (const f of files) {
-        const fileDate = f.replace('orders_', '').replace('.json', '');
-        if (fileDate >= sinceDate) {
-          const orders = (fileDate === getTodayStr()) ? dailyOrders : loadOrders(fileDate);
-          allOrders = allOrders.concat(orders);
+        const name = f.replace('orders_', '').replace('.json', '');
+        if (name.length === 7) {
+          // 월별 파일 — 해당 월이 범위에 포함되면 날짜별 읽기
+          if (name >= sinceMonth) {
+            try {
+              const data = JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf8'));
+              for (const [dateKey, orders] of Object.entries(data)) {
+                if (dateKey >= sinceDate && dateKey !== getTodayStr()) {
+                  allOrders = allOrders.concat(orders);
+                }
+              }
+            } catch (e) {}
+          }
+        } else if (name.length === 10) {
+          // 레거시 일별 파일
+          if (name >= sinceDate && name !== getTodayStr()) {
+            allOrders = allOrders.concat(loadOrders(name));
+          }
         }
       }
-      // Also include today's orders if not in files
-      if (!files.some(f => f.includes(getTodayStr()))) {
-        allOrders = allOrders.concat(dailyOrders);
-      }
+      // 항상 오늘 메모리 주문 포함
+      allOrders = allOrders.concat(dailyOrders);
     } catch (e) {
       allOrders = [...dailyOrders];
     }
@@ -778,6 +1181,151 @@ const server = http.createServer(async (req, res) => {
     const branches = Object.values(branchMap).sort((a, b) => b.grandTotal - a.grandTotal);
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({ date, branches }));
+    return;
+  }
+
+  // ─── END Sales Log (with optional filters: branch, from, to) ───
+  // TBMS can use: /api/end-sales-log?branch=PAB&from=2026-03-01&to=2026-03-07
+  if (url === '/api/end-sales-log') {
+    const urlParams = new URL(req.url, `http://localhost:${PORT}`).searchParams;
+    const branch = urlParams.get('branch');
+    const from = urlParams.get('from');
+    const to = urlParams.get('to');
+    const logPath = path.join(DATA_DIR, 'end_sales_log.json');
+    let log = [];
+    try { if (fs.existsSync(logPath)) log = JSON.parse(fs.readFileSync(logPath, 'utf8')); } catch (e) {}
+    if (branch) log = log.filter(e => e.branchCode === branch);
+    if (from) log = log.filter(e => e.timestamp >= from);
+    if (to) log = log.filter(e => e.timestamp <= (to.length === 10 ? to + 'T23:59:59' : to));
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    res.end(JSON.stringify(log));
+    return;
+  }
+
+  // ─── END Sales Detail (full record with orders & items) ───
+  // TBMS can use: /api/end-sales-detail?id=ES-PAB-2026-03-07T19-30-00-000Z
+  if (url === '/api/end-sales-detail') {
+    const urlParams = new URL(req.url, `http://localhost:${PORT}`).searchParams;
+    const id = urlParams.get('id');
+    if (!id) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'id parameter required' }));
+      return;
+    }
+    const filePath = path.join(END_SALES_DIR, `${id}.json`);
+    if (!fs.existsSync(filePath)) {
+      res.writeHead(404, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'END Sales record not found' }));
+      return;
+    }
+    try {
+      const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+      res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+      res.end(JSON.stringify(data));
+    } catch (e) {
+      res.writeHead(500, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  // ─── TBMS: Branch status overview (all branches, latest END Sales, today totals) ───
+  // /api/tbms/branches-status?date=2026-03-07
+  if (url === '/api/tbms/branches-status') {
+    const urlParams = new URL(req.url, `http://localhost:${PORT}`).searchParams;
+    const date = urlParams.get('date') || getTodayStr();
+
+    // Get today's orders per branch
+    const orders = (date === getTodayStr()) ? dailyOrders : loadOrders(date);
+    const branchMap = {};
+    orders.forEach(o => {
+      const bc = o.branchCode || 'unknown';
+      if (!branchMap[bc]) branchMap[bc] = { branchCode: bc, branchName: o.branchName || bc, totalOrders: 0, cashTotal: 0, cardTotal: 0, grandTotal: 0 };
+      branchMap[bc].totalOrders++;
+      const amt = o.total || 0;
+      if (o.paymentMethod === 'cash') branchMap[bc].cashTotal += amt;
+      else if (o.paymentMethod === 'card') branchMap[bc].cardTotal += amt;
+      branchMap[bc].grandTotal += amt;
+    });
+
+    // Get latest END Sales per branch
+    const logPath = path.join(DATA_DIR, 'end_sales_log.json');
+    let log = [];
+    try { if (fs.existsSync(logPath)) log = JSON.parse(fs.readFileSync(logPath, 'utf8')); } catch (e) {}
+    const lastES = {};
+    log.forEach(e => { lastES[e.branchCode] = e; });
+
+    // Merge
+    const branches = Object.keys({ ...branchMap, ...lastES }).map(bc => ({
+      ...branchMap[bc] || { branchCode: bc, branchName: bc, totalOrders: 0, cashTotal: 0, cardTotal: 0, grandTotal: 0 },
+      lastEndSales: lastES[bc] || null
+    }));
+
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    res.end(JSON.stringify({ date, branches }));
+    return;
+  }
+
+  // ─── TBMS: Date range sales summary (aggregate by date) ───
+  // /api/tbms/sales-summary?branch=PAB&from=2026-03-01&to=2026-03-07
+  if (url === '/api/tbms/sales-summary') {
+    const urlParams = new URL(req.url, `http://localhost:${PORT}`).searchParams;
+    const branch = urlParams.get('branch');
+    const from = urlParams.get('from') || getTodayStr();
+    const to = urlParams.get('to') || getTodayStr();
+
+    const dayMap = {};
+    let d = new Date(from);
+    const end = new Date(to);
+    while (d <= end) {
+      const ds = d.toISOString().slice(0, 10);
+      const orders = (ds === getTodayStr()) ? dailyOrders : loadOrders(ds);
+      const filtered = branch ? orders.filter(o => o.branchCode === branch) : orders;
+      if (filtered.length > 0) {
+        dayMap[ds] = {
+          date: ds,
+          totalOrders: filtered.length,
+          cashTotal: filtered.filter(o => o.paymentMethod === 'cash').reduce((s, o) => s + (o.total || 0), 0),
+          cardTotal: filtered.filter(o => o.paymentMethod === 'card').reduce((s, o) => s + (o.total || 0), 0),
+          grandTotal: filtered.reduce((s, o) => s + (o.total || 0), 0)
+        };
+      }
+      d.setDate(d.getDate() + 1);
+    }
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' });
+    res.end(JSON.stringify({ branch: branch || 'all', from, to, days: Object.values(dayMap) }));
+    return;
+  }
+
+  // ─── Last END Sales (persistent per branch) ───
+  if (url === '/api/last-end-sales' && req.method === 'GET') {
+    const urlParams = new URL(req.url, `http://localhost:${PORT}`).searchParams;
+    const branch = urlParams.get('branch');
+    const filePath = path.join(DATA_DIR, 'last_end_sales.json');
+    let data = {};
+    try { if (fs.existsSync(filePath)) data = JSON.parse(fs.readFileSync(filePath, 'utf8')); } catch (e) {}
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ lastEndSalesAt: (branch && data[branch]) || null }));
+    return;
+  }
+  if (url === '/api/last-end-sales' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const { branch, lastEndSalesAt } = JSON.parse(body);
+        const filePath = path.join(DATA_DIR, 'last_end_sales.json');
+        let data = {};
+        try { if (fs.existsSync(filePath)) data = JSON.parse(fs.readFileSync(filePath, 'utf8')); } catch (e) {}
+        data[branch] = lastEndSalesAt;
+        fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
     return;
   }
 
@@ -832,15 +1380,21 @@ const server = http.createServer(async (req, res) => {
     const from = urlParams.get('from');
     const to = urlParams.get('to') || getTodayStr();
     try {
+      // 모든 날짜 수집 (월별 + 레거시)
       const files = fs.readdirSync(DATA_DIR).filter(f => f.startsWith('orders_') && f.endsWith('.json'));
-      const result = [];
+      let allDates = [];
       files.forEach(f => {
-        const d = f.replace('orders_', '').replace('.json', '');
-        if ((!from || d >= from) && d <= to) {
-          const orders = loadOrders(d);
-          const reg = loadRegister(d);
-          result.push({ date: d, orders, register: reg, summary: calcDailySummary(d) });
-        }
+        const name = f.replace('orders_', '').replace('.json', '');
+        if (name.length === 7) {
+          try { allDates = allDates.concat(Object.keys(JSON.parse(fs.readFileSync(path.join(DATA_DIR, f), 'utf8')))); } catch (e) {}
+        } else allDates.push(name);
+      });
+      const dates = [...new Set(allDates)].filter(d => (!from || d >= from) && d <= to).sort();
+      const result = [];
+      dates.forEach(d => {
+        const orders = (d === getTodayStr()) ? dailyOrders : loadOrders(d);
+        const reg = loadRegister(d);
+        result.push({ date: d, orders, register: reg, summary: calcDailySummary(d) });
       });
       result.sort((a, b) => a.date.localeCompare(b.date));
       res.writeHead(200, { 'Content-Type': 'application/json' });
@@ -921,6 +1475,50 @@ const server = http.createServer(async (req, res) => {
     } catch (e) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: e.message }));
+    }
+    return;
+  }
+
+  // ─── Cash Drawer API ───
+  if (url === '/api/cashdrawer' && req.method === 'POST') {
+    // ESC/POS command to open cash drawer: ESC p 0 25 250
+    // Pin 2 kick: 0x1B 0x70 0x00 0x19 0xFA
+    const drawerCmd = Buffer.from([0x1B, 0x70, 0x00, 0x19, 0xFA]);
+    try {
+      // Try writing to common POS printer devices
+      const printerPaths = ['/dev/usb/lp0', '/dev/usb/lp1', '/dev/lp0'];
+      let opened = false;
+      for (const pp of printerPaths) {
+        try {
+          fs.writeFileSync(pp, drawerCmd);
+          console.log(`  💰 Cash drawer opened via ${pp}`);
+          opened = true;
+          break;
+        } catch (e) { /* try next */ }
+      }
+      if (!opened) {
+        // Fallback: try network printer if configured
+        const printerIP = process.env.TB_PRINTER_IP;
+        const printerPort = parseInt(process.env.TB_PRINTER_PORT || '9100');
+        if (printerIP) {
+          const net = require('net');
+          const sock = new net.Socket();
+          sock.connect(printerPort, printerIP, () => {
+            sock.write(drawerCmd);
+            sock.end();
+            console.log(`  💰 Cash drawer opened via ${printerIP}:${printerPort}`);
+          });
+          sock.on('error', (e) => console.warn('  ⚠️ Printer socket error:', e.message));
+        } else {
+          console.log('  ℹ️ Cash drawer: no printer device found (set TB_PRINTER_IP for network printer)');
+        }
+      }
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: true }));
+    } catch (e) {
+      console.error('  ⚠️ Cash drawer error:', e.message);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ success: false, error: e.message }));
     }
     return;
   }
@@ -1039,9 +1637,10 @@ const server = http.createServer(async (req, res) => {
 <span class="url">🍳 주방: http://${LOCAL_IP}:${PORT}/kitchen</span>
 <span class="url">⚙️ 관리: http://${LOCAL_IP}:${PORT}/admin</span>
 <span class="url">💰 POS:  http://${LOCAL_IP}:${PORT}/pos</span>
+<span class="url">📺 손님: http://${LOCAL_IP}:${PORT}/display</span>
 <span class="url">🔧 진단: http://${LOCAL_IP}:${PORT}/test</span></div></div>
 <script>setInterval(()=>{fetch('/api/health').then(r=>r.json()).then(d=>{
-document.getElementById('cl').textContent='주문:'+d.clients.order+' 주방:'+d.clients.kitchen+' POS:'+d.clients.pos+' 관리:'+d.clients.admin;
+document.getElementById('cl').textContent='주문:'+d.clients.order+' 주방:'+d.clients.kitchen+' POS:'+d.clients.pos+' 손님:'+(d.clients.customer_display||0)+' 관리:'+d.clients.admin;
 document.getElementById('od').textContent=d.dailyOrders+'건';}).catch(()=>{});},3000);</script></body></html>`);
     return;
   }
@@ -1110,8 +1709,9 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log('');
   console.log('  ╔══════════════════════════════════════════════════╗');
   console.log('  ║                                                  ║');
-  console.log('  ║   🍚  TBOrder Server v5.0 (ws + Stripe)           ║');
+  console.log(`  ║   🍚  TBOrder Server v${SERVER_VERSION} (ws + Stripe)`.padEnd(55) + '║');
   console.log('  ║   The Bap (더밥) Kiosk System                    ║');
+  console.log(`  ║   🏪  Branch: ${BRANCH_CODE}`.padEnd(55) + '║');
   console.log(`  ║   💳  Stripe: ${stripe ? '✅ Active' : '❌ Not configured'}`.padEnd(55) + '║');
   console.log('  ║                                                  ║');
   console.log(`  ║   📡  IP:   ${LOCAL_IP.padEnd(36)}║`);
@@ -1121,6 +1721,7 @@ server.listen(PORT, '0.0.0.0', () => {
   console.log(`  ║   🍳  주방:  http://${LOCAL_IP}:${PORT}/kitchen`.padEnd(55) + '║');
   console.log(`  ║   ⚙️  관리:  http://${LOCAL_IP}:${PORT}/admin`.padEnd(55) + '║');
   console.log(`  ║   💰  POS:   http://${LOCAL_IP}:${PORT}/pos`.padEnd(55) + '║');
+  console.log(`  ║   📺  손님:  http://${LOCAL_IP}:${PORT}/display`.padEnd(55) + '║');
   console.log(`  ║   🔧  진단:  http://${LOCAL_IP}:${PORT}/test`.padEnd(55) + '║');
   console.log(`  ║   📊  상태:  http://${LOCAL_IP}:${PORT}/status`.padEnd(55) + '║');
   console.log('  ║                                                  ║');

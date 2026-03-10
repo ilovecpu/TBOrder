@@ -40,7 +40,7 @@ const SH_BRANCH = 'BranchPricing';
 const SH_ORDER = 'Orders';
 
 // ─── TBMS API (지점 정보 읽기 전용) ───
-const TBMS_API = 'https://script.google.com/macros/s/AKfycbybzyd_yHJbzgQeqtPK6EuBturucDGRg7Gl3yX_9KsBg7zMY-MoYLMMCloBHv2QTNJQ/exec';
+const TBMS_API = 'https://script.google.com/macros/s/AKfycbwaC6b6WTo4Gw_UpgbpbrVDj52ooG-qqcqPeR4Tgne_bWbzDomXw14SlD0q6QiszZw5/exec';
 const TBMS_KEY = 'tBaP2026xKr!mGt9Qz';
 
 // ─── Google Drive 이미지 폴더 ───

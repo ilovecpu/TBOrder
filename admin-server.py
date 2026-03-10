@@ -7,7 +7,7 @@ CORS 문제 없이 어디서든 Admin 실행 가능!
 import http.server, json, urllib.request, urllib.parse, os, sys
 
 PORT = 9000
-GOOGLE_API = 'https://script.google.com/macros/s/AKfycbzBrKnJg4ypsgDjP9HA6n7k23HgsG1IECGtJUwdy6Wx_n64QcihwxaEzLNOc4EmWtZHsQ/exec'
+GOOGLE_API = 'https://script.google.com/macros/s/AKfycbwzRdh2grvGlE1YKH58lEYXf9XrchkGQJGDslzx80OfkRkKcbHRk-pguJd74cGpfrpBUQ/exec'
 
 class AdminHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):

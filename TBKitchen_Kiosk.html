@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Kitchen Display v1.1 | 2026-03-06 -->
+<!-- The Bap Kitchen Display v1.2 | 2026-03-07 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -772,7 +772,13 @@
             if (data.type === 'new_order') {
                 addNewOrder(data.order);
             } else if (data.type === 'order_status') {
-                updateOrderStatus(data.orderNumber, data.status);
+                updateOrderStatus(data.orderNumber, data.status, data);
+            } else if (data.type === 'order_deleted') {
+                removeOrder(data.orderNumber);
+            } else if (data.type === 'orders_cleared' || data.type === 'day_reset') {
+                state.orders.clear();
+                state.processedOrderIds.clear();
+                renderOrders();
             }
         }
 
@@ -802,6 +808,7 @@
                     console.log(`[WS] ✅ 연결 성공: ${wsUrl}`);
                     reconnectAttempts = 0;
                     setConnectionStatus('connected');
+                    // 서버에 등록 — 서버가 자동으로 지점코드(BRANCH_CODE) 할당
                     websocket.send(JSON.stringify({
                         type: 'register',
                         clientType: 'kitchen'
@@ -815,7 +822,17 @@
                         if (message.type === 'new_order') {
                             addNewOrder(message.order);
                         } else if (message.type === 'order_status') {
-                            updateOrderStatus(message.orderNumber, message.status);
+                            updateOrderStatus(message.orderNumber, message.status, message);
+                        } else if (message.type === 'order_deleted') {
+                            removeOrder(message.orderNumber);
+                        } else if (message.type === 'orders_cleared') {
+                            state.orders.clear();
+                            state.processedOrderIds.clear();
+                            renderOrders();
+                        } else if (message.type === 'day_reset') {
+                            state.orders.clear();
+                            state.processedOrderIds.clear();
+                            renderOrders();
                         }
                     } catch (error) {
                         console.error('[WS] 파싱 오류:', error);
@@ -973,6 +990,9 @@
                 total: order.total || order.subtotal || 0,
                 timestamp: order.timestamp || new Date().toLocaleTimeString(),
                 source: order.source || 'kiosk',
+                paymentStatus: order.paymentStatus || (order.paymentMethod === 'pay_at_counter' ? 'unpaid' : (order.paymentMethod ? 'paid' : '')),
+                paymentMethod: order.paymentMethod || '',
+                branchCode: order.branchCode || '',
             };
 
             state.orders.set(normalizedOrder.orderNumber, normalizedOrder);
@@ -980,15 +1000,29 @@
             renderOrders();
         }
 
-        function updateOrderStatus(orderNumber, newStatus) {
-            const order = state.orders.get(orderNumber);
+        function updateOrderStatus(orderNumber, newStatus, msgData) {
+            let order = state.orders.get(orderNumber);
+            // ★ 주문이 없으면 (놓친 경우) full order data로 추가
+            if (!order && msgData && msgData.order) {
+                console.log(`[Kitchen] Order ${orderNumber} 없음 → full order로 추가`);
+                addNewOrder(msgData.order);
+                order = state.orders.get(orderNumber);
+            }
             if (order) {
-                order.status = newStatus;
+                order.status = newStatus === 'pending' ? 'new' : newStatus;
+                // Propagate payment info from POS
+                if (msgData && msgData.paymentStatus) order.paymentStatus = msgData.paymentStatus;
+                if (msgData && msgData.paymentMethod) order.paymentMethod = msgData.paymentMethod;
                 renderOrders();
+                // If order is done AND paid, auto-remove after 5s
                 if (newStatus === 'done') {
                     setTimeout(() => {
                         removeOrder(orderNumber);
                     }, 5000);
+                }
+                // If order was just paid (from POS), show visual feedback
+                if (msgData && msgData.paymentStatus === 'paid') {
+                    console.log(`[Kitchen] Order ${orderNumber} PAID via ${msgData.paymentMethod || '?'}`);
                 }
             }
         }
@@ -1128,11 +1162,17 @@
                 ? `<div style="font-size:18px;font-weight:700;color:#FFD93D;background:#333;padding:6px 14px;border-radius:8px;margin-bottom:4px;">👤 ${escapeHtml(order.customerName)}</div>`
                 : '';
 
+            // Payment status badge for kitchen
+            const isPaid = order.paymentStatus === 'paid';
+            const paidBadge = isPaid
+                ? '<span style="background:#22C55E;color:#fff;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700;margin-left:6px;">💰 PAID</span>'
+                : (order.source === 'kiosk' ? '<span style="background:#EF4444;color:#fff;padding:2px 8px;border-radius:8px;font-size:11px;font-weight:700;margin-left:6px;">UNPAID</span>' : '');
+
             return `
                 <div class="order-card ${order.status}" data-order="${order.orderNumber}">
                     <div class="card-header">
                         <div class="order-number">${escapeHtml(order.orderNumber)}</div>
-                        <div class="order-type-badge ${typeBadgeClass}">${typeLabel}</div>${mobileBadge}
+                        <div class="order-type-badge ${typeBadgeClass}">${typeLabel}</div>${mobileBadge}${paidBadge}
                     </div>
                     ${nameBadge}
                     <div class="card-time ${timeClass}">${statusTime}</div>

@@ -1941,26 +1941,39 @@
 
                 <div class="confirmation-order-number">
                     <div class="confirmation-order-label">Order Number</div>
-                    <div class="confirmation-order-value" id="confirmationOrderNumber">TB-000</div>
+                    <div class="confirmation-order-value" id="confirmationOrderNumber">---</div>
                 </div>
 
                 <div id="confirmationName" style="font-size:28px;font-weight:700;color:#333;margin:8px 0;display:none;"></div>
 
                 <div class="confirmation-order-type" id="confirmationOrderType">Eat In</div>
 
-                <div class="confirmation-status">Preparing your order...</div>
+                <div class="confirmation-status" style="font-size:14px;color:#666;">Preparing your order...</div>
+
+                <!-- Pay at counter message -->
+                <div style="
+                    margin-top:20px;padding:24px 32px;
+                    background:linear-gradient(135deg,#DBEAFE,#BFDBFE);
+                    border:3px solid #3B82F6;border-radius:16px;
+                    text-align:center;max-width:500px;width:80%;
+                ">
+                    <div style="font-size:32px;margin-bottom:8px;">💰</div>
+                    <div style="font-size:24px;color:#1E40AF;font-weight:800;">
+                        Please pay at the counter
+                    </div>
+                    <div style="font-size:18px;color:#1E40AF;font-weight:600;margin-top:4px;">
+                        카운터에서 결제해 주세요
+                    </div>
+                </div>
 
                 <div id="counterMessage" style="
-                    margin-top:20px;padding:20px 32px;
+                    margin-top:12px;padding:16px 28px;
                     background:linear-gradient(135deg,#FFF3CD,#FFEEBA);
                     border:2px solid #FFD93D;border-radius:12px;
                     text-align:center;max-width:500px;width:80%;
                 ">
-                    <div style="font-size:22px;margin-bottom:6px;">🥤🍫 Drinks & Snacks</div>
-                    <div style="font-size:16px;color:#856404;font-weight:600;">
-                        Please choose at the counter!
-                    </div>
-                    <div style="font-size:14px;color:#856404;margin-top:4px;">
+                    <div style="font-size:18px;margin-bottom:4px;">🥤🍫 Drinks & Snacks</div>
+                    <div style="font-size:14px;color:#856404;font-weight:600;">
                         Available at the counter
                     </div>
                 </div>
@@ -2036,11 +2049,12 @@
                     .map(c => ({ id: c.id, name: c.nameEn, nameKr: c.nameKr, icon: c.icon || '🍱', color: c.color }));
                 // Map items: server uses string IDs like 'M001', keep as-is
                 MENU_ITEMS = (data.items || [])
-                    .filter(i => i.active !== false)
+                    .filter(i => i.active !== false && i.showOnKiosk !== false)
                     .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
                     .map(i => ({
                         id: i.id, catId: i.catId, nameEn: i.nameEn, nameKr: i.nameKr,
                         desc: i.desc || '', price: i.price, dietary: i.dietary || [],
+                        spicyLevel: i.spicyLevel || 0,
                         image: i.driveId || i.image || i.thumbnail || '', isCombo: i.isCombo || false, comboCount: i.comboCount || 0,
                         hasTopping: i.hasTopping || false, toppingCount: i.toppingCount || 0
                     }));
@@ -2118,7 +2132,7 @@
 
         // ========== APP STATE ==========
         const AppState = {
-            currentBranch: localStorage.getItem('tb_current_branch') || null,
+            currentBranch: null, // 항상 지점 선택부터 시작
             currentOrderType: null,
             customerName: '',
             cart: JSON.parse(localStorage.getItem('tb_cart') || '[]'),
@@ -2244,14 +2258,17 @@
             return '🔥'.repeat(spiceLevel);
         }
 
-        function renderDietaryBadges(dietary, container) {
+        function renderDietaryBadges(dietary, container, spicyLevel) {
             container.innerHTML = '';
             dietary.forEach(type => {
                 const badge = document.createElement('div');
                 badge.className = `dietary-badge ${type === 'spicy' ? 'spicy' : ''}`;
                 if (type === 'V') badge.textContent = 'V (Vegetarian)';
                 else if (type === 'VG') badge.textContent = 'VG (Vegan)';
-                else if (type === 'spicy') badge.innerHTML = '🌶️ Spicy';
+                else if (type === 'spicy') {
+                    const lvl = spicyLevel || 1;
+                    badge.innerHTML = '🌶️'.repeat(lvl) + ' Spicy';
+                }
                 container.appendChild(badge);
             });
         }
@@ -2485,7 +2502,10 @@
                 const dietaryHtml = item.dietary.map(d => {
                     if (d === 'V') return '<div class="dietary-badge">V</div>';
                     if (d === 'VG') return '<div class="dietary-badge">VG</div>';
-                    if (d === 'spicy') return '<div class="dietary-badge spicy">🌶️</div>';
+                    if (d === 'spicy') {
+                        const lvl = item.spicyLevel || 1;
+                        return '<div class="dietary-badge spicy">' + '🌶️'.repeat(lvl) + '</div>';
+                    }
                     return '';
                 }).join('');
 
@@ -2542,7 +2562,7 @@
             document.getElementById('itemDetailDesc').textContent = item.desc;
 
             const dietaryContainer = document.getElementById('itemDetailDietary');
-            renderDietaryBadges(item.dietary, dietaryContainer);
+            renderDietaryBadges(item.dietary, dietaryContainer, item.spicyLevel);
 
             const allergenSection = document.getElementById('allergenSection');
             const allergenData = ALLERGENS_DATA[item.id] || {};
@@ -2883,14 +2903,14 @@
 
         function goToPaymentFromName() {
             AppState.customerName = document.getElementById('customerNameInput').value.trim();
-            const subtotal = AppState.cart.reduce((sum, item) => sum + item.totalPrice, 0);
-            document.getElementById('paymentAmount').textContent = formatPrice(subtotal);
-            document.getElementById('paymentStatus').textContent = 'Tap your card on the reader';
-            document.getElementById('payWithCardBtn').disabled = false;
-            document.getElementById('payWithCardBtn').classList.remove('hidden');
-            document.getElementById('payAtCounterBtn').classList.remove('hidden');
-            document.getElementById('cancelPaymentBtn').classList.add('hidden');
-            AppState.goToScreen('payment');
+            // Skip payment screen — go directly to "pay at counter" flow
+            const branch = AppState.getCurrentBranch();
+            const today = new Date().toISOString().split('T')[0];
+            const counterKey = `order_counter_${branch.code || 'TB'}_${today}`;
+            let orderCounter = parseInt(localStorage.getItem(counterKey) || '0') + 1;
+            localStorage.setItem(counterKey, orderCounter);
+            const orderNumber = `${branch.code || 'TB'}-${String(orderCounter).padStart(3, '0')}`;
+            completeOrder(orderNumber, branch, 'pay_at_counter');
         }
 
         document.getElementById('nameBackBtn').addEventListener('click', () => {
@@ -3004,9 +3024,10 @@
 
             const branch = AppState.getCurrentBranch();
             const today = new Date().toISOString().split('T')[0];
-            let orderCounter = parseInt(localStorage.getItem(`tb_order_counter_${today}`) || '0') + 1;
-            localStorage.setItem(`tb_order_counter_${today}`, orderCounter);
-            const orderNumber = `TB-${String(orderCounter).padStart(3, '0')}`;
+            const counterKey = `order_counter_${branch.code || 'TB'}_${today}`;
+            let orderCounter = parseInt(localStorage.getItem(counterKey) || '0') + 1;
+            localStorage.setItem(counterKey, orderCounter);
+            const orderNumber = `${branch.code || 'TB'}-${String(orderCounter).padStart(3, '0')}`;
 
             if (stripeEnabled && stripeTerminal) {
                 // ── 실제 Stripe Terminal 결제 ──
@@ -3054,7 +3075,7 @@
                     document.getElementById('payAtCounterBtn').classList.remove('hidden');
                     document.getElementById('cancelPaymentBtn').classList.add('hidden');
                     // 주문번호 롤백
-                    localStorage.setItem(`tb_order_counter_${today}`, orderCounter - 1);
+                    localStorage.setItem(counterKey, orderCounter - 1);
                 }
 
             } else {
@@ -3085,9 +3106,10 @@
             playTapSound();
             const branch = AppState.getCurrentBranch();
             const today = new Date().toISOString().split('T')[0];
-            let orderCounter = parseInt(localStorage.getItem(`tb_order_counter_${today}`) || '0') + 1;
-            localStorage.setItem(`tb_order_counter_${today}`, orderCounter);
-            const orderNumber = `TB-${String(orderCounter).padStart(3, '0')}`;
+            const counterKey = `order_counter_${branch.code || 'TB'}_${today}`;
+            let orderCounter = parseInt(localStorage.getItem(counterKey) || '0') + 1;
+            localStorage.setItem(counterKey, orderCounter);
+            const orderNumber = `${branch.code || 'TB'}-${String(orderCounter).padStart(3, '0')}`;
             completeOrder(orderNumber, branch, 'pay_at_counter');
         });
 
@@ -3107,7 +3129,10 @@
                 vat,
                 total: subtotal,
                 paymentMethod,
+                paymentStatus: paymentMethod === 'pay_at_counter' ? 'unpaid' : 'paid',
                 status: 'pending',
+                source: 'kiosk',
+                timestamp: new Date().toISOString(),
                 createdAt: new Date().toISOString()
             };
 

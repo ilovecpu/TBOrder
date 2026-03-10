@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap POS v1.9 | 2026-03-07 -->
+<!-- The Bap POS v2.5 | 2026-03-10 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -38,6 +38,20 @@ button { font-family: inherit; cursor: pointer; }
     text-align: center; outline: none; margin-bottom: 16px;
 }
 .tb-popup input:focus { border-color: #006AFF; }
+
+/* ═══════════ CHANGE POPUP ═══════════ */
+.change-popup-overlay { position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:10000;opacity:0;pointer-events:none;transition:opacity .2s }
+.change-popup-overlay.active { opacity:1;pointer-events:auto }
+.change-popup { background:#fff;border-radius:20px;padding:40px 50px;min-width:400px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.25);transform:scale(.9);transition:transform .2s }
+.change-popup-overlay.active .change-popup { transform:scale(1) }
+.change-popup-label { font-size: 18px; color: #6B7280; margin-bottom: 8px; font-weight: 600; }
+.change-popup-amount { font-size: 64px; font-weight: 800; color: #DC2626; margin-bottom: 8px; }
+.change-popup-detail { font-size: 14px; color: #9CA3AF; margin-bottom: 24px; }
+.change-popup-ok { padding: 14px 60px; border: none; border-radius: 12px; font-size: 20px; font-weight: 700; cursor: pointer; background: #059669; color: #fff; }
+.change-popup-ok:hover { background: #047857; }
+.change-popup-timer { font-size: 12px; color: #9CA3AF; margin-top: 12px; }
+
+/* ═══════════ PICKUP READY POPUP ═══════════ */
 
 /* ═══════════ TOAST ═══════════ */
 .toast-container { position:fixed;top:20px;right:20px;z-index:9998;display:flex;flex-direction:column;gap:8px }
@@ -152,20 +166,29 @@ button { font-family: inherit; cursor: pointer; }
     flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px;
 }
 .main-menu-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
-    max-width: 700px; width: 100%;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px;
+    max-width: 800px; width: 100%;
 }
 .main-menu-btn {
-    padding: clamp(20px, 4vh, 40px) 16px; border: none; border-radius: 14px;
-    font-size: clamp(15px, 2vw, 20px); font-weight: 700; cursor: pointer;
+    padding: clamp(24px, 5vh, 48px) 18px; border: none; border-radius: 16px;
+    font-size: clamp(16px, 2.2vw, 22px); font-weight: 700; cursor: pointer;
     transition: all .15s; text-align: center; color: #fff;
-    display: flex; flex-direction: column; align-items: center; gap: 6px;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
     box-shadow: 0 2px 8px rgba(0,0,0,.1);
 }
 .main-menu-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,.15); }
 .main-menu-btn:active { transform: scale(.97); }
-.main-menu-btn .btn-icon { font-size: 32px; }
-.main-menu-btn.takeaway { background: #006AFF; grid-column: span 2; }
+.main-menu-btn .btn-icon { font-size: 36px; }
+.main-menu-btn.takeaway { background: #006AFF; }
+.main-menu-btn.kiosk-main { background: #F59E0B; position: relative; }
+.main-menu-btn.kiosk-main .kiosk-main-badge {
+    position: absolute; top: 8px; right: 8px;
+    background: #DC2626; color: #fff; font-size: 14px; font-weight: 700;
+    border-radius: 50%; width: 28px; height: 28px; line-height: 28px; text-align: center;
+    display: none;
+}
+@keyframes kioskBlink { 0%,100%{opacity:1} 50%{opacity:.3} }
+.main-menu-btn.kiosk-main.blinking { animation: kioskBlink .6s infinite; }
 .main-menu-btn.takings { background: #7C3AED; }
 .main-menu-btn.open-till { background: #059669; }
 .main-menu-btn.orders { background: #2563EB; }
@@ -218,41 +241,42 @@ button { font-family: inherit; cursor: pointer; }
 
 .order-menu-grid {
     flex: 1; overflow-y: auto; padding: 12px; display: grid;
-    grid-template-columns: repeat(4, 1fr); gap: 10px; align-content: start;
+    grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; align-content: start;
 }
 .order-menu-grid::-webkit-scrollbar { width: 5px; }
 .order-menu-grid::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 4px; }
 
 /* Clean white card-style menu buttons (Square look) — compact v1.3 */
 .menu-btn {
-    border: 1px solid #E5E7EB; border-radius: 8px; padding: 0; overflow: hidden;
+    border: 1px solid #E5E7EB; border-radius: 8px; padding: 0; overflow: visible;
     font-size: clamp(13px, 1.4vw, 16px); font-weight: 600; cursor: pointer;
     transition: all .15s; text-align: left; color: #1F2937;
     min-height: clamp(48px, 6vh, 64px);
     display: flex; flex-direction: row; align-items: center;
     background: #fff;
     box-shadow: 0 1px 3px rgba(0,0,0,.04);
-    line-height: 1.3;
+    line-height: 1.25;
+    position: relative;
 }
 .menu-btn.has-img { padding: 0; }
 .menu-btn.has-img .menu-btn-img {
     width: 54px; height: 54px; min-width: 54px; object-fit: cover; border-radius: 8px 0 0 8px;
     background: #F3F4F6;
 }
-.menu-btn.has-img .menu-btn-info { padding: 4px 8px; flex: 1; min-width: 0; }
+.menu-btn.has-img .menu-btn-info { padding: 4px 8px; flex: 1; min-width: 0; overflow: hidden; }
 .menu-btn:not(.has-img) { padding: 8px 10px; }
 .menu-btn:hover { border-color: #006AFF; box-shadow: 0 2px 8px rgba(0,106,255,.1); transform: translateY(-1px); }
 .menu-btn:active { transform: scale(.97); background: #F9FAFB; }
-.menu-btn .menu-name { font-size: clamp(13px, 1.4vw, 16px); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.menu-btn .price-tag { font-size: 11px; font-weight: 600; color: #006AFF; margin-top: 1px; }
+.menu-btn .menu-name { font-weight: 700; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; white-space: normal; font-size: clamp(12px, 1.3vw, 15px); }
+.menu-btn .price-tag { position: absolute; top: -8px; right: 4px; background: #FEE2E2; color: #374151; font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 4px; z-index: 1; line-height: 1.4; }
 
 /* Bottom action bar */
 .order-bottom-bar {
     display: flex; gap: 8px; flex-shrink: 0; padding: 8px 12px; background: #fff; border-top: 1px solid #E5E7EB;
 }
 .order-bottom-btn {
-    flex: 1; padding: clamp(10px, 1.6vh, 14px) 6px; border: none; border-radius: 10px;
-    font-size: clamp(12px, 1.2vw, 14px); font-weight: 600;
+    flex: 1; padding: clamp(14px, 2.2vh, 22px) 6px; border: none; border-radius: 10px;
+    font-size: clamp(15px, 1.8vw, 20px); font-weight: 700;
     transition: all .12s; text-align: center; color: #fff;
 }
 .order-bottom-btn:hover { filter: brightness(1.1); }
@@ -260,7 +284,7 @@ button { font-family: inherit; cursor: pointer; }
 .order-bottom-btn.btn-close { background: #6B7280; }
 .order-bottom-btn.btn-sauce { background: #8B5CF6; }
 .order-bottom-btn.btn-special { background: #0EA5E9; }
-.order-bottom-btn.btn-finish { background: #006AFF; font-size: clamp(14px, 1.6vw, 18px); }
+.order-bottom-btn.btn-finish { background: #006AFF; font-size: clamp(16px, 2vw, 22px); }
 
 /* RIGHT: Current Sale Panel (Square style — white panel) */
 .order-right {
@@ -268,8 +292,8 @@ button { font-family: inherit; cursor: pointer; }
     display: flex; flex-direction: column; flex-shrink: 0;
 }
 .order-list-header {
-    padding: 12px 16px; border-bottom: 1px solid #E5E7EB;
-    display: flex; font-size: 12px; font-weight: 600; color: #9CA3AF; text-transform: uppercase; letter-spacing: .5px;
+    padding: 8px 16px; border-bottom: 1px solid #E5E7EB;
+    display: flex; font-size: 9px; font-weight: 600; color: #9CA3AF; text-transform: uppercase; letter-spacing: .5px;
 }
 .order-list-header .col-qty { width: 36px; text-align: center; }
 .order-list-header .col-desc { flex: 1; }
@@ -284,34 +308,34 @@ button { font-family: inherit; cursor: pointer; }
 .order-list-empty { text-align: center; color: #9CA3AF; padding: 40px 16px; font-size: 14px; }
 
 .order-list-row {
-    display: flex; padding: 10px 16px; border-bottom: 1px solid #F3F4F6;
+    display: flex; padding: 7px 12px; border-bottom: 1px solid #F3F4F6;
     cursor: pointer; transition: background .1s; align-items: center;
 }
 .order-list-row:hover { background: #F9FAFB; }
 .order-list-row.selected { background: #EFF6FF; border-left: 3px solid #006AFF; }
-.order-list-row .col-qty { width: 36px; text-align: center; font-size: 14px; font-weight: 600; color: #1F2937; }
-.order-list-row .col-desc { flex: 1; font-size: 14px; color: #1F2937; }
-.order-list-row .col-desc .desc-kr { font-size: 11px; color: #9CA3AF; }
-.order-list-row .col-desc .desc-note { font-size: 11px; color: #D97706; font-style: italic; }
-.order-list-row .col-price { width: 70px; text-align: right; font-size: 14px; font-weight: 600; color: #1F2937; }
+.order-list-row .col-qty { width: 30px; text-align: center; font-size: 10px; font-weight: 600; color: #1F2937; }
+.order-list-row .col-desc { flex: 1; font-size: 10px; color: #1F2937; }
+.order-list-row .col-desc .desc-kr { font-size: 8px; color: #9CA3AF; }
+.order-list-row .col-desc .desc-note { font-size: 8px; color: #D97706; font-style: italic; }
+.order-list-row .col-price { width: 60px; text-align: right; font-size: 10px; font-weight: 600; color: #1F2937; }
 
 /* Order total bar */
 .order-total-bar {
-    padding: 14px 16px; background: #fff; border-top: 1px solid #E5E7EB;
+    padding: 10px 12px; background: #fff; border-top: 1px solid #E5E7EB;
 }
-.order-total-row { display: flex; justify-content: space-between; margin-bottom: 4px; font-size: 13px; color: #6B7280; }
+.order-total-row { display: flex; justify-content: space-between; margin-bottom: 3px; font-size: 9px; color: #6B7280; }
 .order-total-row.discount { color: #059669; }
-.order-total-row.grand-total { font-size: 20px; font-weight: 800; color: #1F2937; margin-top: 6px; padding-top: 8px; border-top: 1px solid #E5E7EB; }
+.order-total-row.grand-total { font-size: 14px; font-weight: 800; color: #1F2937; margin-top: 4px; padding-top: 6px; border-top: 1px solid #E5E7EB; }
 .order-total-row.grand-total .val { color: #1F2937; }
 
 /* Right side action buttons */
 .order-action-grid {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px;
-    padding: 8px 10px; border-top: 1px solid #E5E7EB; flex-shrink: 0;
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+    padding: 10px 10px; border-top: 1px solid #E5E7EB; flex-shrink: 0;
 }
 .order-action-btn {
-    padding: 8px 4px; border: 1px solid #E5E7EB; border-radius: 8px;
-    background: #F9FAFB; color: #4B5563; font-size: clamp(10px, 1.1vw, 12px); font-weight: 600;
+    padding: clamp(10px, 1.8vh, 16px) 4px; border: 1px solid #E5E7EB; border-radius: 8px;
+    background: #F9FAFB; color: #4B5563; font-size: clamp(13px, 1.4vw, 16px); font-weight: 700;
     text-align: center; transition: all .12s;
 }
 .order-action-btn:hover { background: #F3F4F6; color: #1F2937; }
@@ -409,17 +433,16 @@ button { font-family: inherit; cursor: pointer; }
 .payment-numpad .key-double-zero { font-size: 16px; }
 
 .payment-bottom {
-    display: flex; gap: 8px; flex-shrink: 0; padding: 8px 12px; background: #fff; border-top: 1px solid #E5E7EB;
+    display: flex; gap: 10px; flex-shrink: 0; padding: 10px 12px; background: #fff; border-top: 1px solid #E5E7EB;
 }
 .payment-bottom-btn {
-    flex: 1; padding: clamp(12px, 2vh, 16px) 8px; border: none; border-radius: 10px;
-    font-size: clamp(12px, 1.3vw, 15px); font-weight: 700;
+    flex: 1; padding: clamp(18px, 3vh, 28px) 8px; border: none; border-radius: 12px;
+    font-size: clamp(16px, 2vw, 22px); font-weight: 700;
     transition: all .12s; text-align: center; color: #fff;
 }
 .payment-bottom-btn:hover { filter: brightness(1.1); }
 .payment-bottom-btn.cancel { background: #6B7280; }
 .payment-bottom-btn.no-receipt { background: #D97706; }
-.payment-bottom-btn.print-two { background: #006AFF; }
 .payment-bottom-btn.print-one { background: #059669; }
 .payment-bottom-btn:disabled { opacity: .35; pointer-events: none; }
 
@@ -495,15 +518,25 @@ button { font-family: inherit; cursor: pointer; }
 
 .takings-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 
-.takings-period-tabs {
-    display: flex; gap: 6px; padding: 12px 16px; flex-shrink: 0;
+.takings-range-bar {
+    display: flex; align-items: center; gap: 6px; padding: 8px 12px; flex-shrink: 0;
+    background: #fff; border-bottom: 1px solid #E5E7EB; flex-wrap: wrap;
 }
-.takings-period-tab {
-    padding: 8px 18px; border: 1px solid #D1D5DB; border-radius: 20px;
-    background: #fff; color: #6B7280; font-size: 13px; font-weight: 600;
+.takings-quick-btn {
+    padding: 5px 12px; border: 1px solid #D1D5DB; border-radius: 16px;
+    background: #fff; color: #6B7280; font-size: 11px; font-weight: 600; cursor: pointer;
     transition: all .12s;
 }
-.takings-period-tab.active { background: #006AFF; color: #fff; border-color: #006AFF; }
+.takings-quick-btn.active { background: #006AFF; color: #fff; border-color: #006AFF; }
+.takings-range-pick {
+    padding: 5px 10px; border: 1px solid #2563EB; border-radius: 6px;
+    background: #EFF6FF; color: #2563EB; font-size: 11px; font-weight: 600; cursor: pointer;
+    min-width: 100px; text-align: center;
+}
+.takings-range-go {
+    padding: 5px 14px; border: none; border-radius: 6px;
+    background: #2563EB; color: #fff; font-size: 11px; font-weight: 700; cursor: pointer;
+}
 
 .takings-sub-tabs {
     display: flex; gap: 4px; padding: 0 16px 12px; flex-shrink: 0; flex-wrap: wrap;
@@ -557,10 +590,10 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ═══════════ ORDERS LIST SCREEN ═══════════ */
 .orders-screen {
-    flex-direction: column; background: #F5F5F5;
+    flex-direction: column; background: #F5F5F5; height: 100vh; overflow: hidden;
 }
 .orders-header {
-    height: 52px; background: #fff; border-bottom: 1px solid #E5E7EB;
+    height: 48px; background: #fff; border-bottom: 1px solid #E5E7EB;
     display: flex; align-items: center; padding: 0 16px; gap: 12px; flex-shrink: 0;
 }
 .orders-header-title { font-size: 16px; font-weight: 700; color: #1F2937; }
@@ -572,34 +605,35 @@ button { font-family: inherit; cursor: pointer; }
 .orders-back-btn:hover { background: #F3F4F6; }
 
 .orders-filter-bar {
-    display: flex; gap: 6px; padding: 10px 16px; flex-shrink: 0;
+    display: flex; gap: 6px; padding: 8px 16px; flex-shrink: 0;
 }
 .orders-filter-btn {
-    padding: 6px 14px; border: 1px solid #D1D5DB; border-radius: 20px;
+    padding: 5px 12px; border: 1px solid #D1D5DB; border-radius: 20px;
     background: #fff; color: #6B7280; font-size: 12px; font-weight: 600;
     transition: all .12s;
 }
 .orders-filter-btn.active { background: #1F2937; color: #fff; border-color: #1F2937; }
 
+#ordersViewList { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
 .orders-list-body {
-    flex: 1; overflow-y: auto; padding: 0 16px 16px;
+    flex: 1; overflow-y: auto; padding: 0 12px 12px; -webkit-overflow-scrolling: touch;
 }
 .orders-list-body::-webkit-scrollbar { width: 4px; }
 .orders-list-body::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 4px; }
 
 .order-card {
-    background: #fff; border: 1px solid #E5E7EB; border-radius: 12px;
-    padding: 14px 16px; margin-bottom: 8px; transition: all .15s;
-    box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    background: #fff; border: 1px solid #E5E7EB; border-radius: 8px;
+    padding: 8px 12px; margin-bottom: 4px;
+    display: flex; align-items: center; gap: 10px;
 }
-.order-card:hover { border-color: #D1D5DB; box-shadow: 0 2px 6px rgba(0,0,0,.08); }
-.order-card.pending { border-left: 4px solid #F59E0B; }
-.order-card.preparing { border-left: 4px solid #3B82F6; }
-.order-card.done { border-left: 4px solid #22C55E; }
-.order-card-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
-.order-card-num { font-size: 16px; font-weight: 700; color: #1F2937; }
-.order-card-badges { display: flex; gap: 6px; }
-.order-card-badge { font-size: 11px; padding: 2px 8px; border-radius: 12px; font-weight: 600; }
+.order-card.pending { border-left: 3px solid #F59E0B; }
+.order-card.preparing { border-left: 3px solid #3B82F6; }
+.order-card.done { border-left: 3px solid #22C55E; }
+.order-card-top { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.order-card-num { font-size: 14px; font-weight: 700; color: #1F2937; white-space: nowrap; }
+.order-card-badges { display: flex; gap: 4px; flex-shrink: 0; }
+.order-card-badge { font-size: 10px; padding: 1px 6px; border-radius: 10px; font-weight: 600; }
 .order-card-badge.eat_in { background: #DBEAFE; color: #1D4ED8; }
 .order-card-badge.takeaway { background: #FEF3C7; color: #B45309; }
 .order-card-badge.pending { background: #FEF3C7; color: #B45309; }
@@ -607,15 +641,16 @@ button { font-family: inherit; cursor: pointer; }
 .order-card-badge.done { background: #D1FAE5; color: #047857; }
 .order-card-badge.paid { background: #D1FAE5; color: #047857; }
 .order-card-badge.unpaid { background: #FEE2E2; color: #DC2626; }
-.order-card-items { font-size: 12px; color: #6B7280; margin-bottom: 4px; }
-.order-card-bottom { display: flex; justify-content: space-between; align-items: center; }
-.order-card-total { font-size: 16px; font-weight: 700; color: #1F2937; }
-.order-card-time { font-size: 11px; color: #9CA3AF; }
-.order-card-name { font-size: 12px; color: #006AFF; }
-.order-card-actions { display: flex; gap: 6px; margin-top: 8px; }
+.order-card-mid { flex: 1; min-width: 0; }
+.order-card-items { font-size: 11px; color: #6B7280; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.order-card-name { font-size: 11px; color: #006AFF; }
+.order-card-bottom { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.order-card-total { font-size: 14px; font-weight: 700; color: #1F2937; white-space: nowrap; }
+.order-card-time { font-size: 10px; color: #9CA3AF; white-space: nowrap; }
+.order-card-actions { display: flex; gap: 4px; flex-shrink: 0; }
 .order-card-action-btn {
-    padding: 6px 12px; border: 1px solid #E5E7EB; border-radius: 8px;
-    background: #fff; color: #6B7280; font-size: 12px; font-weight: 600;
+    padding: 4px 10px; border: 1px solid #E5E7EB; border-radius: 6px;
+    background: #fff; color: #6B7280; font-size: 11px; font-weight: 600;
     transition: all .12s;
 }
 .order-card-action-btn:hover { background: #F3F4F6; }
@@ -634,7 +669,7 @@ button { font-family: inherit; cursor: pointer; }
 
 /* View tabs (Today / Monthly) */
 .orders-view-tabs {
-    display: flex; gap: 0; background: #fff; border-bottom: 1px solid #E5E7EB; padding: 0 16px;
+    display: flex; gap: 0; background: #fff; border-bottom: 1px solid #E5E7EB; padding: 0 16px; flex-shrink: 0;
 }
 .orders-view-tab {
     padding: 10px 20px; border: none; background: none; font-size: 13px; font-weight: 600;
@@ -643,40 +678,41 @@ button { font-family: inherit; cursor: pointer; }
 .orders-view-tab.active { color: #006AFF; border-bottom-color: #006AFF; }
 
 /* Monthly calendar */
+#ordersViewMonthly { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
 .orders-month-nav {
-    display: flex; align-items: center; justify-content: center; gap: 16px; padding: 14px;
-    background: #fff; border-bottom: 1px solid #E5E7EB;
+    display: flex; align-items: center; justify-content: center; gap: 12px; padding: 6px;
+    background: #fff; border-bottom: 1px solid #E5E7EB; flex-shrink: 0;
 }
 .orders-month-btn {
-    width: 36px; height: 36px; border: 1px solid #E5E7EB; border-radius: 8px;
-    background: #fff; font-size: 18px; font-weight: 700; cursor: pointer; color: #374151;
+    width: 30px; height: 30px; border: 1px solid #E5E7EB; border-radius: 6px;
+    background: #fff; font-size: 16px; font-weight: 700; cursor: pointer; color: #374151;
 }
 .orders-month-btn:hover { background: #F3F4F6; }
-.orders-month-title { font-size: 16px; font-weight: 700; color: #1F2937; min-width: 160px; text-align: center; }
+.orders-month-title { font-size: 14px; font-weight: 700; color: #1F2937; min-width: 130px; text-align: center; }
 
 .orders-calendar {
-    display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px;
-    padding: 8px 16px; background: #F5F5F5;
+    display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px;
+    padding: 4px 8px; background: #F5F5F5; flex-shrink: 0;
 }
 .cal-header {
-    text-align: center; font-size: 11px; font-weight: 700; color: #9CA3AF; padding: 6px 0;
+    text-align: center; font-size: 10px; font-weight: 700; color: #9CA3AF; padding: 3px 0;
 }
 .cal-day {
-    background: #fff; border-radius: 8px; padding: 8px 4px; text-align: center;
-    min-height: 70px; cursor: pointer; border: 2px solid transparent; transition: all .12s;
+    background: #fff; border-radius: 4px; padding: 3px 2px; text-align: center;
+    min-height: 38px; cursor: pointer; border: 2px solid transparent; transition: all .12s;
 }
 .cal-day:hover { border-color: #006AFF; }
 .cal-day.today { border-color: #006AFF; background: #EFF6FF; }
 .cal-day.selected { border-color: #006AFF; background: #DBEAFE; }
 .cal-day.empty { background: transparent; cursor: default; border: none; }
 .cal-day.empty:hover { border-color: transparent; }
-.cal-day-num { font-size: 14px; font-weight: 600; color: #374151; }
+.cal-day-num { font-size: 12px; font-weight: 600; color: #374151; }
 .cal-day.empty .cal-day-num { color: transparent; }
-.cal-day-orders { font-size: 11px; color: #006AFF; font-weight: 600; margin-top: 2px; }
-.cal-day-total { font-size: 10px; color: #059669; font-weight: 500; }
+.cal-day-orders { font-size: 9px; color: #006AFF; font-weight: 600; margin-top: 1px; }
+.cal-day-total { font-size: 9px; color: #059669; font-weight: 500; }
 
 .orders-day-detail {
-    flex: 1; overflow-y: auto; padding: 12px 16px;
+    flex: 1; overflow-y: auto; padding: 8px 12px; -webkit-overflow-scrolling: touch;
 }
 
 /* ═══════════ REGISTER SCREEN ═══════════ */
@@ -718,20 +754,42 @@ button { font-family: inherit; cursor: pointer; }
 .register-btn.close:hover { background: #B91C1C; }
 
 /* ═══════════ RECEIPT PRINT ═══════════ */
+/* ═══════════ 80mm THERMAL RECEIPT PRINT ═══════════ */
+@page {
+    size: 80mm auto;
+    margin: 0;
+}
 @media print {
+    html, body {
+        width: 80mm !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        background: #fff !important;
+    }
     body * { visibility: hidden; }
-    .receipt-print, .receipt-print * { visibility: visible; }
+    .receipt-print, .receipt-print * { visibility: visible !important; }
     .receipt-print {
         position: absolute; top: 0; left: 0;
-        width: 80mm; font-family: 'Courier New', monospace;
-        font-size: 12px; color: #000; padding: 5mm;
+        width: 72mm;
+        max-width: 72mm;
+        font-family: 'Arial', 'Helvetica', sans-serif;
+        font-size: 15px; font-weight: 700; line-height: 1.5;
+        color: #000; background: #fff;
+        padding: 2mm 4mm;
+        box-sizing: border-box;
     }
-    .receipt-print .r-logo { text-align: center; font-size: 18px; font-weight: 700; margin-bottom: 4px; }
-    .receipt-print .r-sub { text-align: center; font-size: 10px; margin-bottom: 8px; }
-    .receipt-print .r-line { border-top: 1px dashed #000; margin: 4px 0; }
-    .receipt-print .r-row { display: flex; justify-content: space-between; }
-    .receipt-print .r-total { font-size: 16px; font-weight: 700; }
-    .receipt-print .r-center { text-align: center; }
+    .receipt-print .r-logo { text-align: center; font-size: 22px; font-weight: 900; margin-bottom: 4px; }
+    .receipt-print .r-sub { text-align: center; font-size: 13px; font-weight: 700; margin-bottom: 8px; }
+    .receipt-print .r-line { border-top: 2px dashed #000; margin: 5px 0; }
+    .receipt-print .r-row { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; }
+    .receipt-print .r-total { font-size: 20px; font-weight: 900; }
+    .receipt-print .r-center { text-align: center; font-weight: 700; }
+    /* END Sales / Daily Report receipt — 같은 80mm 규격 */
+    .receipt-print table { width: 100%; border-collapse: collapse; font-size: 13px; font-weight: 700; }
+    .receipt-print th, .receipt-print td { padding: 2px 3px; text-align: left; }
+    .receipt-print th { border-bottom: 2px solid #000; font-size: 12px; font-weight: 900; }
+    /* 페이지 나눔 방지 */
+    .receipt-print * { page-break-inside: avoid; }
 }
 
 /* ═══════════ FULLSCREEN BUTTON ═══════════ */
@@ -747,17 +805,43 @@ button { font-family: inherit; cursor: pointer; }
 /* ═══════════ RESPONSIVE ═══════════ */
 @media (max-width: 900px) {
     .order-right { width: clamp(220px, 35vw, 300px); }
-    .order-menu-grid { grid-template-columns: repeat(3, 1fr); }
+    .order-menu-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .payment-right { width: clamp(200px, 30vw, 280px); }
 }
 @media (max-width: 600px) {
     .order-body { flex-direction: column; }
     .order-right { width: 100%; border-left: none; border-top: 1px solid #E5E7EB; height: 45%; }
-    .order-menu-grid { grid-template-columns: repeat(3, 1fr); }
+    .order-menu-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
     .payment-body { flex-direction: column; }
     .payment-right { width: 100%; border-left: none; border-top: 1px solid #E5E7EB; }
     .main-menu-grid { grid-template-columns: repeat(2, 1fr); }
 }
+
+/* ─── Touch DateTime Picker ─── */
+.touch-dt-overlay { position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9000;display:flex;align-items:center;justify-content:center; }
+.touch-dt-box { background:#fff;border-radius:16px;padding:24px;width:340px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.3); }
+.touch-dt-title { font-size:16px;font-weight:700;color:#1F2937;text-align:center;margin-bottom:16px; }
+.touch-dt-month-nav { display:flex;align-items:center;justify-content:space-between;margin-bottom:12px; }
+.touch-dt-month-nav button { width:44px;height:44px;border-radius:10px;border:1px solid #D1D5DB;background:#F9FAFB;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center; }
+.touch-dt-month-nav span { font-size:15px;font-weight:600;color:#374151; }
+.touch-dt-grid { display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:16px; }
+.touch-dt-grid .hdr { font-size:11px;color:#9CA3AF;text-align:center;font-weight:600;padding:4px 0; }
+.touch-dt-grid .day { width:100%;aspect-ratio:1;border-radius:10px;border:1px solid #E5E7EB;background:#fff;font-size:14px;font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#374151; }
+.touch-dt-grid .day:hover { background:#EFF6FF;border-color:#3B82F6; }
+.touch-dt-grid .day.sel { background:#006AFF;color:#fff;border-color:#006AFF;font-weight:700; }
+.touch-dt-grid .day.today { border-color:#006AFF;color:#006AFF; }
+.touch-dt-grid .day.empty { border:none;cursor:default; }
+.touch-dt-grid .day.other { color:#D1D5DB; }
+.touch-dt-time { display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:20px; }
+.touch-dt-time .spin { display:flex;flex-direction:column;align-items:center;gap:4px; }
+.touch-dt-time .spin button { width:50px;height:40px;border-radius:8px;border:1px solid #D1D5DB;background:#F3F4F6;font-size:18px;cursor:pointer;font-weight:700;color:#374151; }
+.touch-dt-time .spin button:active { background:#DBEAFE; }
+.touch-dt-time .spin .val { font-size:28px;font-weight:700;color:#1F2937;width:50px;text-align:center; }
+.touch-dt-time .colon { font-size:28px;font-weight:700;color:#6B7280;margin-top:24px; }
+.touch-dt-actions { display:flex;gap:10px; }
+.touch-dt-actions button { flex:1;padding:14px;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;border:none; }
+.touch-dt-actions .ok { background:#006AFF;color:#fff; }
+.touch-dt-actions .cancel { background:#F3F4F6;color:#6B7280; }
 </style>
 </head>
 <body>
@@ -829,7 +913,7 @@ button { font-family: inherit; cursor: pointer; }
                     <button onclick="pinInput(1)">1</button><button onclick="pinInput(2)">2</button><button onclick="pinInput(3)">3</button>
                     <button onclick="pinInput(4)">4</button><button onclick="pinInput(5)">5</button><button onclick="pinInput(6)">6</button>
                     <button onclick="pinInput(7)">7</button><button onclick="pinInput(8)">8</button><button onclick="pinInput(9)">9</button>
-                    <button class="key-clear" onclick="pinClear()">CLEAR</button>
+                    <button class="key-clear" onclick="pinClear()">CLR</button>
                     <button onclick="pinInput(0)">0</button>
                     <button class="key-ok" onclick="pinEnter()">OK</button>
                 </div>
@@ -838,14 +922,14 @@ button { font-family: inherit; cursor: pointer; }
         </div>
     </div>
     <div style="text-align:center;padding:10px 0 0;color:#B0B0B0;font-size:11px;line-height:1.6;" id="loginFooter">
-        POS v1.9 <span id="loginServerVer"></span>&nbsp;|&nbsp; © 2026 The Bap. All rights reserved. &nbsp;|&nbsp; Program by DJ Kim
+        POS v2.5 <span id="loginServerVer"></span>&nbsp;|&nbsp; © 2026 The Bap. All rights reserved. &nbsp;|&nbsp; Program by DJ Kim
     </div>
 </div>
 
 <!-- ═══════════ SCREEN: MAIN MENU ═══════════ -->
 <div class="screen main-menu-screen" id="screenMainMenu">
     <div class="main-menu-header">
-        <div class="main-menu-header-title">The Bap POS <span style="font-size:10px;color:#9CA3AF;font-weight:400">v1.9</span></div>
+        <div class="main-menu-header-title">The Bap POS <span style="font-size:10px;color:#9CA3AF;font-weight:400">v2.5</span></div>
         <div class="main-menu-header-branch" id="mainMenuBranch">TBS</div>
         <div class="main-menu-header-spacer"></div>
         <div class="main-menu-header-time" id="mainMenuTime">12:00:00</div>
@@ -856,8 +940,12 @@ button { font-family: inherit; cursor: pointer; }
             <div class="main-menu-btn takeaway" onclick="gotoOrderScreen()">
                 <div class="btn-icon">🛒</div>TAKEAWAY
             </div>
-            <div class="main-menu-btn takings" onclick="gotoTakings()">
-                <div class="btn-icon">📊</div>TAKINGS
+            <div class="main-menu-btn kiosk-main" id="mainKioskBtn" onclick="gotoKioskFromMain()">
+                <span class="kiosk-main-badge" id="mainKioskBadge">0</span>
+                <div class="btn-icon">🔔</div>KIOSK
+            </div>
+            <div class="main-menu-btn takings" onclick="gotoReport()">
+                <div class="btn-icon">📊</div>REPORT
             </div>
             <div class="main-menu-btn open-till" onclick="openCashDrawer()">
                 <div class="btn-icon">💰</div>OPEN TILL
@@ -878,6 +966,9 @@ button { font-family: inherit; cursor: pointer; }
         <div class="order-topbar-title">The Bap POS</div>
         <div class="order-topbar-branch" id="orderBranch">TBS</div>
         <button class="order-topbar-type takeaway" id="orderTypeToggle" onclick="toggleOrderType()">TAKE AWAY</button>
+        <button id="kioskOrdersBtn" onclick="toggleKioskPanel()" style="margin-left:12px;padding:6px 14px;border:2px solid #F59E0B;border-radius:8px;background:#FEF3C7;color:#B45309;font-size:12px;font-weight:700;cursor:pointer;position:relative">
+            KIOSK <span id="kioskBadge" style="display:none;position:absolute;top:-6px;right:-6px;background:#DC2626;color:#fff;font-size:10px;font-weight:700;border-radius:50%;width:18px;height:18px;line-height:18px;text-align:center">0</span>
+        </button>
         <div class="order-topbar-spacer"></div>
         <div class="order-topbar-time" id="orderTime">12:00:00</div>
         <div class="order-topbar-conn" id="orderConn"></div>
@@ -889,8 +980,6 @@ button { font-family: inherit; cursor: pointer; }
             <div class="order-menu-grid" id="orderMenuGrid"></div>
             <div class="order-bottom-bar">
                 <button class="order-bottom-btn btn-close" onclick="gotoMainMenu()">CLOSE</button>
-                <button class="order-bottom-btn btn-sauce" onclick="showSauces()">DRESSINGS</button>
-                <button class="order-bottom-btn btn-special" onclick="showSpecialInstructions()">Special Inst.</button>
                 <button class="order-bottom-btn btn-finish" onclick="gotoPayment()">FINISH</button>
             </div>
         </div>
@@ -904,23 +993,33 @@ button { font-family: inherit; cursor: pointer; }
             <div class="order-list-items" id="orderListItems">
                 <div class="order-list-empty">No items added</div>
             </div>
-            <div class="order-action-grid">
-                <button class="order-action-btn" onclick="qtyMinus()">−</button>
-                <button class="order-action-btn blue" onclick="qtyEdit()">Qty</button>
-                <button class="order-action-btn" onclick="qtyPlus()">+</button>
-                <button class="order-action-btn" onclick="repeatSelected()">Repeat</button>
-                <button class="order-action-btn" onclick="editLine()">Edit</button>
-                <button class="order-action-btn" onclick="deleteLine()">Delete</button>
-                <button class="order-action-btn green" onclick="setFree()">FREE</button>
-                <button class="order-action-btn highlight" onclick="applyDiscountDialog()">Disc %</button>
-                <button class="order-action-btn" onclick="halfPrice()">1/2 Price</button>
-            </div>
             <div class="order-total-bar">
                 <div class="order-total-row"><span>Subtotal</span><span id="orderSubtotal">£0.00</span></div>
                 <div class="order-total-row discount" id="orderDiscountRow" style="display:none"><span id="orderDiscountLabel">Discount</span><span id="orderDiscountVal">-£0.00</span></div>
                 <div class="order-total-row grand-total"><span>TOTAL</span><span class="val" id="orderTotal">£0.00</span></div>
             </div>
+            <div class="order-action-grid">
+                <button class="order-action-btn" onclick="qtyMinus()">−</button>
+                <button class="order-action-btn blue" onclick="qtyEdit()">Qty</button>
+                <button class="order-action-btn" onclick="qtyPlus()">+</button>
+                <button class="order-action-btn" onclick="deleteLine()">Delete</button>
+                <button class="order-action-btn highlight" onclick="applyDiscountDialog()">Disc %</button>
+                <button class="order-action-btn" onclick="halfPrice()">1/2 Price</button>
+            </div>
         </div>
+    </div>
+</div>
+
+<!-- ═══════════ KIOSK ORDERS POPUP (overlay) ═══════════ -->
+<div id="kioskPopupOverlay" class="tb-popup-overlay" onclick="if(event.target===this)closeKioskPopup()">
+    <div style="background:#fff;border-radius:16px;width:90%;max-width:500px;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.2)">
+        <div style="padding:14px 20px;background:#FEF3C7;border-bottom:2px solid #F59E0B;border-radius:16px 16px 0 0;display:flex;align-items:center;gap:12px;flex-shrink:0">
+            <span style="font-size:18px;font-weight:700;color:#B45309">🔔 Kiosk Orders</span>
+            <span id="kioskPopupCount" style="font-size:12px;color:#6B7280"></span>
+            <div style="flex:1"></div>
+            <button onclick="closeKioskPopup()" style="padding:6px 14px;border:1px solid #D1D5DB;border-radius:8px;background:#fff;font-weight:600;cursor:pointer;font-size:13px">✕ Close</button>
+        </div>
+        <div id="kioskPopupBody" style="flex:1;overflow-y:auto;padding:12px;-webkit-overflow-scrolling:touch"></div>
     </div>
 </div>
 
@@ -933,15 +1032,15 @@ button { font-family: inherit; cursor: pointer; }
     </div>
     <div class="payment-body">
         <div class="payment-left">
-            <div class="payment-methods">
-                <button class="payment-method-btn not-paid" onclick="selectPayMethod('not_paid')">NOT PAID</button>
-                <button class="payment-method-btn cash" onclick="selectPayMethod('cash')">CASH</button>
-                <button class="payment-method-btn card" onclick="selectPayMethod('card')">CREDIT CARD</button>
-            </div>
             <div class="payment-totals">
                 <div class="payment-total-row sale"><span class="label">Total Sale</span><span class="value" id="payTotalSale">£0.00</span></div>
                 <div class="payment-total-row paid"><span class="label">Total Paid</span><span class="value" id="payTotalPaid">£0.00</span></div>
                 <div class="payment-total-row change"><span class="label">Change</span><span class="value" id="payChange">£0.00</span></div>
+            </div>
+            <div class="payment-methods">
+                <button class="payment-method-btn not-paid" onclick="selectPayMethod('not_paid')">NOT PAID</button>
+                <button class="payment-method-btn cash" onclick="selectPayMethod('cash')">CASH</button>
+                <button class="payment-method-btn card" onclick="selectPayMethod('card')">CREDIT CARD</button>
             </div>
             <div class="payment-quick-cash" id="payQuickCash" style="display:none">
                 <button class="quick-cash-btn" onclick="quickCash(5)">£5</button>
@@ -950,17 +1049,7 @@ button { font-family: inherit; cursor: pointer; }
                 <button class="quick-cash-btn" onclick="quickCash(50)">£50</button>
                 <button class="quick-cash-btn exact" onclick="quickCashExact()">Exact</button>
             </div>
-            <div class="payment-wanted-time">
-                <div class="label">Wanted Time</div>
-                <div class="wanted-time-grid">
-                    <button class="wanted-time-btn" onclick="setWantedTime(10)">10 min</button>
-                    <button class="wanted-time-btn" onclick="setWantedTime(15)">15 min</button>
-                    <button class="wanted-time-btn active" onclick="setWantedTime(25)">25 min</button>
-                    <button class="wanted-time-btn" onclick="setWantedTime(30)">30 min</button>
-                    <button class="wanted-time-btn" onclick="setWantedTime(45)">45 min</button>
-                    <button class="wanted-time-btn" onclick="setWantedTime(60)">60 min</button>
-                </div>
-            </div>
+            <!-- Wanted Time removed -->
         </div>
         <div class="payment-right">
             <div class="payment-numpad-display" id="payNumpadDisplay">0</div>
@@ -977,8 +1066,7 @@ button { font-family: inherit; cursor: pointer; }
     <div class="payment-bottom">
         <button class="payment-bottom-btn cancel" onclick="cancelPayment()">Cancel</button>
         <button class="payment-bottom-btn no-receipt" id="btnNoReceipt" disabled onclick="completePayment(0)">NO RECEIPT</button>
-        <button class="payment-bottom-btn print-two" id="btnPrintTwo" disabled onclick="completePayment(2)">Print 2 Receipts</button>
-        <button class="payment-bottom-btn print-one" id="btnPrintOne" disabled onclick="completePayment(1)">Print 1 Receipt</button>
+        <button class="payment-bottom-btn print-one" id="btnPrintOne" disabled onclick="completePayment(1)">Print Receipt</button>
     </div>
 </div>
 
@@ -987,13 +1075,28 @@ button { font-family: inherit; cursor: pointer; }
     <div class="takings-header">
         <div class="takings-header-title">TAKINGS</div>
         <div class="takings-header-spacer"></div>
+        <div style="display:flex;align-items:center;gap:6px;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;padding:4px 10px;margin-right:8px">
+            <span style="font-size:11px;font-weight:700;color:#92400E">Cash %</span>
+            <input type="range" id="takingsCashPct" min="0" max="100" value="100" step="5" style="width:80px;height:18px"
+                oninput="document.getElementById('takingsCashPctVal').textContent=this.value+'%'">
+            <span id="takingsCashPctVal" style="min-width:32px;font-weight:700;font-size:12px;color:#DC2626">100%</span>
+            <button onclick="saveCashReportPctFromTakings()" style="padding:2px 8px;background:#006AFF;color:#fff;border:none;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">SET</button>
+        </div>
         <button class="takings-back-btn" onclick="gotoMainMenu()">Back to Menu</button>
     </div>
     <div class="takings-body">
-        <div class="takings-period-tabs">
-            <button class="takings-period-tab active" data-period="daily" onclick="switchTakingsPeriod('daily')">DAILY</button>
-            <button class="takings-period-tab" data-period="weekly" onclick="switchTakingsPeriod('weekly')">WEEKLY</button>
-            <button class="takings-period-tab" data-period="monthly" onclick="switchTakingsPeriod('monthly')">MONTHLY</button>
+        <div class="takings-range-bar" id="takingsRangeBar">
+            <button class="takings-quick-btn active" onclick="setTakingsQuick('today')">Today</button>
+            <button class="takings-quick-btn" onclick="setTakingsQuick('yesterday')">Yesterday</button>
+            <button class="takings-quick-btn" onclick="setTakingsQuick('week')">This Week</button>
+            <button class="takings-quick-btn" onclick="setTakingsQuick('month')">This Month</button>
+            <div style="width:1px;height:24px;background:#D1D5DB;margin:0 2px"></div>
+            <button class="takings-range-pick" id="takingsFromBtn" onclick="pickTakingsFrom()">FROM</button>
+            <span style="color:#9CA3AF;font-size:11px">~</span>
+            <button class="takings-range-pick" id="takingsToBtn" onclick="pickTakingsTo()">TO</button>
+            <button class="takings-range-go" onclick="applyTakingsRange()">GO</button>
+            <div style="flex:1"></div>
+            <span id="takingsRangeLabel" style="font-size:11px;color:#6B7280;font-weight:600"></span>
         </div>
         <div class="takings-sub-tabs">
             <button class="takings-sub-tab active" data-view="overview" onclick="switchTakingsView('overview')">Overview</button>
@@ -1001,10 +1104,38 @@ button { font-family: inherit; cursor: pointer; }
             <button class="takings-sub-tab" data-view="by_payment" onclick="switchTakingsView('by_payment')">By Payment</button>
             <button class="takings-sub-tab" data-view="by_item" onclick="switchTakingsView('by_item')">Sales Analysis</button>
             <button class="takings-sub-tab" data-view="vat" onclick="switchTakingsView('vat')">VAT Report</button>
-            <button class="takings-sub-tab" data-view="register" onclick="switchTakingsView('register')">Cash Register</button>
             <button class="takings-sub-tab" style="background:#2563EB;color:#fff;border-color:#2563EB" onclick="quickDailyReport()">Daily Report</button>
+            <button class="takings-sub-tab" style="background:#DC2626;color:#fff;border-color:#DC2626;font-weight:700" onclick="switchTakingsView('end_sales')">END Sales</button>
         </div>
         <div class="takings-content" id="takingsContent"></div>
+    </div>
+</div>
+
+<!-- ═══════════ SCREEN: DAILY REPORT (Simple) ═══════════ -->
+<div class="screen takings-screen" id="screenReport">
+    <div class="takings-header">
+        <div class="takings-header-title">📊 DAILY REPORT</div>
+        <div class="takings-header-spacer"></div>
+        <button class="takings-back-btn" onclick="gotoMainMenu()">Back to Menu</button>
+    </div>
+    <div class="takings-body" style="padding:20px;max-width:500px;margin:0 auto">
+        <div style="background:#F9FAFB;border:2px solid #E5E7EB;border-radius:12px;padding:14px;margin-bottom:16px">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+                <label style="font-size:13px;font-weight:700;color:#374151;min-width:44px">From</label>
+                <input type="date" id="reportDateFrom" style="padding:8px 10px;border:2px solid #D1D5DB;border-radius:8px;font-size:14px;font-weight:600;flex:1">
+                <input type="time" id="reportTimeFrom" value="00:00" style="padding:8px 10px;border:2px solid #D1D5DB;border-radius:8px;font-size:14px;font-weight:600;width:110px">
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+                <label style="font-size:13px;font-weight:700;color:#374151;min-width:44px">To</label>
+                <input type="date" id="reportDateTo" style="padding:8px 10px;border:2px solid #D1D5DB;border-radius:8px;font-size:14px;font-weight:600;flex:1">
+                <input type="time" id="reportTimeTo" value="23:59" style="padding:8px 10px;border:2px solid #D1D5DB;border-radius:8px;font-size:14px;font-weight:600;width:110px">
+            </div>
+            <button onclick="loadDailyReport()" style="width:100%;margin-top:12px;padding:10px;background:#2563EB;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">🔍 LOAD REPORT</button>
+        </div>
+        <div id="reportContent" style="text-align:center;padding:40px;color:#9CA3AF;font-size:15px">Select date range to view report</div>
+        <div id="reportPrintBtn" style="display:none;margin-top:16px">
+            <button onclick="printDailyReportSimple()" style="width:100%;padding:14px;background:#006AFF;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer">🖨️ PRINT REPORT</button>
+        </div>
     </div>
 </div>
 
@@ -1097,6 +1228,7 @@ button { font-family: inherit; cursor: pointer; }
     <div class="r-row"><span>Cash Total:</span><span id="esrCash"></span></div>
     <div class="r-row"><span>Card Total:</span><span id="esrCard"></span></div>
     <div class="r-row r-total"><span>GRAND TOTAL:</span><span id="esrGrand"></span></div>
+    <div class="r-row" style="font-weight:700"><span>Cash in Drawer:</span><span id="esrCashDrawer"></span></div>
     <div class="r-line"></div>
     <div id="esrVatRows"></div>
     <div class="r-row"><span>Total VAT:</span><span id="esrVatTotal"></span></div>
@@ -1120,7 +1252,7 @@ const POS = {
     orderType: 'takeaway',
     discount: { type: null, value: 0, name: '' },
     orders: [],
-    register: { isOpen: false, openingFloat: 0, cashSales: 0, cardSales: 0, transactions: [], lastEndSalesAt: null },
+    register: { isOpen: false, openingFloat: 100, cashSales: 0, cardSales: 0, transactions: [], lastEndSalesAt: null },
     dailyOrderCount: 0,
     currentScreen: 'login',
     currentCategory: null,
@@ -1131,6 +1263,7 @@ const POS = {
     // Settings (persisted in localStorage)
     settings: {
         sendPosToKitchen: false, // send POS orders to kitchen display
+        cashReportPct: 100, // Daily Report에 표시할 현금 비율 (0-100)
     },
 };
 
@@ -1182,8 +1315,8 @@ async function loadMenuFromAPI() {
             const data = await resp.json();
             POS.menuData = data;
             const activeCats = (data.categories || []).filter(c => c.active !== false).sort((a,b) => (a.sortOrder||0) - (b.sortOrder||0));
-            if (activeCats.length > 0 && !POS.currentCategory) {
-                POS.currentCategory = activeCats[0].id;
+            if (!POS.currentCategory) {
+                POS.currentCategory = '__all__';
             }
             // Update branches from server data if available
             if (data.branches && data.branches.length > 0) {
@@ -1203,8 +1336,13 @@ async function loadMenuFromAPI() {
 // Helper: get items for a category, sorted
 function getItemsForCategory(catId) {
     if (!POS.menuData || !POS.menuData.items) return [];
+    if (catId === '__all__') {
+        return POS.menuData.items
+            .filter(i => i.active !== false && i.showOnPos !== false)
+            .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    }
     return POS.menuData.items
-        .filter(i => i.catId === catId && i.active !== false)
+        .filter(i => i.catId === catId && i.active !== false && i.showOnPos !== false)
         .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 }
 
@@ -1266,12 +1404,12 @@ function calcVatBreakdown(orders) {
     };
 }
 
-function toast(msg, type='info') {
+function toast(msg, type='info', duration=3000) {
     const c = document.getElementById('toastContainer');
     const el = document.createElement('div');
     el.className = 'toast ' + type; el.textContent = msg;
     c.appendChild(el);
-    setTimeout(() => { el.style.opacity='0'; setTimeout(() => el.remove(), 300); }, 3000);
+    setTimeout(() => { el.style.opacity='0'; setTimeout(() => el.remove(), 300); }, duration);
 }
 function tbAlert(msg, title, icon) {
     return new Promise(resolve => {
@@ -1353,8 +1491,8 @@ function showScreen(id) {
     document.getElementById(id).classList.add('active');
     POS.currentScreen = id;
 }
-function gotoMainMenu() { showScreen('screenMainMenu'); }
-function gotoOrderScreen() { showScreen('screenOrder'); renderOrderMenu(); }
+function gotoMainMenu() { showScreen('screenMainMenu'); updateKioskBadge(); }
+function gotoOrderScreen() { showScreen('screenOrder'); renderOrderMenu(); updateKioskBadge(); }
 function gotoPayment() {
     if (POS.cart.length === 0) { toast('No items in order', 'error'); return; }
     POS.payMethod = null; POS.payNumStr = '0';
@@ -1363,7 +1501,6 @@ function gotoPayment() {
     document.getElementById('payQuickCash').style.display = 'none';
     document.querySelectorAll('.payment-method-btn').forEach(b => b.classList.remove('selected'));
     document.getElementById('btnNoReceipt').disabled = true;
-    document.getElementById('btnPrintTwo').disabled = true;
     document.getElementById('btnPrintOne').disabled = true;
 }
 // ═══════════════════════════════════════════
@@ -1438,6 +1575,8 @@ async function loadTBMSUsers() {
 
 // ─── Check PIN against users with allowed roles ───
 function checkUserPin(pin, allowedRoles) {
+    // DEV MODE: blank PIN bypasses check
+    if (pin === '') return { id: 'dev', name: 'Dev Mode', role: 'admin' };
     // normalize: "senior_manager" / "Senior Manager" / "senior-manager" → "seniormanager"
     const norm = s => s.toLowerCase().replace(/[_\-\s]+/g, '');
     const roles = allowedRoles.map(norm);
@@ -1454,7 +1593,18 @@ async function gotoTakings() {
     const user = checkUserPin(entered, ['admin', 'senior manager']);
     if (!user) { toast('Access denied — Admin or Senior Manager PIN required', 'error'); return; }
     toast(`Welcome ${user.name || user.id}`, 'success');
-    showScreen('screenTakings'); renderTakings();
+    showScreen('screenTakings');
+    // Init Cash % slider
+    const pct = POS.settings.cashReportPct || 100;
+    document.getElementById('takingsCashPct').value = pct;
+    document.getElementById('takingsCashPctVal').textContent = pct + '%';
+    // Default to Today
+    const now = new Date();
+    takingsRangeFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    takingsRangeTo = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    takingsFilteredOrders = null;
+    updateTakingsRangeUI();
+    loadTakingsData();
 }
 function gotoOrders() { showScreen('screenOrders'); renderAllOrders(); }
 // ─── OPEN TILL = physically open cash drawer via POS printer ───
@@ -1604,17 +1754,21 @@ function pinInput(n) {
 function pinClear() { POS.pin = ''; updatePinDots(); }
 function pinEnter() {
     if (!POS.branch) { toast('Select a branch first', 'error'); return; }
-    if (POS.pin.length < 4) { toast('Enter 4-digit PIN', 'error'); return; }
-    // Verify PIN = last 4 digits of branch phone number
     const branch = BRANCHES.find(b => b.code === POS.branch);
-    if (branch && branch.phone) {
-        const digits = branch.phone.replace(/\D/g, '');
-        const correctPin = digits.slice(-4);
-        if (POS.pin !== correctPin) {
-            toast('Wrong PIN', 'error');
-            POS.pin = '';
-            updatePinDots();
-            return;
+    // DEV MODE: blank PIN bypasses check
+    if (POS.pin.length === 0) { /* dev bypass */ }
+    else if (POS.pin.length < 4) { toast('Enter 4-digit PIN', 'error'); return; }
+    else {
+        // Verify PIN = last 4 digits of branch phone number
+        if (branch && branch.phone) {
+            const digits = branch.phone.replace(/\D/g, '');
+            const correctPin = digits.slice(-4);
+            if (POS.pin !== correctPin) {
+                toast('Wrong PIN', 'error');
+                POS.pin = '';
+                updatePinDots();
+                return;
+            }
         }
     }
     POS.staffId = 'staff_' + POS.branch;
@@ -1643,6 +1797,7 @@ async function startPOS() {
     await restoreRegisterFromServer();
     await restoreCompletedOrdersFromServer();
     connectWebSocket();
+    updateKioskBadge();
     showScreen('screenMainMenu');
 }
 
@@ -1675,7 +1830,7 @@ function connectWebSocket() {
     POS.ws = new WebSocket(`ws://${host}:${port}`);
     POS.ws.onopen = () => {
         POS.connected = true; updateConnDots(true);
-        POS.ws.send(JSON.stringify({ type: 'register', clientType: 'pos', branchCode: POS.branch }));
+        POS.ws.send(JSON.stringify({ type: 'register', clientType: 'pos' }));
         // Suppress toasts for first 2 seconds (initial order sync)
         setTimeout(() => { POS.wsReady = true; }, 2000);
     };
@@ -1698,18 +1853,56 @@ function updateConnDots(connected) {
 }
 function handleWSMessage(msg) {
     switch (msg.type) {
-        case 'registered': POS.dailyOrderCount = msg.dailyOrderCount || 0; break;
+        case 'registered':
+            POS.dailyOrderCount = msg.dailyOrderCount || 0;
+            // 연결/재연결 시 최신 메뉴 로드
+            loadMenuFromAPI().then(() => {
+                renderCategoryTabs();
+                if (POS.currentScreen === 'screenOrder') renderOrderMenu();
+                console.log('[POS] Menu refreshed on connect');
+            }).catch(e => console.warn('[POS] Menu refresh failed:', e));
+            break;
         case 'new_order': {
             const order = msg.order;
-            if (order.branchCode && order.branchCode !== POS.branch) break;
+            // ★ 중복 방지: 같은 주문번호가 이미 있으면 무시
+            if (POS.orders.some(x => x.orderNumber === order.orderNumber)) {
+                console.log(`[POS] 중복 주문 무시: ${order.orderNumber}`);
+                break;
+            }
             POS.orders.push(order);
-            if (POS.wsReady) toast(`New order ${order.orderNumber} — ${fp(order.total)}`, 'info');
+            if (POS.wsReady) {
+                if (order.source && order.source !== 'pos') {
+                    toast(`🔔 KIOSK ORDER ${order.orderNumber} — ${fp(order.total)}`, 'info');
+                } else {
+                    toast(`New order ${order.orderNumber} — ${fp(order.total)}`, 'info');
+                }
+            }
+            updateKioskBadge();
+            if (kioskPopupOpen) renderKioskPopup();
             if (POS.currentScreen === 'screenOrders') renderAllOrders();
             break;
         }
         case 'order_status': {
             const o = POS.orders.find(x => x.orderNumber === msg.orderNumber);
-            if (o) o.status = msg.status;
+            if (o) {
+                const prevStatus = o.status;
+                o.status = msg.status;
+                if (msg.paymentStatus) o.paymentStatus = msg.paymentStatus;
+                if (msg.paymentMethod) o.paymentMethod = msg.paymentMethod;
+                if (msg.pickedUp) o.pickedUp = true;
+                // ★ Kitchen 상태 변경 알림
+                if (msg.status === 'ready' && prevStatus !== 'ready') {
+                    toast(`🍳 ${msg.orderNumber} READY`, 'success');
+                } else if (msg.status === 'preparing' && prevStatus !== 'preparing') {
+                    toast(`👨‍🍳 ${msg.orderNumber} 조리중`, 'info');
+                } else if (msg.status === 'done' && prevStatus !== 'done') {
+                    toast(`✅ ${msg.orderNumber} DONE`, 'success');
+                }
+                // ★ PICKUP READY 체크 (PAID + Kitchen Ready → 비핑 + 뱃지)
+                checkPickupReady(o, msg.status);
+            }
+            updateKioskBadge();
+            if (kioskPopupOpen) renderKioskPopup();
             if (POS.currentScreen === 'screenOrders') renderAllOrders();
             break;
         }
@@ -1763,7 +1956,17 @@ function handleWSMessage(msg) {
             POS.completedOrders = [];
             POS.dailyOrderCount = 0;
             POS.register = { isOpen: false, openingFloat: 0, cashSales: 0, cardSales: 0, transactions: [] };
-            if (POS.currentScreen === 'screenTakings') renderTakings();
+            if (POS.currentScreen === 'screenTakings') {
+                // If viewing today, refresh filtered orders from live data
+                const todayStr = new Date().toISOString().slice(0, 10);
+                if (takingsRangeFrom && takingsRangeFrom.toISOString().slice(0,10) === todayStr) {
+                    takingsFilteredOrders = POS.completedOrders.filter(o => {
+                        const t = new Date(o.timestamp);
+                        return t >= takingsRangeFrom && t <= takingsRangeTo;
+                    });
+                }
+                renderTakings();
+            }
             if (POS.currentScreen === 'screenOrders') renderAllOrders();
             break;
         }
@@ -1782,7 +1985,8 @@ function wsSend(msg) { if (POS.ws && POS.ws.readyState === WebSocket.OPEN) POS.w
 function renderCategoryTabs() {
     const el = document.getElementById('orderCatTabs');
     const cats = getActiveCategories();
-    el.innerHTML = cats.map(c =>
+    const allTab = `<button class="order-cat-tab${POS.currentCategory==='__all__'?' active':''}" data-cat="__all__" onclick="selectCat('__all__')">All</button>`;
+    el.innerHTML = allTab + cats.map(c =>
         `<button class="order-cat-tab${c.id===POS.currentCategory?' active':''}" data-cat="${c.id}" onclick="selectCat('${c.id}')">${c.icon||''} ${c.nameEn}</button>`
     ).join('');
 }
@@ -1830,13 +2034,8 @@ function addToOrder(itemId) {
     const item = findMenuItem(itemId);
     if (!item) return;
     const price = getItemPrice(item);
-    const existing = POS.cart.find(c => c.id === itemId && !c.free && !c.note);
-    if (existing) {
-        existing.quantity++;
-        existing.totalPrice = existing.quantity * existing.unitPrice;
-    } else {
-        POS.cart.push({ id: item.id, nameEn: item.nameEn, nameKr: item.nameKr, unitPrice: price, quantity: 1, totalPrice: price, vatRate: item.vatRate || 20, note: '', free: false });
-    }
+    // Always add as a new line (1x per line)
+    POS.cart.push({ id: item.id, nameEn: item.nameEn, nameKr: item.nameKr, unitPrice: price, quantity: 1, totalPrice: price, vatRate: item.vatRate || 20, note: '', free: false });
     POS.selectedCartIdx = POS.cart.length - 1;
     renderOrderList();
 }
@@ -1894,25 +2093,48 @@ function getOrderTotal() {
 function qtyPlus() {
     const item = POS.cart[POS.selectedCartIdx];
     if (!item) { toast('Select an item first', 'error'); return; }
-    item.quantity++; item.totalPrice = item.quantity * item.unitPrice;
+    // Add a new line (duplicate) instead of incrementing
+    POS.cart.splice(POS.selectedCartIdx + 1, 0, { ...item, quantity: 1, totalPrice: item.unitPrice, note: '', free: false });
+    POS.selectedCartIdx = POS.selectedCartIdx + 1;
     renderOrderList();
 }
 function qtyMinus() {
     const item = POS.cart[POS.selectedCartIdx];
     if (!item) { toast('Select an item first', 'error'); return; }
-    item.quantity--;
-    if (item.quantity <= 0) { POS.cart.splice(POS.selectedCartIdx, 1); POS.selectedCartIdx = Math.min(POS.selectedCartIdx, POS.cart.length - 1); }
-    else item.totalPrice = item.quantity * item.unitPrice;
+    // Remove the line
+    POS.cart.splice(POS.selectedCartIdx, 1);
+    POS.selectedCartIdx = Math.min(POS.selectedCartIdx, POS.cart.length - 1);
     renderOrderList();
 }
 async function qtyEdit() {
     const item = POS.cart[POS.selectedCartIdx];
     if (!item) { toast('Select an item first', 'error'); return; }
-    const val = await tbInput(`Set quantity for ${item.nameEn}`, 'Quantity', '🔢', item.quantity.toString());
+    // Count how many of this item already in cart
+    const currentCount = POS.cart.filter(c => c.id === item.id && !c.free && !c.note).length;
+    const val = await tbInput(`Set quantity for ${item.nameEn} (currently ${currentCount})`, 'Quantity', '🔢', currentCount.toString());
     if (val === null) return;
     const n = parseInt(val);
-    if (isNaN(n) || n <= 0) { POS.cart.splice(POS.selectedCartIdx, 1); POS.selectedCartIdx = -1; }
-    else { item.quantity = n; item.totalPrice = n * item.unitPrice; }
+    if (isNaN(n) || n <= 0) {
+        // Remove all of this item
+        POS.cart = POS.cart.filter(c => !(c.id === item.id && !c.free && !c.note));
+        POS.selectedCartIdx = Math.min(POS.selectedCartIdx, POS.cart.length - 1);
+    } else if (n > currentCount) {
+        // Add more lines
+        for (let k = 0; k < n - currentCount; k++) {
+            POS.cart.push({ ...item, quantity: 1, totalPrice: item.unitPrice, note: '', free: false });
+        }
+        POS.selectedCartIdx = POS.cart.length - 1;
+    } else if (n < currentCount) {
+        // Remove excess lines (from end)
+        let toRemove = currentCount - n;
+        for (let k = POS.cart.length - 1; k >= 0 && toRemove > 0; k--) {
+            if (POS.cart[k].id === item.id && !POS.cart[k].free && !POS.cart[k].note) {
+                POS.cart.splice(k, 1);
+                toRemove--;
+            }
+        }
+        POS.selectedCartIdx = Math.min(POS.selectedCartIdx, POS.cart.length - 1);
+    }
     renderOrderList();
 }
 function repeatSelected() {
@@ -2037,24 +2259,27 @@ function quickCashExact() {
 
 function updatePaymentDisplay() {
     const total = getOrderTotal();
-    const paid = parseInt(POS.payNumStr || '0') / 100;
-    const change = paid - total;
+    const paidPennies = parseInt(POS.payNumStr || '0');
+    const totalPennies = Math.round(total * 100);
+    const changePennies = paidPennies - totalPennies;
+    const paid = paidPennies / 100;
+    const change = changePennies / 100;
 
     document.getElementById('payTotalSale').textContent = fp(total);
     document.getElementById('payTotalPaid').textContent = fp(paid);
-    document.getElementById('payChange').textContent = change >= 0 ? fp(change) : '-' + fp(Math.abs(change));
+    document.getElementById('payChange').textContent = changePennies >= 0 ? fp(change) : '-' + fp(Math.abs(change));
     document.getElementById('payNumpadDisplay').textContent = fp(paid);
 
     const changeRow = document.querySelector('.payment-total-row.change');
-    if (changeRow) changeRow.classList.toggle('negative', change < 0);
+    if (changeRow) changeRow.classList.toggle('negative', changePennies < 0);
 }
 
 function enablePaymentButtons() {
     const total = getOrderTotal();
-    const paid = parseInt(POS.payNumStr || '0') / 100;
-    const canComplete = POS.payMethod === 'not_paid' || POS.payMethod === 'card' || (POS.payMethod === 'cash' && paid >= total);
+    const paidPennies = parseInt(POS.payNumStr || '0');
+    const totalPennies = Math.round(total * 100);
+    const canComplete = POS.payMethod === 'not_paid' || POS.payMethod === 'card' || (POS.payMethod === 'cash' && paidPennies >= totalPennies);
     document.getElementById('btnNoReceipt').disabled = !canComplete;
-    document.getElementById('btnPrintTwo').disabled = !canComplete;
     document.getElementById('btnPrintOne').disabled = !canComplete;
 }
 
@@ -2064,30 +2289,90 @@ function setWantedTime(mins) {
     event.target.classList.add('active');
 }
 
-function cancelPayment() { showScreen('screenOrder'); }
+function cancelPayment() { showScreen('screenOrder'); POS._kioskOrderRef = null; }
+
+// Aggregate cart items (1x per line in display → combine same items for order data)
+function aggregateCartItems(cart) {
+    // ★ No aggregation — list every item individually
+    return cart.map(c => ({
+        nameEn: c.nameEn, nameKr: c.nameKr,
+        quantity: c.quantity, unitPrice: c.unitPrice,
+        totalPrice: c.free ? 0 : c.totalPrice,
+        vatRate: c.vatRate || 20,
+        note: c.note, free: c.free,
+    }));
+}
 
 function completePayment(printCount) {
     const total = getOrderTotal();
-    const paid = parseInt(POS.payNumStr || '0') / 100;
-    const change = paid - total;
+    const paidPennies = parseInt(POS.payNumStr || '0');
+    const totalPennies = Math.round(total * 100);
+    const paid = paidPennies / 100;
+    const change = Math.max(0, (paidPennies - totalPennies)) / 100;
     const payMethod = POS.payMethod || 'not_paid';
+    const now = new Date();
+
+    // Check if this is a kiosk order being paid at POS
+    if (POS._kioskOrderRef) {
+        const kioskOrderNum = POS._kioskOrderRef;
+        const kioskOrder = POS.orders.find(x => x.orderNumber === kioskOrderNum);
+        if (kioskOrder) {
+            // Update kiosk order with payment info
+            kioskOrder.paymentMethod = payMethod;
+            kioskOrder.paymentStatus = payMethod === 'not_paid' ? 'unpaid' : 'paid';
+            kioskOrder.amountPaid = paid;
+            kioskOrder.change = Math.max(0, change);
+            kioskOrder.staff = POS.staffName;
+
+            // Track register
+            if (payMethod === 'cash') POS.register.cashSales += total;
+            else if (payMethod === 'card') POS.register.cardSales += total;
+            POS.register.transactions.push({ time: now.toLocaleTimeString('en-GB'), method: payMethod, amount: total, orderNum: kioskOrderNum });
+
+            // Add to completedOrders if not already
+            if (!POS.completedOrders.find(x => x.orderNumber === kioskOrderNum)) {
+                POS.completedOrders.push(kioskOrder);
+            }
+
+            // Notify server (include all payment fields + full order for Kitchen sync)
+            wsSend({ type: 'order_status', orderNumber: kioskOrderNum, status: kioskOrder.status, paymentStatus: 'paid', paymentMethod: payMethod, amountPaid: paid, staff: POS.staffName, order: kioskOrder });
+            syncRegisterToServer();
+
+            // Print receipt
+            if (printCount > 0) printReceipt(kioskOrder, printCount);
+
+            // Clear cart & kiosk ref
+            POS.cart = []; POS.selectedCartIdx = -1;
+            POS.discount = { type: null, value: 0, name: '' };
+            POS._kioskOrderRef = null;
+            renderOrderList();
+
+            toast(`Kiosk ${kioskOrderNum} paid — ${fp(total)} (${payMethod.toUpperCase()})`, 'success');
+            updateKioskBadge();
+
+            // Cash: open drawer + show change popup if needed
+            if (payMethod === 'cash') {
+                openCashDrawer();
+                if (change > 0.005) {
+                    showChangePopup(change, paid, total);
+                    return; // changePopup OK will go to main
+                }
+            }
+            showScreen('screenMainMenu');
+            return;
+        }
+        POS._kioskOrderRef = null; // fallback: not found, treat as new order
+    }
 
     POS.dailyOrderCount++;
     const orderNum = POS.branch + '-' + String(POS.dailyOrderCount).padStart(3, '0');
-    const now = new Date();
 
     const orderData = {
         orderNumber: orderNum,
         branchCode: POS.branch,
         branchName: POS.branchName,
         orderType: POS.orderType,
-        items: POS.cart.map(c => ({
-            nameEn: c.nameEn, nameKr: c.nameKr,
-            quantity: c.quantity, unitPrice: c.unitPrice,
-            totalPrice: c.free ? 0 : c.totalPrice,
-            vatRate: c.vatRate || 20,
-            note: c.note, free: c.free,
-        })),
+        items: aggregateCartItems(POS.cart),
         subtotal: POS.cart.reduce((s, i) => s + (i.free ? 0 : i.totalPrice), 0),
         discount: POS.discount,
         total: total,
@@ -2121,36 +2406,140 @@ function completePayment(printCount) {
     // Clear cart
     POS.cart = []; POS.selectedCartIdx = -1;
     POS.discount = { type: null, value: 0, name: '' };
+    renderOrderList();
 
     toast(`Order ${orderNum} completed — ${fp(total)} (${payMethod.toUpperCase()})`, 'success');
+    updateKioskBadge();
+
+    // Cash: open drawer + show change popup if needed
+    if (payMethod === 'cash') {
+        openCashDrawer();
+        if (change > 0.005) {
+            showChangePopup(change, paid, total);
+            return; // changePopup OK will go to main
+        }
+    }
     showScreen('screenMainMenu');
 }
 
-function printReceipt(order, count) {
+// ═══════════════════════════════════════════
+//  CASH DRAWER & CHANGE POPUP
+// ═══════════════════════════════════════════
+function openCashDrawer() {
+    // ESC/POS command to open cash drawer: ESC p 0 25 250
+    // Send via hidden iframe print to POS printer, or via server API
+    try {
+        // Method: Send raw ESC/POS command via server
+        fetch('/api/cashdrawer', { method: 'POST' }).catch(() => {});
+        console.log('[POS] Cash drawer open command sent');
+    } catch (e) {
+        console.warn('[POS] Cash drawer open failed:', e);
+    }
+}
+
+let _changePopupTimer = null;
+function showChangePopup(changeAmount, paid, total) {
+    document.getElementById('changeAmount').textContent = fp(changeAmount);
+    document.getElementById('changeDetail').textContent = `Paid ${fp(paid)} — Total ${fp(total)}`;
+    document.getElementById('changePopup').classList.add('active');
+    let countdown = 10;
+    document.getElementById('changeTimer').textContent = `Auto-close in ${countdown}s`;
+    _changePopupTimer = setInterval(() => {
+        countdown--;
+        document.getElementById('changeTimer').textContent = `Auto-close in ${countdown}s`;
+        if (countdown <= 0) closeChangePopup();
+    }, 1000);
+}
+
+function closeChangePopup() {
+    if (_changePopupTimer) { clearInterval(_changePopupTimer); _changePopupTimer = null; }
+    document.getElementById('changePopup').classList.remove('active');
+    showScreen('screenMainMenu');
+}
+
+// ═══════════════════════════════════════════
+//  PICKUP READY — Beep Sound + Badge Alert
+// ═══════════════════════════════════════════
+function playPickupBeep() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        [0, 300, 600].forEach(delay => {
+            setTimeout(() => {
+                const osc = ctx.createOscillator();
+                const gain = ctx.createGain();
+                osc.connect(gain); gain.connect(ctx.destination);
+                osc.frequency.value = 880;
+                gain.gain.value = 0.3;
+                osc.start(ctx.currentTime);
+                osc.stop(ctx.currentTime + 0.15);
+            }, delay);
+        });
+    } catch(e) {}
+}
+
+function getPaidReadyKioskOrders() {
+    return getKioskOrders().filter(o => {
+        const isPaid = o.paymentStatus === 'paid' || o.paymentMethod === 'cash' || o.paymentMethod === 'card';
+        return isPaid && o.status === 'ready' && !o.pickedUp;
+    });
+}
+
+function checkPickupReady(order, newStatus) {
+    // PAID + Kitchen Ready/Done → Beep + Toast + Badge update
+    if (!order) return;
+    const isPaid = order.paymentStatus === 'paid' || order.paymentMethod === 'cash' || order.paymentMethod === 'card';
+    const isReady = (newStatus === 'ready' || newStatus === 'done');
+    const isKiosk = order.source === 'kiosk';
+    if (isPaid && isReady && isKiosk) {
+        playPickupBeep();
+        const name = order.customerName || 'Customer';
+        toast(`🔔 PICKUP ${order.orderNumber} — ${name}`, 'success', 8000);
+        updateKioskBadge();
+    }
+}
+
+async function printReceipt(order, count) {
     const b = BRANCHES.find(x => x.code === order.branchCode);
-    document.getElementById('receiptBranch').textContent = b ? b.name : order.branchCode;
+    const branchName = b ? b.name : order.branchCode;
+
+    // ★ Try direct ESC/POS print first (no preview)
+    try {
+        const resp = await fetch('/api/print', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'receipt', order, branchName, copies: count })
+        });
+        const result = await resp.json();
+        if (result.success) {
+            console.log(`[Print] Receipt ${order.orderNumber} → ${result.target} (${count}x)`);
+            return; // Direct print success — skip browser print
+        }
+        console.warn('[Print] Direct print failed:', result.error);
+    } catch (e) {
+        console.warn('[Print] Direct print unavailable:', e.message);
+    }
+
+    // ★ Fallback: browser window.print() — show warning
+    toast('Direct print failed — using browser print', 'warn');
+    document.getElementById('receiptBranch').textContent = branchName;
     document.getElementById('receiptDate').textContent = new Date(order.timestamp).toLocaleString('en-GB');
     document.getElementById('receiptOrderNum').textContent = order.orderNumber;
     document.getElementById('receiptType').textContent = order.orderType === 'eat_in' ? 'Eat In' : 'Take Away';
     document.getElementById('receiptStaff').textContent = order.staff;
-
     document.getElementById('receiptItems').innerHTML = order.items.map(item =>
-        `<div class="r-row"><span>${item.quantity}x ${item.nameEn}</span><span>${item.free ? 'FREE' : fp(item.totalPrice)}</span></div>`
+        `<div class="r-row"><span>${item.quantity > 1 ? item.quantity + 'x ' : ''}${item.nameEn}</span><span>${item.free ? 'FREE' : fp(item.totalPrice)}</span></div>`
     ).join('');
-
     document.getElementById('receiptSubtotal').textContent = fp(order.subtotal);
     const discAmt = order.subtotal - order.total;
     if (discAmt > 0) {
         document.getElementById('receiptDiscountRow').style.display = '';
         document.getElementById('receiptDiscount').textContent = '-' + fp(discAmt);
     } else document.getElementById('receiptDiscountRow').style.display = 'none';
-
     const orderVat = calcVatBreakdown([order]);
     document.getElementById('receiptVat').textContent = fp(orderVat.totalVat);
     document.getElementById('receiptTotal').textContent = fp(order.total);
     document.getElementById('receiptPaid').textContent = fp(order.amountPaid);
     document.getElementById('receiptChange').textContent = fp(order.change);
-
     document.getElementById('receiptPrint').style.display = 'block';
     for (let i = 0; i < count; i++) {
         setTimeout(() => window.print(), i * 500);
@@ -2158,16 +2547,131 @@ function printReceipt(order, count) {
     setTimeout(() => { document.getElementById('receiptPrint').style.display = 'none'; }, count * 600);
 }
 
+// ★ Direct print for cash drawer
+async function openCashDrawerDirect() {
+    try {
+        const resp = await fetch('/api/print', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'open_drawer' })
+        });
+        const result = await resp.json();
+        if (result.success) console.log('[Print] Cash drawer opened');
+        else console.warn('[Print] Drawer open failed:', result.error);
+    } catch (e) { console.warn('[Print] Drawer command error:', e.message); }
+}
+
 // ═══════════════════════════════════════════
 //  TAKINGS / REPORTS
 // ═══════════════════════════════════════════
-let takingsPeriod = 'daily', takingsView = 'overview';
+let takingsView = 'overview';
+let takingsRangeFrom = null, takingsRangeTo = null;
+let takingsFilteredOrders = null; // cached filtered orders
 
-function switchTakingsPeriod(p) {
-    takingsPeriod = p;
-    document.querySelectorAll('.takings-period-tab').forEach(t => t.classList.toggle('active', t.dataset.period === p));
+// Quick period shortcuts
+function setTakingsQuick(period) {
+    const now = new Date();
+    document.querySelectorAll('.takings-quick-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    if (period === 'today') {
+        takingsRangeFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+        takingsRangeTo = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    } else if (period === 'yesterday') {
+        const y = new Date(now); y.setDate(y.getDate() - 1);
+        takingsRangeFrom = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 0, 0, 0);
+        takingsRangeTo = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 23, 59, 59);
+    } else if (period === 'week') {
+        const day = now.getDay(); // 0=Sun
+        const mon = new Date(now); mon.setDate(mon.getDate() - ((day + 6) % 7)); // Monday
+        takingsRangeFrom = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate(), 0, 0, 0);
+        takingsRangeTo = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    } else if (period === 'month') {
+        takingsRangeFrom = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+        takingsRangeTo = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    }
+    updateTakingsRangeUI();
+    loadTakingsData();
+}
+
+async function pickTakingsFrom() {
+    document.querySelectorAll('.takings-quick-btn').forEach(b => b.classList.remove('active'));
+    const d = await touchDateTimePicker('FROM Date/Time', takingsRangeFrom || new Date());
+    if (!d) return;
+    takingsRangeFrom = d;
+    updateTakingsRangeUI();
+}
+async function pickTakingsTo() {
+    document.querySelectorAll('.takings-quick-btn').forEach(b => b.classList.remove('active'));
+    const d = await touchDateTimePicker('TO Date/Time', takingsRangeTo || new Date());
+    if (!d) return;
+    takingsRangeTo = d;
+    updateTakingsRangeUI();
+}
+function applyTakingsRange() {
+    if (!takingsRangeFrom || !takingsRangeTo) { toast('Set FROM and TO first', 'error'); return; }
+    loadTakingsData();
+}
+function updateTakingsRangeUI() {
+    const fmt = d => d ? d.toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '---';
+    document.getElementById('takingsFromBtn').textContent = takingsRangeFrom ? fmt(takingsRangeFrom) : 'FROM';
+    document.getElementById('takingsToBtn').textContent = takingsRangeTo ? fmt(takingsRangeTo) : 'TO';
+    const label = document.getElementById('takingsRangeLabel');
+    if (takingsRangeFrom && takingsRangeTo) {
+        label.textContent = fmt(takingsRangeFrom) + ' ~ ' + fmt(takingsRangeTo);
+    }
+}
+
+async function loadTakingsData() {
+    if (!takingsRangeFrom || !takingsRangeTo) return;
+    const el = document.getElementById('takingsContent');
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:#9CA3AF">Loading...</div>';
+
+    const fromISO = takingsRangeFrom.toISOString();
+    const toISO = takingsRangeTo.toISOString();
+    const today = new Date().toISOString().slice(0, 10);
+    const fromDate = takingsRangeFrom.toISOString().slice(0, 10);
+    const toDate = takingsRangeTo.toISOString().slice(0, 10);
+
+    let allOrders = [];
+
+    // If range includes today, include live POS orders
+    // ★ Combine POS.orders + POS.completedOrders (deduped) — same as renderAllOrders
+    if (today >= fromDate && today <= toDate) {
+        const combined = [...POS.orders, ...POS.completedOrders.filter(o => !POS.orders.find(p => p.orderNumber === o.orderNumber))];
+        allOrders = combined;
+    }
+
+    // Fetch historical data from server for dates before today
+    if (fromDate < today) {
+        try {
+            const resp = await fetch(`/api/orders-since?since=${fromISO}&branch=${POS.branch}`);
+            if (resp.ok) {
+                const data = await resp.json();
+                // ★ Server returns plain array, handle both formats
+                const rawOrders = Array.isArray(data) ? data : (data.orders || []);
+                const serverOrders = rawOrders.filter(o => {
+                    const t = new Date(o.timestamp);
+                    return t >= takingsRangeFrom && t <= takingsRangeTo;
+                });
+                // Merge: add server orders not already in live list
+                const liveNums = new Set(allOrders.map(o => o.orderNumber));
+                serverOrders.forEach(o => { if (!liveNums.has(o.orderNumber)) allOrders.push(o); });
+            }
+        } catch (e) { console.warn('[Takings] fetch error:', e.message); }
+    }
+
+    // Filter by time range
+    takingsFilteredOrders = allOrders.filter(o => {
+        const t = new Date(o.timestamp);
+        return t >= takingsRangeFrom && t <= takingsRangeTo;
+    });
+
+    // Filter to branch
+    takingsFilteredOrders = takingsFilteredOrders.filter(o => !o.branchCode || o.branchCode === POS.branch);
+
     renderTakings();
 }
+
 function switchTakingsView(v) {
     takingsView = v;
     document.querySelectorAll('.takings-sub-tab').forEach(t => t.classList.toggle('active', t.dataset.view === v));
@@ -2176,24 +2680,28 @@ function switchTakingsView(v) {
 
 function renderTakings() {
     const el = document.getElementById('takingsContent');
-    const orders = POS.completedOrders;
-    const totalSales = orders.reduce((s, o) => s + o.total, 0);
+    // Use filtered orders if available, otherwise combine all live orders
+    const orders = takingsFilteredOrders || [...POS.orders, ...POS.completedOrders.filter(o => !POS.orders.find(p => p.orderNumber === o.orderNumber))];
+    // ★ Separate paid vs unpaid orders for accurate sales calculation
+    const paidOrders = orders.filter(o => o.paymentMethod === 'cash' || o.paymentMethod === 'card' || o.paymentStatus === 'paid');
+    const unpaidOrders = orders.filter(o => !o.paymentMethod || o.paymentMethod === 'not_paid');
     const cashOrders = orders.filter(o => o.paymentMethod === 'cash');
     const cardOrders = orders.filter(o => o.paymentMethod === 'card');
     const cashTotal = cashOrders.reduce((s, o) => s + o.total, 0);
     const cardTotal = cardOrders.reduce((s, o) => s + o.total, 0);
+    const totalSales = cashTotal + cardTotal;
     const takeawayOrders = orders.filter(o => o.orderType === 'takeaway');
     const eatInOrders = orders.filter(o => o.orderType === 'eat_in');
 
     if (takingsView === 'overview') {
         el.innerHTML = `
             <div class="takings-stat-grid">
-                <div class="takings-stat-card"><div class="takings-stat-val">${orders.length}</div><div class="takings-stat-label">Total Orders</div></div>
+                <div class="takings-stat-card"><div class="takings-stat-val">${paidOrders.length}${unpaidOrders.length > 0 ? ` <span style="font-size:14px;color:#F97316">(+${unpaidOrders.length} unpaid)</span>` : ''}</div><div class="takings-stat-label">Paid Orders</div></div>
                 <div class="takings-stat-card"><div class="takings-stat-val">${fp(totalSales)}</div><div class="takings-stat-label">Total Sales</div></div>
                 <div class="takings-stat-card"><div class="takings-stat-val">${fp(cashTotal)}</div><div class="takings-stat-label">Cash</div></div>
                 <div class="takings-stat-card"><div class="takings-stat-val">${fp(cardTotal)}</div><div class="takings-stat-label">Card</div></div>
-                <div class="takings-stat-card"><div class="takings-stat-val">${fp(calcVatBreakdown(orders).totalVat)}</div><div class="takings-stat-label">VAT Total</div></div>
-                <div class="takings-stat-card"><div class="takings-stat-val">${orders.length > 0 ? fp(totalSales / orders.length) : '£0.00'}</div><div class="takings-stat-label">Avg Order</div></div>
+                <div class="takings-stat-card"><div class="takings-stat-val">${fp(calcVatBreakdown(paidOrders).totalVat)}</div><div class="takings-stat-label">VAT Total</div></div>
+                <div class="takings-stat-card"><div class="takings-stat-val">${paidOrders.length > 0 ? fp(totalSales / paidOrders.length) : '£0.00'}</div><div class="takings-stat-label">Avg Order</div></div>
             </div>
             <table class="takings-table">
                 <thead><tr><th>Description</th><th>Quantity</th><th>Amount</th></tr></thead>
@@ -2244,7 +2752,7 @@ function renderTakings() {
             ${sorted.length === 0 ? '<div style="text-align:center;color:#6B7280;padding:20px">No sales data yet</div>' : ''}
         `;
     } else if (takingsView === 'vat') {
-        const vb = calcVatBreakdown(orders);
+        const vb = calcVatBreakdown(paidOrders);
         const rateKeys = Object.keys(vb.byRate).sort((a,b) => Number(b) - Number(a));
         el.innerHTML = `
             <div class="takings-stat-grid">
@@ -2261,37 +2769,155 @@ function renderTakings() {
             </table>
             <div class="takings-total-bar"><span class="label">TOTAL VAT</span><span class="value">${fp(vb.totalVat)}</span></div>
         `;
-    } else if (takingsView === 'register') {
+    } else if (takingsView === 'end_sales') {
+        // END Sales tab — show last END sales info, history, and action button
         const r = POS.register;
-        const regTotalSales = r.cashSales + r.cardSales;
-        const expectedCash = r.openingFloat + r.cashSales;
-        if (!r.isOpen) {
-            el.innerHTML = `
-                <div class="register-card"><h3>Cash Register — CLOSED</h3>
-                    <p style="color:#9CA3AF;margin-bottom:16px">Open the register to start tracking cash</p>
+        const lastES = r.lastEndSalesAt ? new Date(r.lastEndSalesAt).toLocaleString('en-GB') : 'Never';
+
+        el.innerHTML = `
+            <div style="background:#FEF2F2;border:2px solid #DC2626;border-radius:12px;padding:20px;margin-bottom:16px">
+                <h3 style="color:#DC2626;margin:0 0 12px 0;font-size:18px">END SALES</h3>
+                <div style="display:flex;gap:20px;flex-wrap:wrap">
+                    <div><span style="color:#6B7280;font-size:12px">Branch</span><div style="font-weight:700;font-size:15px">${POS.branchName || POS.branch}</div></div>
+                    <div><span style="color:#6B7280;font-size:12px">Last END Sales</span><div style="font-weight:700;font-size:15px;color:#DC2626">${lastES}</div></div>
+                    <div><span style="color:#6B7280;font-size:12px">Cash Drawer Float</span><div style="font-weight:700;font-size:15px">£100.00</div></div>
                 </div>
-                <button class="register-btn open" onclick="openRegister()">OPEN REGISTER</button>
-                <button class="register-btn eod" onclick="endOfDay()" style="margin-top:12px;background:#4A1D96;color:#fff">END OF DAY</button>
-            `;
-        } else {
-            el.innerHTML = `
-                <div class="register-card"><h3>Cash Register — OPEN</h3>
-                    <div class="register-row"><span class="label">Opening Float</span><span class="val green">${fp(r.openingFloat)}</span></div>
-                    <div class="register-row"><span class="label">Cash Sales</span><span class="val green">${fp(r.cashSales)}</span></div>
-                    <div class="register-row"><span class="label">Card Sales</span><span class="val">${fp(r.cardSales)}</span></div>
-                    <div class="register-row"><span class="label">Total Sales</span><span class="val green">${fp(regTotalSales)}</span></div>
-                    <div class="register-row"><span class="label">Expected Cash in Till</span><span class="val green">${fp(expectedCash)}</span></div>
+            </div>
+            <div style="display:flex;gap:12px;margin-bottom:20px">
+                <button class="register-btn close" onclick="endSales()" style="flex:1;background:#DC2626;font-weight:700;font-size:16px;padding:16px">END SALES NOW</button>
+            </div>
+
+            <div style="background:#F0F9FF;border:2px solid #2563EB;border-radius:12px;padding:16px;margin-bottom:20px">
+                <h4 style="color:#2563EB;margin:0 0 12px 0;font-size:15px">Custom Range Report</h4>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+                    <div style="flex:1;min-width:140px">
+                        <div style="font-size:11px;color:#6B7280;margin-bottom:4px">FROM</div>
+                        <button onclick="pickCustomRangeFrom()" style="width:100%;padding:12px;border:2px solid #D1D5DB;border-radius:10px;background:#fff;font-size:13px;font-weight:600;cursor:pointer;text-align:center;color:#374151" id="crFromLabel">Tap to select</button>
+                    </div>
+                    <div style="flex:1;min-width:140px">
+                        <div style="font-size:11px;color:#6B7280;margin-bottom:4px">TO</div>
+                        <button onclick="pickCustomRangeTo()" style="width:100%;padding:12px;border:2px solid #D1D5DB;border-radius:10px;background:#fff;font-size:13px;font-weight:600;cursor:pointer;text-align:center;color:#374151" id="crToLabel">Tap to select</button>
+                    </div>
                 </div>
-                <div class="register-card"><h3>Recent Transactions</h3>
-                    ${r.transactions.length === 0 ? '<div style="color:#6B7280">No transactions yet</div>' :
-                        r.transactions.slice(-10).reverse().map(t =>
-                            `<div class="register-row"><span class="label">${t.time} — ${t.orderNum}</span><span class="val${t.method==='cash'?' green':''}">${t.method.toUpperCase()} ${fp(t.amount)}</span></div>`
-                        ).join('')}
-                </div>
-                <button class="register-btn close" onclick="closeRegister()">CLOSE REGISTER</button>
-                <button class="register-btn eod" onclick="endSales()" style="margin-top:12px;background:#DC2626;color:#fff;font-weight:700">END SALES</button>
-            `;
+                <button onclick="runCustomRangeReport()" style="width:100%;padding:12px;background:#2563EB;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">GET REPORT</button>
+                <div id="crResultBody" style="margin-top:12px"></div>
+            </div>
+
+            <div style="margin-bottom:12px">
+                <h4 style="color:#374151;margin:0 0 8px 0">END Sales History</h4>
+                <div id="endSalesHistoryBody" style="color:#9CA3AF;font-size:13px">Loading...</div>
+            </div>
+        `;
+        // Load history from server
+        loadEndSalesHistory();
+    }
+}
+
+async function loadEndSalesHistory() {
+    const el = document.getElementById('endSalesHistoryBody');
+    if (!el) return;
+    try {
+        const resp = await fetch('/api/end-sales-log');
+        if (!resp.ok) { el.innerHTML = '<div style="color:#9CA3AF">No history available</div>'; return; }
+        const log = await resp.json();
+        const myLog = log.filter(e => e.branchCode === POS.branch).reverse();
+        if (myLog.length === 0) {
+            el.innerHTML = '<div style="color:#9CA3AF;padding:10px;text-align:center">No END Sales records yet</div>';
+            return;
         }
+        el.innerHTML = `
+            <table class="takings-table">
+                <thead><tr><th>Date/Time</th><th>Period</th><th>Orders</th><th>Cash</th><th>Card</th><th>Total</th><th>VAT</th><th></th></tr></thead>
+                <tbody>
+                    ${myLog.slice(0, 50).map(e => {
+                        const dt = new Date(e.timestamp).toLocaleString('en-GB', {day:'2-digit',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit'});
+                        const from = e.periodFrom ? new Date(e.periodFrom).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) : 'Start';
+                        const to = new Date(e.periodTo).toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
+                        const hasId = e.id ? `onclick="viewEndSalesDetail('${e.id}')" style="cursor:pointer"` : '';
+                        return `<tr ${hasId}>
+                            <td style="font-size:12px">${dt}</td>
+                            <td style="font-size:11px;color:#6B7280">${from} → ${to}</td>
+                            <td>${e.totalOrders || 0}</td>
+                            <td class="val-green">${fp(e.cashTotal || 0)}</td>
+                            <td class="val-green">${fp(e.cardTotal || 0)}</td>
+                            <td class="val-highlight" style="font-weight:700">${fp(e.grandTotal || 0)}</td>
+                            <td>${fp(e.vatTotal || 0)}</td>
+                            <td>${e.id ? '<span style="color:#006AFF;font-size:11px">Detail</span>' : ''}</td>
+                        </tr>`;
+                    }).join('')}
+                </tbody>
+            </table>
+        `;
+    } catch (e) {
+        el.innerHTML = `<div style="color:#DC2626">Failed to load history</div>`;
+    }
+}
+
+async function viewEndSalesDetail(esId) {
+    const el = document.getElementById('takingsContent');
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:#9CA3AF">Loading...</div>';
+    try {
+        const resp = await fetch(`/api/end-sales-detail?id=${esId}`);
+        if (!resp.ok) { toast('Record not found', 'error'); renderTakings(); return; }
+        const rec = await resp.json();
+        const s = rec.summary;
+        const fromStr = rec.periodFrom ? new Date(rec.periodFrom).toLocaleString('en-GB') : 'Start';
+        const toStr = new Date(rec.periodTo).toLocaleString('en-GB');
+        const rateKeys = s.vatBreakdown ? Object.keys(s.vatBreakdown).sort((a,b) => Number(b) - Number(a)) : [];
+
+        let html = `
+            <div style="background:#F0F9FF;border:2px solid #2563EB;border-radius:12px;padding:16px;margin-bottom:12px">
+                <h3 style="color:#2563EB;margin:0 0 6px 0;font-size:16px">END Sales Detail — ${rec.branchName}</h3>
+                <div style="font-size:12px;color:#6B7280">Period: ${fromStr} → ${toStr}</div>
+                <div style="font-size:11px;color:#9CA3AF">ID: ${rec.id}${rec.staff ? ` · Staff: ${rec.staff.name || rec.staff.id}` : ''}</div>
+            </div>
+            <div class="takings-stat-grid">
+                <div class="takings-stat-card"><div class="takings-stat-val">${s.totalOrders}</div><div class="takings-stat-label">Orders</div></div>
+                <div class="takings-stat-card"><div class="takings-stat-val">${fp(s.cashTotal)}</div><div class="takings-stat-label">Cash (${s.cashCustomers})</div></div>
+                <div class="takings-stat-card"><div class="takings-stat-val">${fp(s.cardTotal)}</div><div class="takings-stat-label">Card (${s.cardCustomers})</div></div>
+                <div class="takings-stat-card"><div class="takings-stat-val">${fp(s.grandTotal)}</div><div class="takings-stat-label">Grand Total</div></div>
+            </div>
+            <div style="background:#ECFDF5;border:2px solid #059669;border-radius:10px;padding:10px;margin:10px 0;display:flex;justify-content:space-between;align-items:center">
+                <span style="font-weight:700;color:#059669;font-size:13px">Cash in Drawer (£100 + Cash)</span>
+                <span style="font-weight:800;color:#059669;font-size:18px">${fp(s.cashInDrawer || (100 + s.cashTotal))}</span>
+            </div>`;
+
+        // VAT breakdown
+        if (rateKeys.length > 0) {
+            html += `<h4 style="margin:12px 0 6px;color:#374151;font-size:13px">VAT Breakdown</h4>
+            <table class="takings-table"><thead><tr><th>Rate</th><th>Net</th><th>VAT</th><th>Gross</th></tr></thead><tbody>
+            ${rateKeys.map(r => `<tr><td>${r}%</td><td>${fp(s.vatBreakdown[r].net)}</td><td class="val-highlight">${fp(s.vatBreakdown[r].vat)}</td><td class="val-green">${fp(s.vatBreakdown[r].gross)}</td></tr>`).join('')}
+            </tbody></table>`;
+        }
+
+        // Item breakdown
+        if (rec.itemBreakdown && rec.itemBreakdown.length > 0) {
+            html += `<h4 style="margin:12px 0 6px;color:#374151;font-size:13px">Item Sales</h4>
+            <table class="takings-table"><thead><tr><th>Item</th><th>Qty</th><th>Revenue</th></tr></thead><tbody>
+            ${rec.itemBreakdown.map(i => `<tr><td>${i.name}</td><td>${i.qty}</td><td class="val-green">${fp(i.total)}</td></tr>`).join('')}
+            </tbody></table>`;
+        }
+
+        // Order list
+        if (rec.orders && rec.orders.length > 0) {
+            html += `<h4 style="margin:12px 0 6px;color:#374151;font-size:13px">Orders (${rec.orders.length})</h4>
+            <table class="takings-table"><thead><tr><th>Order</th><th>Time</th><th>Type</th><th>Payment</th><th>Items</th><th>Total</th></tr></thead><tbody>
+            ${rec.orders.map(o => {
+                const t = new Date(o.timestamp).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
+                const items = o.items.map(i => `${i.qty}x ${i.name}`).join(', ');
+                return `<tr><td style="font-weight:600">${o.orderNumber}</td><td>${t}</td><td>${o.orderType === 'eat_in' ? 'Eat In' : 'Takeaway'}</td><td>${(o.paymentMethod||'').toUpperCase()}</td><td style="font-size:11px;color:#6B7280">${items}</td><td class="val-green">${fp(o.total)}</td></tr>`;
+            }).join('')}
+            </tbody></table>`;
+        }
+
+        html += `<div style="display:flex;gap:12px;margin-top:16px">
+            <button class="register-btn open" onclick="printEndSalesDetail('${rec.id}')" style="flex:1">🖨️ PRINT</button>
+            <button onclick="switchTakingsView('end_sales')" style="flex:1;padding:12px;border:1px solid #D1D5DB;border-radius:8px;background:#fff;font-weight:600;cursor:pointer">← Back to END Sales</button>
+        </div>`;
+        el.innerHTML = html;
+    } catch (e) {
+        toast('Failed to load detail', 'error');
+        renderTakings();
     }
 }
 
@@ -2329,26 +2955,337 @@ function renderAllOrders() {
         return `<div class="order-card ${o.status || 'pending'}">
             <div class="order-card-top">
                 <div class="order-card-num">${o.orderNumber}</div>
-                <div class="order-card-badges">
-                    <span class="order-card-badge ${o.orderType}">${o.orderType === 'eat_in' ? 'Eat In' : 'Takeaway'}</span>
-                    <span class="order-card-badge ${o.status || 'pending'}">${(o.status || 'pending').toUpperCase()}</span>
-                    <span class="order-card-badge ${o.paymentStatus === 'paid' ? 'paid' : 'unpaid'}">${o.paymentStatus === 'paid' ? 'PAID' : 'UNPAID'}</span>
-                </div>
             </div>
-            <div class="order-card-items">${itemsStr}</div>
-            ${o.customerName ? `<div class="order-card-name">Customer: ${o.customerName}</div>` : ''}
-            <div class="order-card-bottom">
-                <div class="order-card-total">${fp(o.total)}</div>
-                <div class="order-card-time">${time} · ${o.source || 'pos'}</div>
+            <div class="order-card-mid">
+                <div class="order-card-items">${itemsStr}${o.customerName ? ` · <span class="order-card-name">${o.customerName}</span>` : ''}</div>
             </div>
+            <div class="order-card-total">${fp(o.total)}</div>
+            <div class="order-card-badges">
+                <span class="order-card-badge ${o.orderType}">${o.orderType === 'eat_in' ? 'Eat In' : 'Takeaway'}</span>
+                <span class="order-card-badge ${o.status || 'pending'}">${(o.status || 'pending').toUpperCase()}</span>
+                <span class="order-card-badge ${o.paymentStatus === 'paid' ? 'paid' : 'unpaid'}">${o.paymentStatus === 'paid' ? 'PAID' : 'UNPAID'}</span>
+            </div>
+            <div class="order-card-time">${time}</div>
             <div class="order-card-actions">
-                ${o.paymentStatus !== 'paid' ? `
-                <button class="order-card-action-btn pay-cash" onclick="payOrderCash('${o.orderNumber}')">Cash</button>
+                ${o.paymentStatus !== 'paid' ? `<button class="order-card-action-btn pay-cash" onclick="payOrderCash('${o.orderNumber}')">Cash</button>
                 <button class="order-card-action-btn pay-card" onclick="payOrderCard('${o.orderNumber}')">Card</button>` : ''}
                 <button class="order-card-action-btn delete" onclick="deleteOrder('${o.orderNumber}')">Delete</button>
+                <button class="order-card-action-btn" style="border-color:#6B7280;color:#6B7280" onclick="reprintOrder('${o.orderNumber}')">Print</button>
             </div>
         </div>`;
     }).join('');
+}
+
+// ─── Reprint receipt for existing order ───
+function reprintOrder(orderNum) {
+    const o = POS.orders.find(x => x.orderNumber === orderNum) ||
+              POS.completedOrders.find(x => x.orderNumber === orderNum);
+    if (!o) { toast('Order not found', 'error'); return; }
+    printReceipt(o, 1);
+}
+async function reprintOrderByDate(orderNum, dateStr) {
+    // First try local
+    let o = POS.orders.find(x => x.orderNumber === orderNum) ||
+            POS.completedOrders.find(x => x.orderNumber === orderNum);
+    if (!o && dateStr) {
+        // Fetch from server
+        try {
+            const resp = await fetch(`/api/orders?date=${dateStr}`);
+            if (resp.ok) {
+                const data = await resp.json();
+                o = (data.orders || []).find(x => x.orderNumber === orderNum);
+            }
+        } catch (e) {}
+    }
+    if (!o) { toast('Order not found', 'error'); return; }
+    printReceipt(o, 1);
+}
+
+// ═══════════════════════════════════════════
+//  KIOSK ORDERS POPUP
+// ═══════════════════════════════════════════
+let kioskPopupOpen = false;
+
+function getKioskOrders() {
+    return POS.orders.filter(o => o.source && o.source !== 'pos');
+}
+
+function getUnpaidKioskOrders() {
+    return getKioskOrders().filter(o => {
+        const isPaid = o.paymentStatus === 'paid' || o.paymentMethod === 'cash' || o.paymentMethod === 'card';
+        return !isPaid;
+    });
+}
+
+function getPendingKioskOrders() {
+    return getKioskOrders().filter(o => o.status === 'pending' || o.status === 'preparing');
+}
+
+function getDoneUnpaidKioskOrders() {
+    return getKioskOrders().filter(o => {
+        const isPaid = o.paymentStatus === 'paid' || o.paymentMethod === 'cash' || o.paymentMethod === 'card';
+        return !isPaid && o.status === 'done';
+    });
+}
+
+function updateKioskBadge() {
+    const unpaidCount = getUnpaidKioskOrders().length;
+    const doneUnpaid = getDoneUnpaidKioskOrders().length;
+    const pickupReady = getPaidReadyKioskOrders().length;
+    const notReady = unpaidCount - doneUnpaid; // pending/preparing
+    const hasReady = doneUnpaid > 0;
+    const hasPickup = pickupReady > 0;
+
+    // Total badge = unpaid + pickup ready
+    const totalBadge = unpaidCount + pickupReady;
+
+    // ── Order screen KIOSK button ──
+    const badge = document.getElementById('kioskBadge');
+    const orderBtn = document.getElementById('kioskOrdersBtn');
+    if (badge && orderBtn) {
+        if (totalBadge > 0) {
+            badge.style.display = '';
+            badge.textContent = totalBadge;
+        } else {
+            badge.style.display = 'none';
+        }
+        // Update button text to show counts
+        let statusText = '';
+        if (hasPickup && hasReady) statusText = `<span style="font-size:10px;color:#DC2626">(${pickupReady} pickup · ${doneUnpaid} ready)</span>`;
+        else if (hasPickup) statusText = `<span style="font-size:10px;color:#F97316">(${pickupReady} pickup)</span>`;
+        else if (hasReady) statusText = `<span style="font-size:10px;color:#DC2626">(${doneUnpaid} ready)</span>`;
+
+        orderBtn.innerHTML = `KIOSK ${statusText} <span id="kioskBadge" style="${totalBadge > 0 ? '' : 'display:none;'}position:absolute;top:-6px;right:-6px;background:${hasPickup ? '#F97316' : '#DC2626'};color:#fff;font-size:10px;font-weight:700;border-radius:50%;width:18px;height:18px;line-height:18px;text-align:center">${totalBadge}</span>`;
+
+        if (hasPickup) {
+            orderBtn.style.borderColor = '#F97316';
+            orderBtn.style.background = '#FFF7ED';
+            orderBtn.style.animation = 'kioskBlink .6s infinite';
+        } else if (hasReady) {
+            orderBtn.style.borderColor = '#DC2626';
+            orderBtn.style.background = '#FEE2E2';
+            orderBtn.style.animation = 'kioskBlink .6s infinite';
+        } else if (unpaidCount > 0) {
+            orderBtn.style.borderColor = '#F59E0B';
+            orderBtn.style.background = '#FEF3C7';
+            orderBtn.style.animation = 'none';
+        } else {
+            orderBtn.style.borderColor = '#22C55E';
+            orderBtn.style.background = '#ECFDF5';
+            orderBtn.style.animation = 'none';
+        }
+    }
+
+    // ── Main menu KIOSK button ──
+    const totalKiosk = getKioskOrders().filter(o => {
+        const paid = o.paymentStatus === 'paid' || o.paymentMethod === 'cash' || o.paymentMethod === 'card';
+        return !(paid && (o.pickedUp || o.status === 'done'));
+    }).length;
+    const mainBtn = document.getElementById('mainKioskBtn');
+    const mainBadge = document.getElementById('mainKioskBadge');
+    if (mainBtn) {
+        if (mainBadge) {
+            if (totalKiosk > 0) {
+                mainBadge.style.display = '';
+                mainBadge.textContent = totalKiosk;
+            } else {
+                mainBadge.style.display = 'none';
+            }
+        }
+        // Build detail lines
+        const iconDiv = mainBtn.querySelector('.btn-icon');
+        if (iconDiv) {
+            const lines = [];
+            if (totalKiosk > 0) lines.push(`<b>${totalKiosk} Orders</b>`);
+            if (unpaidCount > 0) lines.push(`${unpaidCount} Waiting for pay`);
+            if (pickupReady > 0) lines.push(`${pickupReady} Ready for pickup`);
+            if (hasReady && doneUnpaid > 0) lines.push(`${doneUnpaid} Food ready · unpaid`);
+
+            let label = 'KIOSK';
+            if (lines.length > 0) {
+                label = `KIOSK<br><span style="font-size:clamp(10px,1.2vw,13px);color:rgba(255,255,255,.9);line-height:1.5;font-weight:400">${lines.join('<br>')}</span>`;
+            }
+            while (iconDiv.nextSibling) iconDiv.nextSibling.remove();
+            const span = document.createElement('span');
+            span.innerHTML = label;
+            mainBtn.appendChild(span);
+        }
+
+        if (hasPickup) {
+            mainBtn.classList.add('blinking');
+            mainBtn.style.background = '#F97316';
+        } else if (hasReady) {
+            mainBtn.classList.add('blinking');
+            mainBtn.style.background = '#DC2626';
+        } else if (unpaidCount > 0) {
+            mainBtn.classList.remove('blinking');
+            mainBtn.style.background = '#F59E0B';
+        } else {
+            mainBtn.classList.remove('blinking');
+            mainBtn.style.background = '#22C55E';
+        }
+    }
+}
+
+function openKioskPopup() {
+    kioskPopupOpen = true;
+    const overlay = document.getElementById('kioskPopupOverlay');
+    overlay.classList.add('active');
+    renderKioskPopup();
+}
+
+function closeKioskPopup() {
+    kioskPopupOpen = false;
+    document.getElementById('kioskPopupOverlay').classList.remove('active');
+}
+
+function toggleKioskPanel() { openKioskPopup(); }
+
+// Main menu KIOSK button → go to order screen and open kiosk popup
+function gotoKioskFromMain() {
+    showScreen('screenOrder');
+    renderOrderMenu();
+    updateKioskBadge();
+    setTimeout(() => openKioskPopup(), 200);
+}
+
+function renderKioskPopup() {
+    const unpaid = getUnpaidKioskOrders().sort((a, b) => new Date(a.timestamp || a.createdAt) - new Date(b.timestamp || b.createdAt));
+    const paid = getKioskOrders().filter(o => {
+        const isPaid = o.paymentStatus === 'paid' || o.paymentMethod === 'cash' || o.paymentMethod === 'card';
+        return isPaid;
+    }).sort((a, b) => new Date(b.timestamp || b.createdAt) - new Date(a.timestamp || a.createdAt));
+    const body = document.getElementById('kioskPopupBody');
+    document.getElementById('kioskPopupCount').textContent = `${unpaid.length} unpaid`;
+
+    if (unpaid.length === 0 && paid.length === 0) {
+        body.innerHTML = '<div style="text-align:center;color:#9CA3AF;padding:40px;font-size:15px">No kiosk orders</div>';
+        return;
+    }
+
+    let html = '';
+    if (unpaid.length > 0) {
+        html += '<div style="font-size:11px;font-weight:700;color:#DC2626;padding:6px 8px;background:#FEE2E2;border-radius:6px;margin-bottom:8px">UNPAID — tap to load into POS</div>';
+        html += unpaid.map(o => renderKioskPopupCard(o, false)).join('');
+    }
+    // PAID 분리: pickedUp 아닌 것 / pickedUp 된 것
+    const paidNotPickedUp = paid.filter(o => !o.pickedUp && o.status !== 'done');
+    const paidPickedUp = paid.filter(o => o.pickedUp || o.status === 'done');
+    if (paidNotPickedUp.length > 0) {
+        html += '<div style="font-size:11px;font-weight:700;color:#059669;padding:6px 8px;background:#ECFDF5;border-radius:6px;margin:10px 0 8px">PAID — waiting for pickup</div>';
+        html += paidNotPickedUp.map(o => renderKioskPopupCard(o, true)).join('');
+    }
+    if (paidPickedUp.length > 0) {
+        html += '<div style="font-size:11px;font-weight:700;color:#6B7280;padding:6px 8px;background:#F3F4F6;border-radius:6px;margin:10px 0 8px">PICKED UP ✅</div>';
+        html += paidPickedUp.slice(0, 5).map(o => renderKioskPopupCard(o, true)).join('');
+    }
+    body.innerHTML = html;
+}
+
+function renderKioskPopupCard(o, isPaid) {
+    const time = new Date(o.timestamp || o.createdAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+    const itemLines = [];
+    (o.items || []).forEach(i => {
+        const qty = i.quantity || 1;
+        const name = i.nameEn || i.name;
+        for (let k = 0; k < qty; k++) itemLines.push(name);
+    });
+    const itemsStr = itemLines.slice(0, 5).join(', ') + (itemLines.length > 5 ? ` +${itemLines.length - 5}` : '');
+
+    const isDone = o.status === 'done';
+    // Done+unpaid = reddish (urgent: ready but not paid), paid = light green, others = white
+    let bgColor = '#fff';
+    let borderColor = '#F59E0B';
+    if (isPaid) { bgColor = '#F0FFF4'; borderColor = '#22C55E'; }
+    else if (isDone) { bgColor = '#FEE2E2'; borderColor = '#DC2626'; }
+
+    const cursor = isPaid ? 'default' : 'pointer';
+    const clickAction = isPaid ? '' : `onclick="loadKioskOrderToCart('${o.orderNumber}')"`;
+    const hoverBg = isDone ? '#FECACA' : '#FEF3C7';
+
+    return `<div ${clickAction} style="background:${bgColor};border:1px solid #E5E7EB;border-left:4px solid ${borderColor};border-radius:8px;padding:10px 14px;margin-bottom:6px;cursor:${cursor};${!isPaid ? 'transition:background .15s;' : ''}" ${!isPaid ? `onmouseenter="this.style.background='${hoverBg}'" onmouseleave="this.style.background='${bgColor}'"` : ''}>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+            <div style="display:flex;align-items:center;gap:8px">
+                <span style="font-weight:700;font-size:15px;color:#1F2937">${o.orderNumber}</span>
+                ${o.customerName ? `<span style="font-size:14px;color:#006AFF;font-weight:700;background:#EFF6FF;padding:2px 8px;border-radius:6px">${o.customerName}</span>` : ''}
+            </div>
+            <div style="display:flex;gap:4px;align-items:center">
+                ${isDone && !isPaid ? '<span style="font-size:10px;padding:2px 6px;border-radius:8px;font-weight:700;background:#DC2626;color:#fff">🔥 READY</span>' : ''}
+                <span style="font-size:10px;padding:2px 6px;border-radius:8px;font-weight:600;background:${isPaid ? '#D1FAE5;color:#047857' : '#FEE2E2;color:#DC2626'}">${isPaid ? 'PAID' : 'UNPAID'}</span>
+                <span style="font-size:11px;color:#9CA3AF">${time}</span>
+            </div>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+            <div style="font-size:12px;color:#6B7280;flex:1">${itemsStr}</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-left:12px">
+                <span style="font-weight:700;font-size:16px;color:#1F2937">${fp(o.total)}</span>
+                ${isPaid && !o.pickedUp && o.status !== 'done' ? `<button onclick="event.stopPropagation();markPickedUp('${o.orderNumber}')" style="padding:4px 12px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:#F97316;color:#fff;white-space:nowrap">PICKED UP</button>` : ''}
+                ${o.pickedUp || (isPaid && o.status === 'done') ? '<span style="font-size:11px;color:#059669;font-weight:700">✅</span>' : ''}
+            </div>
+        </div>
+    </div>`;
+}
+
+// ★ 픽업 완료 처리
+function markPickedUp(orderNum) {
+    const o = POS.orders.find(x => x.orderNumber === orderNum);
+    if (!o) return;
+    o.pickedUp = true;
+    // 서버에 상태 전파
+    wsSend({ type: 'order_status', orderNumber: orderNum, status: 'done', pickedUp: true });
+    toast(`✅ ${orderNum} PICKED UP`, 'success');
+    updateKioskBadge();
+    if (kioskPopupOpen) renderKioskPopup();
+    if (POS.currentScreen === 'screenOrders') renderAllOrders();
+}
+
+// Load kiosk order items into POS cart for normal payment processing
+function loadKioskOrderToCart(orderNum) {
+    const o = POS.orders.find(x => x.orderNumber === orderNum);
+    if (!o) { toast('Order not found', 'error'); return; }
+
+    // Clear current cart
+    POS.cart = [];
+    POS.selectedCartIdx = -1;
+    POS.discount = { type: null, value: 0, name: '' };
+
+    // Load items into cart — 1 unit per line
+    (o.items || []).forEach(item => {
+        const qty = item.quantity || 1;
+        const unitPrice = item.unitPrice || item.price || (item.totalPrice / qty);
+        for (let k = 0; k < qty; k++) {
+            POS.cart.push({
+                id: item.id || item.nameEn || item.name,
+                nameEn: item.nameEn || item.name,
+                nameKr: item.nameKr || '',
+                unitPrice: unitPrice,
+                quantity: 1,
+                totalPrice: unitPrice,
+                vatRate: item.vatRate || 20,
+                note: item.note || '',
+                free: item.free || false
+            });
+        }
+    });
+
+    // Set order type from kiosk order
+    POS.orderType = o.orderType || 'takeaway';
+    const btn = document.getElementById('orderTypeToggle');
+    if (btn) {
+        btn.textContent = POS.orderType === 'takeaway' ? 'TAKE AWAY' : 'EAT IN';
+        btn.className = 'order-topbar-type ' + POS.orderType;
+    }
+
+    // Store reference to kiosk order so payment completion can update it
+    POS._kioskOrderRef = orderNum;
+
+    // Close popup and go to order screen
+    closeKioskPopup();
+    showScreen('screenOrder');
+    renderOrderMenu();
+    renderOrderList();
+
+    toast(`Loaded ${orderNum} — ${fp(o.total)}. Press FINISH to take payment.`, 'info');
 }
 
 // ─── Delete single order ───
@@ -2575,7 +3512,7 @@ async function selectCalendarDay(dateStr) {
     const cardTotal = orders.filter(o => o.paymentMethod === 'card').reduce((s, o) => s + (o.total || 0), 0);
     const grandTotal = orders.reduce((s, o) => s + (o.total || 0), 0);
 
-    let html = `<div style="padding:10px 0;border-bottom:1px solid #E5E7EB;margin-bottom:10px;display:flex;gap:16px;flex-wrap:wrap;font-size:13px;font-weight:600;align-items:center">
+    let html = `<div style="padding:6px 0;border-bottom:1px solid #E5E7EB;margin-bottom:6px;display:flex;gap:12px;flex-wrap:wrap;font-size:12px;font-weight:600;align-items:center">
         <span>${dateStr}</span>
         <span style="color:#006AFF">${orders.length} orders</span>
         <span style="color:#059669">Cash: ${fp(cashTotal)}</span>
@@ -2586,20 +3523,15 @@ async function selectCalendarDay(dateStr) {
     html += orders.map(o => {
         const itemsStr = o.items.map(i => `${i.quantity}x ${i.nameEn}`).join(', ');
         const time = new Date(o.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-        return `<div style="padding:8px 0;border-bottom:1px solid #F3F4F6;font-size:13px">
-            <div style="display:flex;justify-content:space-between;align-items:center">
-                <span style="font-weight:700;color:#374151">${o.orderNumber}</span>
-                <div style="display:flex;gap:6px;align-items:center">
-                    <span style="color:#9CA3AF">${time}</span>
-                    <button onclick="deleteOrder('${o.orderNumber}','${dateStr}')" style="padding:2px 8px;border:1px solid #DC2626;border-radius:6px;background:#fff;color:#DC2626;font-size:11px;font-weight:600;cursor:pointer">Del</button>
-                </div>
-            </div>
-            <div style="color:#6B7280;margin:2px 0">${itemsStr}</div>
-            <div style="display:flex;gap:8px;align-items:center">
-                <span style="font-weight:600">${fp(o.total)}</span>
-                <span style="font-size:11px;color:${o.paymentMethod === 'cash' ? '#059669' : '#6366F1'}">${(o.paymentMethod || 'unpaid').toUpperCase()}</span>
-                <span style="font-size:11px;color:#9CA3AF">${o.orderType === 'eat_in' ? 'Eat In' : 'Takeaway'}</span>
-            </div>
+        return `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #F3F4F6;font-size:12px">
+            <span style="font-weight:700;color:#374151;white-space:nowrap">${o.orderNumber}</span>
+            <span style="flex:1;color:#6B7280;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${itemsStr}</span>
+            <span style="font-weight:700;white-space:nowrap">${fp(o.total)}</span>
+            <span style="font-size:10px;color:${o.paymentMethod === 'cash' ? '#059669' : '#6366F1'};white-space:nowrap">${(o.paymentMethod || 'unpaid').toUpperCase()}</span>
+            <span style="font-size:10px;color:#9CA3AF;white-space:nowrap">${o.orderType === 'eat_in' ? 'Eat In' : 'Takeaway'}</span>
+            <span style="font-size:10px;color:#9CA3AF;white-space:nowrap">${time}</span>
+            <button onclick="deleteOrder('${o.orderNumber}','${dateStr}')" style="padding:2px 8px;border:1px solid #DC2626;border-radius:4px;background:#fff;color:#DC2626;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap">Del</button>
+            <button onclick="reprintOrderByDate('${o.orderNumber}','${dateStr}')" style="padding:2px 8px;border:1px solid #6B7280;border-radius:4px;background:#fff;color:#6B7280;font-size:10px;font-weight:600;cursor:pointer;white-space:nowrap">Print</button>
         </div>`;
     }).join('');
 
@@ -2673,12 +3605,43 @@ async function restoreRegisterFromServer() {
             POS.register.transactions = data.transactions || [];
             POS.register.openedAt = data.openedAt || null;
             POS.register.closedAt = data.closedAt || null;
-            POS.register.lastEndSalesAt = data.lastEndSalesAt || null;
-            console.log('[Register] restored from server — isOpen:', POS.register.isOpen, 'lastEndSalesAt:', POS.register.lastEndSalesAt);
+            console.log('[Register] restored from server — isOpen:', POS.register.isOpen);
         }
     } catch (e) {
         console.warn('[Register] restore failed:', e.message);
     }
+    // Load persistent lastEndSalesAt (separate from daily register)
+    try {
+        const esResp = await fetch(`/api/last-end-sales?branch=${POS.branch}`);
+        if (esResp.ok) {
+            const esData = await esResp.json();
+            if (esData.lastEndSalesAt) {
+                POS.register.lastEndSalesAt = esData.lastEndSalesAt;
+                console.log('[Register] lastEndSalesAt loaded:', POS.register.lastEndSalesAt);
+            }
+        }
+    } catch (e) {
+        console.warn('[Register] lastEndSalesAt API failed:', e.message);
+    }
+    // Fallback: if lastEndSalesAt still null, try to recover from end-sales-log
+    if (!POS.register.lastEndSalesAt) {
+        try {
+            const logResp = await fetch('/api/end-sales-log');
+            if (logResp.ok) {
+                const log = await logResp.json();
+                const myLog = log.filter(e => e.branchCode === POS.branch);
+                if (myLog.length > 0) {
+                    const latest = myLog[myLog.length - 1];
+                    POS.register.lastEndSalesAt = latest.periodTo;
+                    console.log('[Register] lastEndSalesAt recovered from log:', POS.register.lastEndSalesAt);
+                }
+            }
+        } catch (e2) {
+            console.warn('[Register] lastEndSalesAt log fallback failed:', e2.message);
+        }
+    }
+    // Always set openingFloat to 100 (cash drawer constant)
+    POS.register.openingFloat = 100;
 }
 
 async function openRegister() {
@@ -2717,7 +3680,8 @@ async function endOfDay() {
         toast('Please close the register first before End of Day', 'error');
         return;
     }
-    const orders = POS.completedOrders;
+    // ★ Combine POS.orders + POS.completedOrders (deduped) for accurate EOD
+    const orders = [...POS.orders, ...POS.completedOrders.filter(o => !POS.orders.find(p => p.orderNumber === o.orderNumber))];
     if (orders.length === 0) {
         toast('No orders today — nothing to submit', 'info');
         return;
@@ -2742,14 +3706,199 @@ async function endOfDay() {
 }
 
 // ═══════════════════════════════════════════
+//  TOUCH DATE-TIME PICKER
+// ═══════════════════════════════════════════
+function touchDateTimePicker(title, defaultDate) {
+    return new Promise(resolve => {
+        const d = defaultDate ? new Date(defaultDate) : new Date();
+        let selYear = d.getFullYear(), selMonth = d.getMonth(), selDay = d.getDate();
+        let selHour = d.getHours(), selMin = d.getMinutes();
+
+        const overlay = document.createElement('div');
+        overlay.className = 'touch-dt-overlay';
+        document.body.appendChild(overlay);
+
+        function pad(n) { return String(n).padStart(2, '0'); }
+
+        function render() {
+            const months = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+            const today = new Date();
+            const firstDay = new Date(selYear, selMonth, 1).getDay(); // 0=Sun
+            const daysInMonth = new Date(selYear, selMonth + 1, 0).getDate();
+            const startDay = firstDay === 0 ? 6 : firstDay - 1; // Mon=0
+
+            let daysHtml = ['Mo','Tu','We','Th','Fr','Sa','Su'].map(h => `<div class="hdr">${h}</div>`).join('');
+            for (let i = 0; i < startDay; i++) daysHtml += '<div class="day empty"></div>';
+            for (let day = 1; day <= daysInMonth; day++) {
+                const isSel = day === selDay;
+                const isToday = day === today.getDate() && selMonth === today.getMonth() && selYear === today.getFullYear();
+                const cls = isSel ? 'day sel' : isToday ? 'day today' : 'day';
+                daysHtml += `<div class="${cls}" data-day="${day}">${day}</div>`;
+            }
+
+            overlay.innerHTML = `<div class="touch-dt-box">
+                <div class="touch-dt-title">${title}</div>
+                <div class="touch-dt-month-nav">
+                    <button id="tdpPrevM">◀</button>
+                    <span>${months[selMonth]} ${selYear}</span>
+                    <button id="tdpNextM">▶</button>
+                </div>
+                <div class="touch-dt-grid">${daysHtml}</div>
+                <div style="text-align:center;font-size:12px;color:#6B7280;margin-bottom:8px">Time</div>
+                <div class="touch-dt-time">
+                    <div class="spin">
+                        <button id="tdpHUp">▲</button>
+                        <div class="val" id="tdpH">${pad(selHour)}</div>
+                        <button id="tdpHDn">▼</button>
+                    </div>
+                    <div class="colon">:</div>
+                    <div class="spin">
+                        <button id="tdpMUp">▲</button>
+                        <div class="val" id="tdpM">${pad(selMin)}</div>
+                        <button id="tdpMDn">▼</button>
+                    </div>
+                </div>
+                <div style="text-align:center;font-size:13px;color:#374151;font-weight:600;margin-bottom:16px">
+                    ${pad(selDay)}/${pad(selMonth+1)}/${selYear} ${pad(selHour)}:${pad(selMin)}
+                </div>
+                <div class="touch-dt-actions">
+                    <button class="cancel" id="tdpCancel">Cancel</button>
+                    <button class="ok" id="tdpOk">OK</button>
+                </div>
+            </div>`;
+
+            // Day clicks
+            overlay.querySelectorAll('.day:not(.empty)').forEach(el => {
+                el.addEventListener('click', () => { selDay = parseInt(el.dataset.day); render(); });
+            });
+            // Month nav
+            overlay.querySelector('#tdpPrevM').addEventListener('click', () => { selMonth--; if (selMonth < 0) { selMonth = 11; selYear--; } selDay = Math.min(selDay, new Date(selYear, selMonth+1, 0).getDate()); render(); });
+            overlay.querySelector('#tdpNextM').addEventListener('click', () => { selMonth++; if (selMonth > 11) { selMonth = 0; selYear++; } selDay = Math.min(selDay, new Date(selYear, selMonth+1, 0).getDate()); render(); });
+            // Time spinners
+            overlay.querySelector('#tdpHUp').addEventListener('click', () => { selHour = (selHour + 1) % 24; render(); });
+            overlay.querySelector('#tdpHDn').addEventListener('click', () => { selHour = (selHour - 1 + 24) % 24; render(); });
+            overlay.querySelector('#tdpMUp').addEventListener('click', () => { selMin = (selMin + 5) % 60; render(); });
+            overlay.querySelector('#tdpMDn').addEventListener('click', () => { selMin = (selMin - 5 + 60) % 60; render(); });
+            // Actions
+            overlay.querySelector('#tdpCancel').addEventListener('click', () => { overlay.remove(); resolve(null); });
+            overlay.querySelector('#tdpOk').addEventListener('click', () => {
+                overlay.remove();
+                resolve(new Date(selYear, selMonth, selDay, selHour, selMin, 0));
+            });
+        }
+        render();
+    });
+}
+
+// ═══════════════════════════════════════════
+//  CUSTOM RANGE REPORT
+// ═══════════════════════════════════════════
+let _customRangeFrom = null, _customRangeTo = null;
+
+async function pickCustomRangeFrom() {
+    const dt = await touchDateTimePicker('Select START Date & Time', _customRangeFrom || new Date());
+    if (!dt) return;
+    _customRangeFrom = dt;
+    const el = document.getElementById('crFromLabel');
+    if (el) el.textContent = dt.toLocaleString('en-GB', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+async function pickCustomRangeTo() {
+    const dt = await touchDateTimePicker('Select END Date & Time', _customRangeTo || new Date());
+    if (!dt) return;
+    _customRangeTo = dt;
+    const el = document.getElementById('crToLabel');
+    if (el) el.textContent = dt.toLocaleString('en-GB', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+}
+
+async function runCustomRangeReport() {
+    if (!_customRangeFrom || !_customRangeTo) { toast('Select both FROM and TO dates', 'info'); return; }
+    if (_customRangeFrom >= _customRangeTo) { toast('FROM must be before TO', 'error'); return; }
+
+    const body = document.getElementById('crResultBody');
+    if (body) body.innerHTML = '<div style="text-align:center;padding:10px;color:#9CA3AF">Loading...</div>';
+
+    try {
+        const params = new URLSearchParams({ branch: POS.branch, since: _customRangeFrom.toISOString() });
+        const resp = await fetch(`/api/orders-since?${params}`);
+        let orders = resp.ok ? await resp.json() : [];
+        // Filter by TO date
+        orders = orders.filter(o => new Date(o.timestamp) <= _customRangeTo);
+
+        const cashOrders = orders.filter(o => o.paymentMethod === 'cash');
+        const cardOrders = orders.filter(o => o.paymentMethod === 'card');
+        const cashTotal = cashOrders.reduce((s, o) => s + (o.total || 0), 0);
+        const cardTotal = cardOrders.reduce((s, o) => s + (o.total || 0), 0);
+        const grandTotal = cashTotal + cardTotal;
+        const vatData = calcVatBreakdown(orders);
+        const rateKeys = Object.keys(vatData.byRate).sort((a,b) => Number(b) - Number(a));
+
+        if (!body) return;
+        body.innerHTML = `
+            <div class="takings-stat-grid">
+                <div class="takings-stat-card"><div class="takings-stat-val">${orders.length}</div><div class="takings-stat-label">Orders</div></div>
+                <div class="takings-stat-card"><div class="takings-stat-val">${cashOrders.length}</div><div class="takings-stat-label">Cash</div></div>
+                <div class="takings-stat-card"><div class="takings-stat-val">${cardOrders.length}</div><div class="takings-stat-label">Card</div></div>
+                <div class="takings-stat-card"><div class="takings-stat-val">${fp(grandTotal)}</div><div class="takings-stat-label">Total</div></div>
+            </div>
+            <table class="takings-table">
+                <thead><tr><th>Payment</th><th>Count</th><th>Amount</th></tr></thead>
+                <tbody>
+                    <tr><td>CASH</td><td>${cashOrders.length}</td><td class="val-green">${fp(cashTotal)}</td></tr>
+                    <tr><td>CARD</td><td>${cardOrders.length}</td><td class="val-green">${fp(cardTotal)}</td></tr>
+                </tbody>
+            </table>
+            <div class="takings-total-bar"><span class="label">GRAND TOTAL</span><span class="value">${fp(grandTotal)}</span></div>
+            <h4 style="margin:12px 0 6px 0;color:#374151;font-size:14px">VAT Breakdown</h4>
+            <table class="takings-table">
+                <thead><tr><th>Rate</th><th>Net</th><th>VAT</th><th>Gross</th></tr></thead>
+                <tbody>
+                    ${rateKeys.map(r => `<tr><td>${r}%</td><td>${fp(vatData.byRate[r].net)}</td><td class="val-highlight">${fp(vatData.byRate[r].vat)}</td><td class="val-green">${fp(vatData.byRate[r].gross)}</td></tr>`).join('')}
+                    ${rateKeys.length === 0 ? '<tr><td colspan="4" style="text-align:center;color:#6B7280">No data</td></tr>' : ''}
+                </tbody>
+            </table>
+            <div class="takings-total-bar"><span class="label">TOTAL VAT</span><span class="value">${fp(vatData.totalVat)}</span></div>
+            <button class="register-btn open" onclick="printCustomRangeReport()" style="margin-top:12px;width:100%">PRINT REPORT</button>
+        `;
+        // Stash for printing
+        POS._customRangeData = { orders, cashOrders, cardOrders, cashTotal, cardTotal, grandTotal, vatData,
+            fromStr: _customRangeFrom.toLocaleString('en-GB'), toStr: _customRangeTo.toLocaleString('en-GB') };
+    } catch (e) {
+        if (body) body.innerHTML = `<div style="color:#DC2626">Error: ${e.message}</div>`;
+    }
+}
+
+function printCustomRangeReport() {
+    const d = POS._customRangeData;
+    if (!d) return;
+    document.getElementById('esrBranch').textContent = POS.branchName;
+    document.getElementById('esrTitle').textContent = 'CUSTOM RANGE REPORT';
+    document.getElementById('esrFrom').textContent = d.fromStr;
+    document.getElementById('esrTo').textContent = d.toStr;
+    document.getElementById('esrOrders').textContent = d.orders.length;
+    document.getElementById('esrCashCust').textContent = d.cashOrders.length;
+    document.getElementById('esrCardCust').textContent = d.cardOrders.length;
+    document.getElementById('esrCash').textContent = fp(d.cashTotal);
+    document.getElementById('esrCard').textContent = fp(d.cardTotal);
+    document.getElementById('esrGrand').textContent = fp(d.grandTotal);
+    document.getElementById('esrCashDrawer').textContent = fp(100 + d.cashTotal);
+    const rateKeys = Object.keys(d.vatData.byRate).sort((a,b) => Number(b) - Number(a));
+    document.getElementById('esrVatRows').innerHTML = rateKeys.map(r =>
+        `<div class="r-row"><span>VAT ${r}%:</span><span>${fp(d.vatData.byRate[r].vat)} (Net: ${fp(d.vatData.byRate[r].net)})</span></div>`
+    ).join('');
+    document.getElementById('esrVatTotal').textContent = fp(d.vatData.totalVat);
+    document.getElementById('esrFooter').textContent = `Printed: ${new Date().toLocaleString('en-GB')}`;
+    document.getElementById('endSalesReceiptPrint').style.display = 'block';
+    setTimeout(() => window.print(), 200);
+    setTimeout(() => { document.getElementById('endSalesReceiptPrint').style.display = 'none'; }, 800);
+}
+
+// ═══════════════════════════════════════════
 //  END SALES (periodic settlement)
 // ═══════════════════════════════════════════
 async function endSales() {
-    // 1. Admin PIN required
-    const pin = await tbPromptPin('Admin PIN Required', '💰');
-    if (pin === false) return;
-    const user = checkUserPin(pin, ['admin']);
-    if (!user) { toast('Access denied — Admin PIN required', 'error'); return; }
+    // 1. Confirm
+    const ok = await tbConfirm('Calculate END Sales report?\nThis will show sales since last END Sales.', 'END Sales', '💰');
+    if (!ok) return;
 
     // 2. Fetch orders since lastEndSalesAt
     const since = POS.register.lastEndSalesAt || null;
@@ -2763,8 +3912,9 @@ async function endSales() {
         console.warn('[END Sales] fetch error:', e.message);
     }
 
-    // Also include today's local completed orders that may not be on server yet
-    const localOrders = POS.completedOrders.filter(o => {
+    // Also include today's local orders (POS.orders + POS.completedOrders combined) that may not be on server yet
+    const allLocalOrders = [...POS.orders, ...POS.completedOrders.filter(o => !POS.orders.find(p => p.orderNumber === o.orderNumber))];
+    const localOrders = allLocalOrders.filter(o => {
         if (!since) return true;
         return new Date(o.timestamp) > new Date(since);
     });
@@ -2813,6 +3963,10 @@ async function endSales() {
             </tbody>
         </table>
         <div class="takings-total-bar"><span class="label">GRAND TOTAL</span><span class="value">${fp(grandTotal)}</span></div>
+        <div style="background:#ECFDF5;border:2px solid #059669;border-radius:10px;padding:14px;margin:12px 0;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:700;color:#059669;font-size:15px">💵 Cash in Drawer (£100 + Cash Sales)</span>
+            <span style="font-weight:800;color:#059669;font-size:20px">${fp(100 + cashTotal)}</span>
+        </div>
         <h4 style="margin:16px 0 8px 0;color:#374151">VAT Breakdown</h4>
         <table class="takings-table">
             <thead><tr><th>Rate</th><th>Net</th><th>VAT</th><th>Gross</th></tr></thead>
@@ -2844,7 +3998,27 @@ async function confirmEndSales() {
     );
     if (!ok) return;
 
-    // Send to server
+    // Build item breakdown for permanent record
+    const itemMap = {};
+    d.periodOrders.forEach(o => o.items.forEach(i => {
+        const k = i.nameEn || i.name;
+        if (!itemMap[k]) itemMap[k] = { name: k, qty: 0, total: 0, vatRate: i.vatRate || 20 };
+        itemMap[k].qty += i.quantity;
+        itemMap[k].total += i.totalPrice || (i.price * i.quantity);
+    }));
+    const itemBreakdown = Object.values(itemMap).sort((a, b) => b.total - a.total);
+
+    // Build compact order list for permanent record
+    const ordersList = d.periodOrders.map(o => ({
+        orderNumber: o.orderNumber,
+        timestamp: o.timestamp,
+        orderType: o.orderType,
+        paymentMethod: o.paymentMethod,
+        total: o.total,
+        items: o.items.map(i => ({ name: i.nameEn || i.name, qty: i.quantity, price: i.totalPrice || (i.price * i.quantity) }))
+    }));
+
+    // Send to server (full data for permanent storage)
     wsSend({
         type: 'end_sales',
         branchCode: POS.branch,
@@ -2858,7 +4032,10 @@ async function confirmEndSales() {
         cashCustomers: d.cashOrders.length,
         cardCustomers: d.cardOrders.length,
         vatTotal: d.vatData.totalVat,
-        vatBreakdown: d.vatData.byRate
+        vatBreakdown: d.vatData.byRate,
+        itemBreakdown: itemBreakdown,
+        orders: ordersList,
+        staff: POS.currentUser || null
     });
 
     // Reset register
@@ -2869,60 +4046,195 @@ async function confirmEndSales() {
     POS.register.transactions = [];
     await syncRegisterToServer();
 
+    // Save lastEndSalesAt persistently (survives reboot/day change)
+    try {
+        await fetch('/api/last-end-sales', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ branch: POS.branch, lastEndSalesAt: d.now })
+        });
+        console.log('[END Sales] lastEndSalesAt saved persistently');
+    } catch (e) { console.warn('[END Sales] persistent save failed:', e.message); }
+
     POS._endSalesData = null;
     toast('END Sales completed — Register reset to £100', 'success');
     renderTakings();
 }
 
-function printEndSalesReceipt() {
+async function printEndSalesReceipt() {
     const d = POS._endSalesData;
     if (!d) return;
-    document.getElementById('esrBranch').textContent = POS.branchName;
-    document.getElementById('esrTitle').textContent = 'END SALES REPORT';
-    document.getElementById('esrFrom').textContent = d.fromStr;
-    document.getElementById('esrTo').textContent = d.toStr;
-    document.getElementById('esrOrders').textContent = d.periodOrders.length;
-    document.getElementById('esrCashCust').textContent = d.cashOrders.length;
-    document.getElementById('esrCardCust').textContent = d.cardOrders.length;
-    document.getElementById('esrCash').textContent = fp(d.cashTotal);
-    document.getElementById('esrCard').textContent = fp(d.cardTotal);
-    document.getElementById('esrGrand').textContent = fp(d.grandTotal);
-    // VAT rows
-    const rateKeys = Object.keys(d.vatData.byRate).sort((a,b) => Number(b) - Number(a));
-    document.getElementById('esrVatRows').innerHTML = rateKeys.map(r =>
-        `<div class="r-row"><span>VAT ${r}%:</span><span>${fp(d.vatData.byRate[r].vat)} (Net: ${fp(d.vatData.byRate[r].net)})</span></div>`
-    ).join('');
-    document.getElementById('esrVatTotal').textContent = fp(d.vatData.totalVat);
-    document.getElementById('esrFooter').textContent = `Printed: ${new Date().toLocaleString('en-GB')}`;
 
+    const rateKeys = Object.keys(d.vatData.byRate).sort((a,b) => Number(b) - Number(a));
+
+    // ★ Try direct ESC/POS print first
+    try {
+        const resp = await fetch('/api/print', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type: 'report',
+                report: {
+                    branchName: POS.branchName,
+                    title: 'END SALES REPORT',
+                    from: d.fromStr,
+                    to: d.toStr,
+                    totalOrders: d.periodOrders.length,
+                    cashCount: d.cashOrders.length,
+                    cardCount: d.cardOrders.length,
+                    cashTotal: d.cashTotal,
+                    cardTotal: d.cardTotal,
+                    grandTotal: d.grandTotal,
+                    cashInDrawer: 100 + d.cashTotal,
+                    vatBreakdown: rateKeys.map(r => ({ rate: r, net: d.vatData.byRate[r].net, vat: d.vatData.byRate[r].vat })),
+                    totalVat: d.vatData.totalVat,
+                }
+            })
+        });
+        const result = await resp.json();
+        if (result.success) { toast('End Sales Report printed', 'success'); return; }
+        console.warn('[Print] Direct print failed:', result.error);
+    } catch (e) { console.warn('[Print] Direct print unavailable:', e.message); }
+
+    // ★ Fallback: browser window.print()
+    _fallbackBrowserPrint('END SALES REPORT', d.fromStr, d.toStr,
+        d.periodOrders.length, d.cashOrders.length, d.cardOrders.length,
+        d.cashTotal, d.cardTotal, d.grandTotal, rateKeys, d.vatData);
+}
+
+// ★ Print End Sales Detail (from history view)
+async function printEndSalesDetail(esId) {
+    let rec, s, rateKeys, fromStr, toStr;
+    try {
+        const resp = await fetch(`/api/end-sales-detail?id=${encodeURIComponent(esId)}`);
+        if (!resp.ok) { toast('Failed to load end sales data', 'error'); return; }
+        rec = await resp.json();
+        s = rec.summary || {};
+        rateKeys = s.vatBreakdown ? Object.keys(s.vatBreakdown).sort((a,b) => Number(b) - Number(a)) : [];
+        fromStr = rec.periodFrom ? new Date(rec.periodFrom).toLocaleString('en-GB') : 'Start';
+        toStr = new Date(rec.periodTo).toLocaleString('en-GB');
+    } catch (e) { toast('Failed to load end sales data', 'error'); return; }
+
+    // ★ Try direct ESC/POS print first
+    try {
+        const resp2 = await fetch('/api/print', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type: 'report',
+                report: {
+                    branchName: rec.branchName || POS.branchName,
+                    title: 'END SALES REPORT',
+                    from: fromStr,
+                    to: toStr,
+                    totalOrders: s.totalOrders || 0,
+                    cashCount: s.cashCustomers || 0,
+                    cardCount: s.cardCustomers || 0,
+                    cashTotal: s.cashTotal || 0,
+                    cardTotal: s.cardTotal || 0,
+                    grandTotal: s.grandTotal || 0,
+                    cashInDrawer: s.cashInDrawer || (100 + (s.cashTotal || 0)),
+                    vatBreakdown: rateKeys.map(r => ({ rate: r, net: s.vatBreakdown[r].net, vat: s.vatBreakdown[r].vat })),
+                    totalVat: s.vatBreakdown ? rateKeys.reduce((sum, r) => sum + s.vatBreakdown[r].vat, 0) : 0,
+                }
+            })
+        });
+        const result = await resp2.json();
+        if (result.success) { toast('End Sales Detail printed', 'success'); return; }
+        console.warn('[Print] Direct print failed:', result.error);
+    } catch (e) { console.warn('[Print] Direct print error:', e.message); }
+
+    // ★ Fallback: browser window.print()
+    toast('Direct print failed — using browser print', 'warn');
+    const vatData = { byRate: s.vatBreakdown || {}, totalVat: rateKeys.reduce((sum, r) => sum + (s.vatBreakdown?.[r]?.vat || 0), 0) };
+    _fallbackBrowserPrint('END SALES REPORT', fromStr, toStr,
+        s.totalOrders || 0, s.cashCustomers || 0, s.cardCustomers || 0,
+        s.cashTotal || 0, s.cardTotal || 0, s.grandTotal || 0, rateKeys, vatData);
+}
+
+// ★ Browser fallback for report printing (used when direct ESC/POS fails)
+function _fallbackBrowserPrint(title, from, to, orders, cashCnt, cardCnt, cashTotal, cardTotal, grandTotal, rateKeys, vatData) {
+    document.getElementById('esrBranch').textContent = POS.branchName;
+    document.getElementById('esrTitle').textContent = title;
+    document.getElementById('esrFrom').textContent = from;
+    document.getElementById('esrTo').textContent = to;
+    document.getElementById('esrOrders').textContent = orders;
+    document.getElementById('esrCashCust').textContent = cashCnt;
+    document.getElementById('esrCardCust').textContent = cardCnt;
+    document.getElementById('esrCash').textContent = fp(cashTotal);
+    document.getElementById('esrCard').textContent = fp(cardTotal);
+    document.getElementById('esrGrand').textContent = fp(grandTotal);
+    const drawerEl = document.getElementById('esrCashDrawer');
+    if (drawerEl) drawerEl.textContent = fp(100 + cashTotal);
+    document.getElementById('esrVatRows').innerHTML = rateKeys.map(r =>
+        `<div class="r-row"><span>VAT ${r}%:</span><span>${fp(vatData.byRate[r].vat)} (Net: ${fp(vatData.byRate[r].net)})</span></div>`
+    ).join('');
+    document.getElementById('esrVatTotal').textContent = fp(vatData.totalVat);
+    document.getElementById('esrFooter').textContent = `Printed: ${new Date().toLocaleString('en-GB')}`;
     document.getElementById('endSalesReceiptPrint').style.display = 'block';
     setTimeout(() => window.print(), 200);
     setTimeout(() => { document.getElementById('endSalesReceiptPrint').style.display = 'none'; }, 800);
 }
 
 // ═══════════════════════════════════════════
-//  QUICK DAILY REPORT
+//  QUICK DAILY REPORT (with date picker)
 // ═══════════════════════════════════════════
-async function quickDailyReport() {
-    const orders = POS.completedOrders;
+let _dailyReportDate = null; // selected date (Date obj), null = today
+
+async function quickDailyReport(targetDate) {
+    const el = document.getElementById('takingsContent');
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const selDate = targetDate || _dailyReportDate || new Date();
+    _dailyReportDate = selDate;
+    const selDateStr = selDate.toISOString().slice(0, 10);
+    const isToday = selDateStr === todayStr;
+    const dateLabel = selDate.toLocaleDateString('en-GB');
+
+    el.innerHTML = '<div style="text-align:center;padding:40px;color:#9CA3AF">Loading...</div>';
+
+    let orders = [];
+    if (isToday) {
+        orders = [...POS.orders, ...POS.completedOrders.filter(o => !POS.orders.find(p => p.orderNumber === o.orderNumber))];
+    } else {
+        try {
+            const resp = await fetch(`/api/orders?date=${selDateStr}`);
+            if (resp.ok) {
+                const data = await resp.json();
+                orders = data.orders || data || [];
+                if (!Array.isArray(orders)) orders = [];
+                orders = orders.filter(o => !o.branchCode || o.branchCode === POS.branch);
+            }
+        } catch (e) { console.warn('[DailyReport] fetch error:', e.message); }
+    }
+
     const cashOrders = orders.filter(o => o.paymentMethod === 'cash');
     const cardOrders = orders.filter(o => o.paymentMethod === 'card');
     const cashTotal = cashOrders.reduce((s, o) => s + (o.total || 0), 0);
     const cardTotal = cardOrders.reduce((s, o) => s + (o.total || 0), 0);
     const grandTotal = cashTotal + cardTotal;
-    const vatData = calcVatBreakdown(orders);
-    const today = new Date().toLocaleDateString('en-GB');
+    const paidOrders = orders.filter(o => o.paymentMethod === 'cash' || o.paymentMethod === 'card' || o.paymentStatus === 'paid');
+    const unpaidOrders = orders.filter(o => !o.paymentMethod || o.paymentMethod === 'not_paid');
+    const vatData = calcVatBreakdown(paidOrders);
     const rateKeys = Object.keys(vatData.byRate).sort((a,b) => Number(b) - Number(a));
 
-    const el = document.getElementById('takingsContent');
     el.innerHTML = `
         <div style="background:#EFF6FF;border:2px solid #2563EB;border-radius:12px;padding:20px;margin-bottom:16px">
-            <h3 style="color:#2563EB;margin:0 0 8px 0;font-size:18px">DAILY REPORT</h3>
-            <div style="color:#6B7280;font-size:13px">${POS.branchName} — ${today}</div>
-            <div style="color:#9CA3AF;font-size:11px;margin-top:4px">View only — no reset</div>
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+                <div>
+                    <h3 style="color:#2563EB;margin:0 0 4px 0;font-size:18px">DAILY REPORT</h3>
+                    <div style="color:#6B7280;font-size:13px">${POS.branchName} — ${dateLabel}</div>
+                    <div style="color:#9CA3AF;font-size:11px;margin-top:2px">View only — no reset</div>
+                </div>
+                <div style="display:flex;gap:8px;align-items:center">
+                    <button onclick="_dailyReportNav(-1)" style="background:#2563EB;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:16px;cursor:pointer;font-weight:700">◀</button>
+                    <button onclick="_dailyReportPickDate()" style="background:#fff;color:#2563EB;border:2px solid #2563EB;border-radius:8px;padding:8px 16px;font-size:14px;cursor:pointer;font-weight:700">📅 ${dateLabel}</button>
+                    <button onclick="_dailyReportNav(1)" style="background:#2563EB;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:16px;cursor:pointer;font-weight:700"${isToday ? ';opacity:0.3;pointer-events:none' : ''}>▶</button>
+                    ${!isToday ? `<button onclick="quickDailyReport(new Date())" style="background:#059669;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;font-weight:700">TODAY</button>` : ''}
+                </div>
+            </div>
         </div>
         <div class="takings-stat-grid">
-            <div class="takings-stat-card"><div class="takings-stat-val">${orders.length}</div><div class="takings-stat-label">Total Orders</div></div>
+            <div class="takings-stat-card"><div class="takings-stat-val">${paidOrders.length}${unpaidOrders.length > 0 ? ` <span style="font-size:14px;color:#F97316">(+${unpaidOrders.length} unpaid)</span>` : ''}</div><div class="takings-stat-label">Paid Orders</div></div>
             <div class="takings-stat-card"><div class="takings-stat-val">${cashOrders.length}</div><div class="takings-stat-label">Cash Customers</div></div>
             <div class="takings-stat-card"><div class="takings-stat-val">${cardOrders.length}</div><div class="takings-stat-label">Card Customers</div></div>
             <div class="takings-stat-card"><div class="takings-stat-val">${fp(grandTotal)}</div><div class="takings-stat-label">Grand Total</div></div>
@@ -2935,6 +4247,10 @@ async function quickDailyReport() {
             </tbody>
         </table>
         <div class="takings-total-bar"><span class="label">GRAND TOTAL</span><span class="value">${fp(grandTotal)}</span></div>
+        ${isToday ? `<div style="background:#ECFDF5;border:2px solid #059669;border-radius:10px;padding:14px;margin:12px 0;display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:700;color:#059669;font-size:15px">💵 Cash in Drawer (£100 + Cash Sales)</span>
+            <span style="font-weight:800;color:#059669;font-size:20px">${fp(100 + cashTotal)}</span>
+        </div>` : ''}
         <h4 style="margin:16px 0 8px 0;color:#374151">VAT Breakdown</h4>
         <table class="takings-table">
             <thead><tr><th>Rate</th><th>Net</th><th>VAT</th><th>Gross</th></tr></thead>
@@ -2945,37 +4261,74 @@ async function quickDailyReport() {
         <div class="takings-total-bar"><span class="label">TOTAL VAT</span><span class="value">${fp(vatData.totalVat)}</span></div>
         <div style="display:flex;gap:12px;margin-top:20px">
             <button class="register-btn open" onclick="printDailyReport()" style="flex:1">PRINT REPORT</button>
-            <button class="register-btn eod" onclick="renderTakings()" style="flex:1;background:#6B7280;color:#fff">BACK</button>
+            <button class="register-btn eod" onclick="_dailyReportDate=null;renderTakings()" style="flex:1;background:#6B7280;color:#fff">BACK</button>
         </div>
     `;
 
     // Stash for printing
-    POS._dailyReportData = { orders, cashOrders, cardOrders, cashTotal, cardTotal, grandTotal, vatData, today };
+    POS._dailyReportData = { orders, cashOrders, cardOrders, cashTotal, cardTotal, grandTotal, vatData, today: dateLabel };
 }
 
-function printDailyReport() {
+// ─── Daily Report date navigation ───
+function _dailyReportNav(dir) {
+    const d = new Date(_dailyReportDate || new Date());
+    d.setDate(d.getDate() + dir);
+    // Don't go past today
+    if (d > new Date()) return;
+    quickDailyReport(d);
+}
+async function _dailyReportPickDate() {
+    const d = await touchDateTimePicker('Select Report Date', _dailyReportDate || new Date());
+    if (!d) return;
+    // Set to start of day
+    d.setHours(0, 0, 0, 0);
+    if (d > new Date()) { toast('Cannot view future dates', 'error'); return; }
+    quickDailyReport(d);
+}
+
+async function printDailyReport() {
     const d = POS._dailyReportData;
     if (!d) return;
-    document.getElementById('esrBranch').textContent = POS.branchName;
-    document.getElementById('esrTitle').textContent = 'DAILY REPORT (No Reset)';
-    document.getElementById('esrFrom').textContent = d.today;
-    document.getElementById('esrTo').textContent = new Date().toLocaleTimeString('en-GB');
-    document.getElementById('esrOrders').textContent = d.orders.length;
-    document.getElementById('esrCashCust').textContent = d.cashOrders.length;
-    document.getElementById('esrCardCust').textContent = d.cardOrders.length;
-    document.getElementById('esrCash').textContent = fp(d.cashTotal);
-    document.getElementById('esrCard').textContent = fp(d.cardTotal);
-    document.getElementById('esrGrand').textContent = fp(d.grandTotal);
-    const rateKeys = Object.keys(d.vatData.byRate).sort((a,b) => Number(b) - Number(a));
-    document.getElementById('esrVatRows').innerHTML = rateKeys.map(r =>
-        `<div class="r-row"><span>VAT ${r}%:</span><span>${fp(d.vatData.byRate[r].vat)} (Net: ${fp(d.vatData.byRate[r].net)})</span></div>`
-    ).join('');
-    document.getElementById('esrVatTotal').textContent = fp(d.vatData.totalVat);
-    document.getElementById('esrFooter').textContent = `Printed: ${new Date().toLocaleString('en-GB')}`;
 
-    document.getElementById('endSalesReceiptPrint').style.display = 'block';
-    setTimeout(() => window.print(), 200);
-    setTimeout(() => { document.getElementById('endSalesReceiptPrint').style.display = 'none'; }, 800);
+    const rateKeys = Object.keys(d.vatData.byRate).sort((a,b) => Number(b) - Number(a));
+
+    // ★ Try direct ESC/POS print first
+    try {
+        const resp = await fetch('/api/print', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type: 'report',
+                report: {
+                    branchName: POS.branchName,
+                    title: 'DAILY REPORT',
+                    from: d.today,
+                    to: new Date().toLocaleTimeString('en-GB'),
+                    totalOrders: d.orders.length,
+                    cashCount: d.cashOrders.length,
+                    cardCount: d.cardOrders.length,
+                    cashTotal: d.cashTotal,
+                    cardTotal: d.cardTotal,
+                    grandTotal: d.grandTotal,
+                    cashInDrawer: 100 + d.cashTotal,
+                    vatBreakdown: rateKeys.map(r => ({ rate: r, net: d.vatData.byRate[r].net, vat: d.vatData.byRate[r].vat })),
+                    totalVat: d.vatData.totalVat,
+                }
+            })
+        });
+        const result = await resp.json();
+        if (result.success) {
+            toast('Daily Report printed', 'success');
+            return;
+        }
+        console.warn('[Print] Direct report print failed:', result.error);
+    } catch (e) { console.warn('[Print] Direct print unavailable:', e.message); }
+
+    // ★ Fallback: browser window.print()
+    toast('Direct print failed — using browser print', 'warn');
+    _fallbackBrowserPrint('DAILY REPORT', d.today, new Date().toLocaleTimeString('en-GB'),
+        d.orders.length, d.cashOrders.length, d.cardOrders.length,
+        d.cashTotal, d.cardTotal, d.grandTotal, rateKeys, d.vatData);
 }
 
 // ═══════════════════════════════════════════
@@ -2984,25 +4337,277 @@ function printDailyReport() {
 let _serverInfo = null;
 
 // ─── Settings persistence (localStorage) ───
-function loadPosSettings() {
+async function loadPosSettings() {
+    // 1) localStorage 먼저 (빠른 로딩)
     try {
         const saved = localStorage.getItem('tb_pos_settings');
-        if (saved) {
-            const parsed = JSON.parse(saved);
-            Object.assign(POS.settings, parsed);
+        if (saved) Object.assign(POS.settings, JSON.parse(saved));
+    } catch (e) {}
+    // 2) 서버에서 불러오기 (영구 저장, 우선)
+    try {
+        const resp = await fetch('/api/pos-settings');
+        if (resp.ok) {
+            const serverSettings = await resp.json();
+            if (serverSettings && Object.keys(serverSettings).length > 0) {
+                Object.assign(POS.settings, serverSettings);
+                localStorage.setItem('tb_pos_settings', JSON.stringify(POS.settings));
+            }
         }
-    } catch (e) { console.warn('[Settings] load failed:', e.message); }
+    } catch (e) { console.warn('[Settings] server load failed, using local:', e.message); }
 }
 function savePosSettings() {
-    try {
-        localStorage.setItem('tb_pos_settings', JSON.stringify(POS.settings));
-    } catch (e) { console.warn('[Settings] save failed:', e.message); }
+    // localStorage (즉시)
+    try { localStorage.setItem('tb_pos_settings', JSON.stringify(POS.settings)); } catch (e) {}
+    // 서버 저장 (영구)
+    fetch('/api/pos-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(POS.settings)
+    }).catch(e => console.warn('[Settings] server save failed:', e.message));
 }
 function toggleSetting(key) {
     POS.settings[key] = !POS.settings[key];
     savePosSettings();
     renderSettings();
     toast(`${key === 'sendPosToKitchen' ? 'POS to Kitchen' : key}: ${POS.settings[key] ? 'ON' : 'OFF'}`, 'info');
+}
+
+function saveCashReportPct() {
+    POS.settings.cashReportPct = parseInt(document.getElementById('cashReportPct').value) || 100;
+    savePosSettings();
+    toast(`Cash Report: ${POS.settings.cashReportPct}%`, 'success');
+}
+
+function saveCashReportPctFromTakings() {
+    POS.settings.cashReportPct = parseInt(document.getElementById('takingsCashPct').value) || 100;
+    savePosSettings();
+    toast(`Cash Report: ${POS.settings.cashReportPct}%`, 'success');
+}
+
+// ═══════════════════════════════════════════
+//  DAILY REPORT (Simple) — 메인 메뉴에서 접근
+// ═══════════════════════════════════════════
+async function gotoReport() {
+    const entered = await tbPromptPin('Manager PIN Required', '📊');
+    if (entered === false) return;
+    const user = checkUserPin(entered, ['admin', 'senior manager']);
+    if (!user) { toast('Access denied', 'error'); return; }
+    toast(`Welcome ${user.name || user.id}`, 'success');
+    showScreen('screenReport');
+    const today = new Date().toISOString().slice(0, 10);
+    document.getElementById('reportDateFrom').value = today;
+    document.getElementById('reportTimeFrom').value = '00:00';
+    document.getElementById('reportDateTo').value = today;
+    document.getElementById('reportTimeTo').value = '23:59';
+    loadDailyReport();
+}
+
+async function loadDailyReport() {
+    const dateFrom = document.getElementById('reportDateFrom').value;
+    const dateTo = document.getElementById('reportDateTo').value;
+    const timeFrom = document.getElementById('reportTimeFrom').value || '00:00';
+    const timeTo = document.getElementById('reportTimeTo').value || '23:59';
+    if (!dateFrom || !dateTo) return;
+
+    const content = document.getElementById('reportContent');
+    const printBtn = document.getElementById('reportPrintBtn');
+    content.innerHTML = '<div style="text-align:center;padding:30px;color:#9CA3AF">Loading...</div>';
+    printBtn.style.display = 'none';
+
+    const sinceISO = `${dateFrom}T${timeFrom}:00`;
+    const untilISO = `${dateTo}T${timeTo}:59`;
+
+    try {
+        // Use orders-since API and filter by end time
+        const resp = await fetch(`/api/orders-since?since=${encodeURIComponent(sinceISO)}`);
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        let allOrders = await resp.json();
+        if (!Array.isArray(allOrders)) allOrders = allOrders.orders || [];
+
+        // Filter by end datetime
+        const untilTime = new Date(untilISO).getTime();
+        const sinceTime = new Date(sinceISO).getTime();
+        const orders = allOrders.filter(o => {
+            const t = new Date(o.timestamp).getTime();
+            return t >= sinceTime && t <= untilTime;
+        });
+
+        if (orders.length === 0) {
+            content.innerHTML = '<div style="text-align:center;padding:40px;color:#9CA3AF;font-size:15px">No orders for this period</div>';
+            return;
+        }
+
+        // Calculate totals
+        let cardTotal = 0, cashTotal = 0, otherTotal = 0;
+        let cardCount = 0, cashCount = 0, otherCount = 0;
+        orders.forEach(o => {
+            const amount = o.total || 0;
+            const pm = (o.paymentMethod || '').toLowerCase();
+            if (pm.includes('card') || pm.includes('stripe')) {
+                cardTotal += amount; cardCount++;
+            } else if (pm.includes('cash')) {
+                cashTotal += amount; cashCount++;
+            } else {
+                otherTotal += amount; otherCount++;
+            }
+        });
+
+        const cashPct = POS.settings.cashReportPct || 100;
+        const reportedCash = Math.round(cashTotal * (cashPct / 100) * 100) / 100;
+        const reportedCashCount = Math.round(cashCount * (cashPct / 100));
+        const reportedOther = Math.round(otherTotal * (cashPct / 100) * 100) / 100;
+        const reportedOtherCount = Math.round(otherCount * (cashPct / 100));
+        const reportedTotalOrders = cardCount + reportedCashCount + reportedOtherCount;
+        const grandTotal = cardTotal + reportedCash + reportedOther;
+
+        // VAT calculation — card 100%, cash/other는 cashPct 적용
+        const vatBreakdown = {};
+        let totalVatAmount = 0;
+        orders.forEach(o => {
+            const pm = (o.paymentMethod || '').toLowerCase();
+            const isCard = pm.includes('card') || pm.includes('stripe');
+            const pctMultiplier = isCard ? 1 : (cashPct / 100);
+            const items = o.items || [];
+            items.forEach(item => {
+                const rate = item.vatRate || (item.vatApplicable === false ? 0 : 20);
+                const itemTotal = (item.totalPrice || item.price || 0) * pctMultiplier;
+                const net = Math.round(itemTotal / (1 + rate / 100) * 100) / 100;
+                const vat = Math.round((itemTotal - net) * 100) / 100;
+                if (!vatBreakdown[rate]) vatBreakdown[rate] = { net: 0, vat: 0, gross: 0 };
+                vatBreakdown[rate].net += net;
+                vatBreakdown[rate].vat += vat;
+                vatBreakdown[rate].gross += itemTotal;
+                totalVatAmount += vat;
+            });
+        });
+
+        // Format period display
+        const fmtDate = (ds) => {
+            const d = new Date(ds + 'T12:00:00');
+            return d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+        };
+        const periodStr = dateFrom === dateTo
+            ? `${fmtDate(dateFrom)} ${timeFrom} - ${timeTo}`
+            : `${fmtDate(dateFrom)} ${timeFrom} ~ ${fmtDate(dateTo)} ${timeTo}`;
+
+        // VAT rows HTML
+        let vatHtml = '';
+        const vatRates = Object.keys(vatBreakdown).sort((a, b) => Number(b) - Number(a));
+        if (vatRates.length > 0) {
+            vatHtml = `<div style="background:#fff;border:2px solid #E5E7EB;border-radius:12px;overflow:hidden;margin-top:12px">
+                <div style="padding:10px 16px;background:#FEF3C7;font-weight:700;font-size:13px;color:#92400E;border-bottom:1px solid #FDE68A">VAT Breakdown</div>`;
+            vatRates.forEach(rate => {
+                const v = vatBreakdown[rate];
+                vatHtml += `<div style="display:flex;justify-content:space-between;padding:10px 16px;border-bottom:1px solid #F3F4F6;font-size:13px">
+                    <span style="color:#6B7280">VAT ${rate}%</span>
+                    <span>Net ${fp(v.net)} + VAT <strong style="color:#B45309">${fp(v.vat)}</strong></span>
+                </div>`;
+            });
+            vatHtml += `<div style="display:flex;justify-content:space-between;padding:12px 16px;background:#FFFBEB">
+                    <span style="font-weight:700;font-size:14px;color:#92400E">Total VAT</span>
+                    <span style="font-weight:800;font-size:16px;color:#B45309">${fp(totalVatAmount)}</span>
+                </div></div>`;
+        }
+
+        content.innerHTML = `
+            <div style="text-align:center;margin-bottom:16px">
+                <div style="font-size:13px;color:#6B7280">${periodStr}</div>
+                <div style="font-size:12px;color:#9CA3AF">${reportedTotalOrders} orders</div>
+            </div>
+            <div style="background:#fff;border:2px solid #E5E7EB;border-radius:12px;overflow:hidden">
+                <div style="display:flex;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #F3F4F6">
+                    <span style="color:#6B7280;font-size:14px">💳 Card Sales (${cardCount})</span>
+                    <span style="font-weight:700;font-size:16px;color:#2563EB">${fp(cardTotal)}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #F3F4F6">
+                    <span style="color:#6B7280;font-size:14px">💵 Cash Sales (${reportedCashCount})</span>
+                    <span style="font-weight:700;font-size:16px;color:#059669">${fp(reportedCash)}</span>
+                </div>
+                ${reportedOtherCount > 0 ? `<div style="display:flex;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #F3F4F6">
+                    <span style="color:#6B7280;font-size:14px">📋 Other (${reportedOtherCount})</span>
+                    <span style="font-weight:700;font-size:16px;color:#F59E0B">${fp(reportedOther)}</span>
+                </div>` : ''}
+                <div style="display:flex;justify-content:space-between;padding:16px;background:#F9FAFB">
+                    <span style="font-weight:700;font-size:16px;color:#111">TOTAL</span>
+                    <span style="font-weight:800;font-size:22px;color:#DC2626">${fp(grandTotal)}</span>
+                </div>
+            </div>
+            ${vatHtml}
+        `;
+        printBtn.style.display = '';
+
+        // Store for printing
+        POS._reportData = {
+            periodStr, orders, dateFrom, dateTo, timeFrom, timeTo,
+            cardTotal, cardCount, cashTotal, cashCount,
+            reportedCash, reportedCashCount, cashPct,
+            reportedOther, reportedOtherCount,
+            reportedTotalOrders, grandTotal,
+            otherTotal, otherCount,
+            vatBreakdown, vatRates, totalVatAmount
+        };
+    } catch (e) {
+        content.innerHTML = `<div style="text-align:center;padding:40px;color:#DC2626">Failed to load: ${e.message}</div>`;
+    }
+}
+
+async function printDailyReportSimple() {
+    const r = POS._reportData;
+    if (!r) { toast('No report data', 'error'); return; }
+
+    // Build VAT data for print
+    const vatByRate = (r.vatRates || []).map(rate => ({
+        rate: Number(rate),
+        net: r.vatBreakdown[rate].net,
+        vat: r.vatBreakdown[rate].vat,
+        gross: r.vatBreakdown[rate].gross
+    }));
+
+    // Try direct ESC/POS
+    try {
+        const resp = await fetch('/api/print', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                type: 'daily_report',
+                data: {
+                    branchName: POS.branchName || POS.branch,
+                    periodFrom: `${r.dateFrom} ${r.timeFrom}`,
+                    periodTo: `${r.dateTo} ${r.timeTo}`,
+                    periodStr: r.periodStr,
+                    totalOrders: r.reportedTotalOrders,
+                    cashCustomers: r.reportedCashCount,
+                    cardCustomers: r.cardCount,
+                    cashTotal: r.reportedCash,
+                    cardTotal: r.cardTotal,
+                    grandTotal: r.grandTotal,
+                    otherTotal: r.reportedOther,
+                    otherCustomers: r.reportedOtherCount,
+                    vatData: { byRate: vatByRate, totalVat: r.totalVatAmount || 0 }
+                }
+            })
+        });
+        if (resp.ok) { toast('Report printed!', 'success'); return; }
+    } catch (e) {}
+
+    // Fallback: browser print
+    toast('Direct print failed, using browser print', 'warning');
+    // Build vatData object for fallback printer
+    const vatObj = { byRate: {}, totalVat: r.totalVatAmount || 0 };
+    (r.vatRates || []).forEach(rate => { vatObj.byRate[rate] = r.vatBreakdown[rate]; });
+    _fallbackBrowserPrint(
+        'DAILY REPORT',
+        `${r.dateFrom} ${r.timeFrom}`,
+        `${r.dateTo} ${r.timeTo}`,
+        r.reportedTotalOrders,
+        r.reportedCashCount,
+        r.cardCount,
+        r.reportedCash,
+        r.cardTotal,
+        r.grandTotal,
+        r.vatRates || [],
+        vatObj
+    );
 }
 
 async function gotoSettings() {
@@ -3013,6 +4618,7 @@ async function gotoSettings() {
     toast(`Welcome ${user.name || user.id}`, 'success');
     showScreen('screenSettings');
     loadServerInfo();
+    loadPrinterConfig();
 }
 
 async function loadServerInfo() {
@@ -3065,6 +4671,44 @@ function renderSettings() {
                     <span class="slider"></span>
                 </label>
             </div>
+        </div>
+    `;
+
+    // ── Printer Setup section ──
+    html += `
+        <div class="settings-section-title">🖨️ PRINTER SETUP</div>
+        <div class="settings-card" id="printerSetupCard">
+            <h3>Receipt Printer (ESC/POS Direct Print)</h3>
+            <div style="color:#6B7280;font-size:12px;margin-bottom:12px">프린터를 설정하면 미리보기 없이 바로 인쇄됩니다</div>
+            <div class="settings-row">
+                <span class="label">Connection Type</span>
+                <select id="printerConnType" onchange="_updatePrinterFields()" style="padding:6px 10px;border:1px solid #D1D5DB;border-radius:8px;font-size:13px">
+                    <option value="network">Network (IP)</option>
+                    <option value="usb">USB (Device Path)</option>
+                    <option value="none">Not configured</option>
+                </select>
+            </div>
+            <div id="printerNetFields">
+                <div class="settings-row">
+                    <span class="label">Printer IP</span>
+                    <input type="text" id="printerIP" placeholder="192.168.1.100" style="padding:6px 10px;border:1px solid #D1D5DB;border-radius:8px;font-size:13px;width:180px">
+                </div>
+                <div class="settings-row">
+                    <span class="label">Port</span>
+                    <input type="number" id="printerPort" value="9100" style="padding:6px 10px;border:1px solid #D1D5DB;border-radius:8px;font-size:13px;width:100px">
+                </div>
+            </div>
+            <div id="printerUsbFields" style="display:none">
+                <div class="settings-row">
+                    <span class="label">Device Path</span>
+                    <input type="text" id="printerDevice" placeholder="/dev/usb/lp0" style="padding:6px 10px;border:1px solid #D1D5DB;border-radius:8px;font-size:13px;width:220px">
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+                <button onclick="savePrinterConfig()" style="padding:8px 20px;background:#006AFF;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">SAVE</button>
+                <button onclick="testPrinter()" style="padding:8px 20px;background:#059669;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">TEST PRINT</button>
+            </div>
+            <div id="printerStatus" style="margin-top:8px;font-size:12px;color:#6B7280"></div>
         </div>
     `;
 
@@ -3141,7 +4785,7 @@ function renderSettings() {
             </div>
 
             <div style="text-align:center;padding:12px;color:#9CA3AF;font-size:11px">
-                The Bap POS v1.9 | Server v${s.serverVersion} | ${s.nodeVersion}
+                The Bap POS v2.5 | Server v${s.serverVersion} | ${s.nodeVersion}
             </div>
         `;
     }
@@ -3157,6 +4801,15 @@ function renderSettings() {
                 <button onclick="loadAllBranchesSummary()" style="padding:6px 14px;background:#006AFF;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer;font-weight:600">Load</button>
             </div>
             <div id="adminBranchesBody" style="color:#9CA3AF;font-size:13px">Select a date and click Load</div>
+        </div>
+    `;
+
+    // ── TAKINGS (full) shortcut — always at bottom ──
+    html += `
+        <div class="settings-card" style="margin-top:20px;border:2px solid #7C3AED">
+            <h3>📊 Full Takings Report</h3>
+            <div class="settings-option-desc" style="margin-bottom:12px">상세 매출 분석 (Overview, Sales By Type, VAT Report, END Sales 등)</div>
+            <button onclick="gotoTakings()" style="width:100%;padding:12px;background:#7C3AED;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer">📊 Open Full TAKINGS</button>
         </div>
     `;
 
@@ -3205,11 +4858,128 @@ async function loadAllBranchesSummary() {
 }
 
 // ═══════════════════════════════════════════
+//  PRINTER SETUP (ESC/POS Direct Print)
+// ═══════════════════════════════════════════
+let _printerConfig = { type: 'none', ip: '', port: 9100, device: '' };
+
+function _updatePrinterFields() {
+    const t = document.getElementById('printerConnType')?.value || 'none';
+    const netEl = document.getElementById('printerNetFields');
+    const usbEl = document.getElementById('printerUsbFields');
+    if (netEl) netEl.style.display = (t === 'network') ? '' : 'none';
+    if (usbEl) usbEl.style.display = (t === 'usb') ? '' : 'none';
+}
+
+async function loadPrinterConfig() {
+    try {
+        const resp = await fetch('/api/printer-config');
+        if (!resp.ok) return;
+        const cfg = await resp.json();
+        _printerConfig = cfg;
+        // Populate UI fields
+        const connEl = document.getElementById('printerConnType');
+        const ipEl = document.getElementById('printerIP');
+        const portEl = document.getElementById('printerPort');
+        const devEl = document.getElementById('printerDevice');
+        if (connEl) connEl.value = cfg.type || 'none';
+        if (ipEl) ipEl.value = cfg.ip || '';
+        if (portEl) portEl.value = cfg.port || 9100;
+        if (devEl) devEl.value = cfg.device || '';
+        _updatePrinterFields();
+    } catch (e) {
+        console.warn('[Printer] Failed to load config:', e.message);
+    }
+}
+
+async function savePrinterConfig() {
+    const connType = document.getElementById('printerConnType')?.value || 'none';
+    const ip = document.getElementById('printerIP')?.value?.trim() || '';
+    const port = parseInt(document.getElementById('printerPort')?.value) || 9100;
+    const device = document.getElementById('printerDevice')?.value?.trim() || '';
+    const statusEl = document.getElementById('printerStatus');
+
+    const cfg = { type: connType, ip, port, device };
+
+    // Validation
+    if (connType === 'network' && !ip) {
+        if (statusEl) statusEl.innerHTML = '<span style="color:#DC2626">❌ IP address is required for network printer</span>';
+        return;
+    }
+    if (connType === 'usb' && !device) {
+        if (statusEl) statusEl.innerHTML = '<span style="color:#DC2626">❌ Device path is required for USB printer</span>';
+        return;
+    }
+
+    try {
+        if (statusEl) statusEl.innerHTML = '<span style="color:#6B7280">Saving...</span>';
+        const resp = await fetch('/api/printer-config', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cfg)
+        });
+        const result = await resp.json();
+        if (result.success) {
+            _printerConfig = cfg;
+            if (statusEl) statusEl.innerHTML = '<span style="color:#059669">✅ Printer config saved!</span>';
+            toast('Printer config saved', 'success');
+        } else {
+            throw new Error(result.error || 'Save failed');
+        }
+    } catch (e) {
+        if (statusEl) statusEl.innerHTML = `<span style="color:#DC2626">❌ ${e.message}</span>`;
+        toast('Failed to save printer config', 'error');
+    }
+}
+
+async function testPrinter() {
+    const statusEl = document.getElementById('printerStatus');
+
+    // Save first, then test
+    await savePrinterConfig();
+    if (_printerConfig.type === 'none') {
+        if (statusEl) statusEl.innerHTML = '<span style="color:#F59E0B">⚠️ No printer configured — select Network or USB first</span>';
+        return;
+    }
+
+    try {
+        if (statusEl) statusEl.innerHTML = '<span style="color:#6B7280">🖨️ Sending test print...</span>';
+        const resp = await fetch('/api/printer-test', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({})
+        });
+        const result = await resp.json();
+        if (result.success) {
+            if (statusEl) statusEl.innerHTML = '<span style="color:#059669">✅ Test print sent! Check printer output.</span>';
+            toast('Test print sent!', 'success');
+        } else {
+            throw new Error(result.error || 'Print failed');
+        }
+    } catch (e) {
+        if (statusEl) statusEl.innerHTML = `<span style="color:#DC2626">❌ Test print failed: ${e.message}</span>`;
+        toast('Test print failed: ' + e.message, 'error');
+    }
+}
+
+// ═══════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════
 initLogin();
 updateClock();
 
 </script>
+
+<!-- Change Popup -->
+<div class="change-popup-overlay" id="changePopup">
+    <div class="change-popup">
+        <div class="change-popup-label">CHANGE DUE</div>
+        <div class="change-popup-amount" id="changeAmount">£0.00</div>
+        <div class="change-popup-detail" id="changeDetail"></div>
+        <button class="change-popup-ok" onclick="closeChangePopup()">OK</button>
+        <div class="change-popup-timer" id="changeTimer"></div>
+    </div>
+</div>
+
+
 </body>
 </html>
