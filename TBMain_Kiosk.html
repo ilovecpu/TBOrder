@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Admin v2.4 | 2026-03-10 -->
+<!-- The Bap Admin v2.5 | 2026-03-10 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -964,7 +964,7 @@
             </div>
             <button id="pinClearBtn" class="btn-secondary" style="width: 100%; margin-bottom: 8px;">Clear</button>
             <button id="pinEnterBtn" class="btn-primary" style="width: 100%;">Enter</button>
-            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v2.4</div>
+            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v2.5</div>
         </div>
     </div>
 
@@ -972,7 +972,7 @@
     <div class="container" id="mainContainer" style="display: none;">
         <!-- SIDEBAR -->
         <div class="sidebar">
-            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v2.4</span></div>
+            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v2.5</span></div>
             <div class="nav-menu">
                 <div class="nav-item active" data-section="dashboard">
                     <div class="nav-icon">📊</div>
@@ -1019,7 +1019,7 @@
                     <span>Settings</span>
                 </div>
             </div>
-            <div class="sidebar-footer">v2.4 | The Bap Group</div>
+            <div class="sidebar-footer">v2.5 | The Bap Group</div>
         </div>
 
         <!-- MAIN CONTENT -->
@@ -1481,6 +1481,20 @@
                         <input type="checkbox" id="menuTopping">
                         <span>Has Topping Options</span>
                     </label>
+                </div>
+                <!-- Display Options -->
+                <div class="form-group">
+                    <label>Display Options</label>
+                    <div style="display:flex;gap:16px;margin-top:4px">
+                        <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;padding:6px 12px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;cursor:pointer">
+                            <input type="checkbox" id="menuShowOnKiosk" checked>
+                            <span>📱 Kiosk</span>
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;padding:6px 12px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;cursor:pointer">
+                            <input type="checkbox" id="menuShowOnPos" checked>
+                            <span>💻 POS</span>
+                        </label>
+                    </div>
                 </div>
                 <!-- VAT Settings -->
                 <div class="form-group">
@@ -2669,6 +2683,9 @@
                 this.editingMenuId = null;
                 document.getElementById('menuForm').reset();
                 document.getElementById('menuActive').checked = true;
+                // Display defaults
+                document.getElementById('menuShowOnKiosk').checked = true;
+                document.getElementById('menuShowOnPos').checked = true;
                 // VAT defaults
                 document.getElementById('menuVatApplicable').checked = true;
                 document.getElementById('menuMainVat').value = 20;
@@ -2715,6 +2732,8 @@
                 setSpicyLevel(item.spicyLevel || (item.dietary.includes('spicy') ? 1 : 0));
                 document.getElementById('menuCombo').checked = item.isCombo;
                 document.getElementById('menuTopping').checked = item.hasTopping;
+                document.getElementById('menuShowOnKiosk').checked = item.showOnKiosk !== false;
+                document.getElementById('menuShowOnPos').checked = item.showOnPos !== false;
                 // VAT fields
                 const vatApplicable = item.vatApplicable !== false; // default true
                 document.getElementById('menuVatApplicable').checked = vatApplicable;
@@ -2757,6 +2776,8 @@
                     dietary: dietary,
                     isCombo: document.getElementById('menuCombo').checked,
                     hasTopping: document.getElementById('menuTopping').checked,
+                    showOnKiosk: document.getElementById('menuShowOnKiosk').checked,
+                    showOnPos: document.getElementById('menuShowOnPos').checked,
                     spicyLevel: document.getElementById('menuSpicy').checked ? (_currentSpicyLevel || 1) : 0,
                     vatApplicable: document.getElementById('menuVatApplicable').checked,
                     mainVat: parseInt(document.getElementById('menuMainVat').value) || 20,
@@ -3350,6 +3371,8 @@
                     hasTopping: item.hasTopping || false,
                     toppingCount: item.toppingCount || 1,
                     btnColor: item.btnColor || '',
+                    showOnKiosk: item.showOnKiosk !== false,
+                    showOnPos: item.showOnPos !== false,
                     spicyLevel: item.spicyLevel || 0,
                     vatApplicable: item.vatApplicable !== false,
                     mainVat: item.mainVat || 20,
@@ -3443,6 +3466,8 @@
                                 hasTopping: i.hasTopping || false,
                                 toppingCount: i.toppingCount || 1,
                                 btnColor: i.btnColor || '',
+                                showOnKiosk: i.showOnKiosk !== undefined ? i.showOnKiosk : (local.showOnKiosk !== false),
+                                showOnPos: i.showOnPos !== undefined ? i.showOnPos : (local.showOnPos !== false),
                                 spicyLevel: i.spicyLevel !== undefined ? i.spicyLevel : (local.spicyLevel || 0),
                                 vatApplicable: i.vatApplicable !== undefined ? i.vatApplicable : (local.vatApplicable !== false),
                                 mainVat: i.mainVat !== undefined ? i.mainVat : (local.mainVat || 20),
