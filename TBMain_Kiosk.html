@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Admin v2.0 | 2026-03-10 -->
+<!-- The Bap Admin v2.3 | 2026-03-10 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -964,7 +964,7 @@
             </div>
             <button id="pinClearBtn" class="btn-secondary" style="width: 100%; margin-bottom: 8px;">Clear</button>
             <button id="pinEnterBtn" class="btn-primary" style="width: 100%;">Enter</button>
-            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v2.0</div>
+            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v2.3</div>
         </div>
     </div>
 
@@ -972,7 +972,7 @@
     <div class="container" id="mainContainer" style="display: none;">
         <!-- SIDEBAR -->
         <div class="sidebar">
-            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v2.0</span></div>
+            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v2.3</span></div>
             <div class="nav-menu">
                 <div class="nav-item active" data-section="dashboard">
                     <div class="nav-icon">📊</div>
@@ -1019,7 +1019,7 @@
                     <span>Settings</span>
                 </div>
             </div>
-            <div class="sidebar-footer">v2.0 | The Bap Group</div>
+            <div class="sidebar-footer">v2.3 | The Bap Group</div>
         </div>
 
         <!-- MAIN CONTENT -->
@@ -1471,6 +1471,31 @@
                         <span>Has Topping Options</span>
                     </label>
                 </div>
+                <!-- VAT Settings -->
+                <div class="form-group">
+                    <label>VAT Settings</label>
+                    <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:12px;margin-top:4px">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+                            <input type="checkbox" id="menuVatApplicable" checked onchange="document.getElementById('vatRateFields').style.display=this.checked?'':'none'">
+                            <span style="font-weight:600;font-size:14px">VAT Applicable</span>
+                        </div>
+                        <div id="vatRateFields">
+                            <div style="display:flex;gap:16px;align-items:center;margin-bottom:8px">
+                                <label style="min-width:80px;font-size:13px;font-weight:500">Main VAT</label>
+                                <input type="range" id="menuMainVat" min="5" max="25" value="20" step="1" style="flex:1"
+                                    oninput="document.getElementById('mainVatVal').textContent=this.value+'%'">
+                                <span id="mainVatVal" style="min-width:36px;text-align:right;font-weight:600;font-size:14px;color:#DC2626">20%</span>
+                            </div>
+                            <div style="display:flex;gap:16px;align-items:center">
+                                <label style="min-width:80px;font-size:13px;font-weight:500">Sub VAT</label>
+                                <input type="range" id="menuSubVat" min="0" max="20" value="0" step="1" style="flex:1"
+                                    oninput="document.getElementById('subVatVal').textContent=this.value+'%'">
+                                <span id="subVatVal" style="min-width:36px;text-align:right;font-weight:600;font-size:14px;color:#2563EB">0%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="form-group">
                     <label style="display: flex; align-items: center; gap: 8px;">
                         <input type="checkbox" id="menuActive" checked>
@@ -1675,7 +1700,7 @@
         // APP STATE
         const app = {
             currentSection: 'dashboard',
-            currentPin: '1234',
+            currentPin: '',
             editingBranchId: null,
             editingMenuId: null,
             editingSauceId: null,
@@ -2551,13 +2576,29 @@
                 // Use saved categories list first, fallback to extracting from items
                 const savedCats = JSON.parse(localStorage.getItem('tb_categories') || '[]');
                 let categories;
+                // ★ Build category name map from items (fallback)
+                const itemCatNames = {};
+                items.forEach(i => {
+                    const cid = i.category || i.catId;
+                    if (cid && !itemCatNames[cid]) itemCatNames[cid] = i.categoryName || cid;
+                });
+
                 if (savedCats.length > 0) {
                     categories = savedCats
                         .filter(c => c.active !== false)
                         .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
                         .map(c => ({ id: c.id, name: c.nameEn || c.name || c.id }));
+                    // ★ Check if items have categories not in savedCats — stale cache
+                    const catIds = new Set(categories.map(c => c.id));
+                    const itemCatIds = [...new Set(items.map(i => i.category || i.catId).filter(Boolean))];
+                    const missing = itemCatIds.filter(id => !catIds.has(id));
+                    if (missing.length > 0) {
+                        console.warn('[Menu] Stale categories cache — rebuilding from items');
+                        categories = itemCatIds.map(c => ({ id: c, name: itemCatNames[c] || c }));
+                    }
                 } else {
-                    categories = [...new Set(items.map(i => i.category))].map(c => ({ id: c, name: c }));
+                    const itemCatIds = [...new Set(items.map(i => i.category || i.catId).filter(Boolean))];
+                    categories = itemCatIds.map(c => ({ id: c, name: itemCatNames[c] || c }));
                 }
 
                 const tabsContainer = document.getElementById('categoryTabs');
@@ -2602,6 +2643,13 @@
                 this.editingMenuId = null;
                 document.getElementById('menuForm').reset();
                 document.getElementById('menuActive').checked = true;
+                // VAT defaults
+                document.getElementById('menuVatApplicable').checked = true;
+                document.getElementById('menuMainVat').value = 20;
+                document.getElementById('mainVatVal').textContent = '20%';
+                document.getElementById('menuSubVat').value = 0;
+                document.getElementById('subVatVal').textContent = '0%';
+                document.getElementById('vatRateFields').style.display = '';
                 document.getElementById('menuImagePreview').style.display = 'none';
                 document.getElementById('menuModal').classList.add('active');
             },
@@ -2637,6 +2685,14 @@
                 document.getElementById('menuSpicy').checked = item.dietary.includes('spicy');
                 document.getElementById('menuCombo').checked = item.isCombo;
                 document.getElementById('menuTopping').checked = item.hasTopping;
+                // VAT fields
+                const vatApplicable = item.vatApplicable !== false; // default true
+                document.getElementById('menuVatApplicable').checked = vatApplicable;
+                document.getElementById('menuMainVat').value = item.mainVat || 20;
+                document.getElementById('mainVatVal').textContent = (item.mainVat || 20) + '%';
+                document.getElementById('menuSubVat').value = item.subVat || 0;
+                document.getElementById('subVatVal').textContent = (item.subVat || 0) + '%';
+                document.getElementById('vatRateFields').style.display = vatApplicable ? '' : 'none';
                 document.getElementById('menuActive').checked = item.active;
 
                 document.getElementById('menuModal').classList.add('active');
@@ -2671,6 +2727,9 @@
                     dietary: dietary,
                     isCombo: document.getElementById('menuCombo').checked,
                     hasTopping: document.getElementById('menuTopping').checked,
+                    vatApplicable: document.getElementById('menuVatApplicable').checked,
+                    mainVat: parseInt(document.getElementById('menuMainVat').value) || 20,
+                    subVat: parseInt(document.getElementById('menuSubVat').value) || 0,
                     active: document.getElementById('menuActive').checked,
                     btnColor: (document.querySelector('#btnColorPicker input[name="btnColor"]:checked') || {}).value || ''
                 };
@@ -3260,6 +3319,9 @@
                     hasTopping: item.hasTopping || false,
                     toppingCount: item.toppingCount || 1,
                     btnColor: item.btnColor || '',
+                    vatApplicable: item.vatApplicable !== false,
+                    mainVat: item.mainVat || 20,
+                    subVat: item.subVat || 0,
                     active: item.active !== false,
                     sortOrder: idx + 1
                 }));
@@ -3319,6 +3381,10 @@
                     }
 
                     // Convert server format → admin localStorage format
+                    const catMap = {};
+                    if (data.categories) {
+                        data.categories.forEach(c => { catMap[c.id] = c.nameEn || c.name || c.id; });
+                    }
                     if (data.items) {
                         const adminItems = data.items.map(i => ({
                             id: i.id,
@@ -3326,6 +3392,7 @@
                             nameKr: i.nameKr,
                             category: i.catId,
                             catId: i.catId,
+                            categoryName: catMap[i.catId] || i.catId,
                             description: i.desc || '',
                             desc: i.desc || '',
                             basePrice: i.price,
@@ -3337,6 +3404,9 @@
                             hasTopping: i.hasTopping || false,
                             toppingCount: i.toppingCount || 1,
                             btnColor: i.btnColor || '',
+                            vatApplicable: i.vatApplicable !== false,
+                            mainVat: i.mainVat || 20,
+                            subVat: i.subVat || 0,
                             active: i.active !== false
                         }));
                         localStorage.setItem('tb_menu_items', JSON.stringify(adminItems));
