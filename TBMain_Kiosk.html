@@ -2023,6 +2023,8 @@
                 try {
                     await this.pullMenuFromServer(true);
                     console.log('[Admin] Menu loaded from ' + (isRemote() ? 'Google Sheets' : 'server'));
+                    // 새 필드(spicyLevel, VAT 등)가 서버에 없을 수 있으니 한번 Push
+                    await this.autoSyncToServer();
                 } catch (e) {
                     console.log('[Admin] API not available, using localStorage defaults');
                 }
@@ -3415,30 +3417,38 @@
                         data.categories.forEach(c => { catMap[c.id] = c.nameEn || c.name || c.id; });
                     }
                     if (data.items) {
-                        const adminItems = data.items.map(i => ({
-                            id: i.id,
-                            nameEn: i.nameEn,
-                            nameKr: i.nameKr,
-                            category: i.catId,
-                            catId: i.catId,
-                            categoryName: catMap[i.catId] || i.catId,
-                            description: i.desc || '',
-                            desc: i.desc || '',
-                            basePrice: i.price,
-                            price: i.price,
-                            driveId: i.driveId || i.image || i.thumbnail || '',
-                            dietary: i.dietary || [],
-                            isCombo: i.isCombo || false,
-                            comboCount: i.comboCount || 2,
-                            hasTopping: i.hasTopping || false,
-                            toppingCount: i.toppingCount || 1,
-                            btnColor: i.btnColor || '',
-                            spicyLevel: i.spicyLevel || 0,
-                            vatApplicable: i.vatApplicable !== false,
-                            mainVat: i.mainVat || 20,
-                            subVat: i.subVat || 0,
-                            active: i.active !== false
-                        }));
+                        // 기존 로컬 데이터 (서버에 없는 필드 보존용)
+                        const localItems = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
+                        const localMap = {};
+                        localItems.forEach(li => { localMap[li.id] = li; });
+
+                        const adminItems = data.items.map(i => {
+                            const local = localMap[i.id] || {};
+                            return {
+                                id: i.id,
+                                nameEn: i.nameEn,
+                                nameKr: i.nameKr,
+                                category: i.catId,
+                                catId: i.catId,
+                                categoryName: catMap[i.catId] || i.catId,
+                                description: i.desc || '',
+                                desc: i.desc || '',
+                                basePrice: i.price,
+                                price: i.price,
+                                driveId: i.driveId || i.image || i.thumbnail || '',
+                                dietary: i.dietary || [],
+                                isCombo: i.isCombo || false,
+                                comboCount: i.comboCount || 2,
+                                hasTopping: i.hasTopping || false,
+                                toppingCount: i.toppingCount || 1,
+                                btnColor: i.btnColor || '',
+                                spicyLevel: i.spicyLevel !== undefined ? i.spicyLevel : (local.spicyLevel || 0),
+                                vatApplicable: i.vatApplicable !== undefined ? i.vatApplicable : (local.vatApplicable !== false),
+                                mainVat: i.mainVat !== undefined ? i.mainVat : (local.mainVat || 20),
+                                subVat: i.subVat !== undefined ? i.subVat : (local.subVat || 0),
+                                active: i.active !== false
+                            };
+                        });
                         localStorage.setItem('tb_menu_items', JSON.stringify(adminItems));
                     }
                     if (data.sauces) {
