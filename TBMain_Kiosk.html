@@ -1219,6 +1219,7 @@
                                 <th>Branch</th>
                                 <th>Items</th>
                                 <th>Total</th>
+                                <th>Payment</th>
                                 <th>Status</th>
                                 <th>Date/Time</th>
                                 <th>Actions</th>
@@ -1610,7 +1611,7 @@
         const ALLERGENS_LIST = ['Sesame', 'Soy', 'Egg', 'Peanuts', 'Tree Nuts', 'Milk', 'Gluten', 'Fish', 'Shellfish', 'Mustard', 'Celery', 'Lupin', 'Molluscs', 'Sulphites'];
 
         // ─── Google Apps Script API (직접 통신) ───
-        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbwFiI1apnEtPEkxqR1uesicIcRv9TAtG0Ew7wuz3ymTQCAxKrNwEPnwaDfMDJz1GcC60A/exec';
+        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbwzRdh2grvGlE1YKH58lEYXf9XrchkGQJGDslzx80OfkRkKcbHRk-pguJd74cGpfrpBUQ/exec';
 
         // 원격 모드 감지 (GitHub Pages, file://, ?remote=true 등)
         function isRemote() {
@@ -1795,8 +1796,19 @@
                 try {
                     const channel = new BroadcastChannel('thebap_orders');
                     channel.addEventListener('message', (event) => {
-                        if (event.data.type === 'new_order' && event.data.order) {
-                            this.addLiveOrder(event.data.order);
+                        const msg = event.data;
+                        if (msg.type === 'new_order' && msg.order) {
+                            this.addLiveOrder(msg.order);
+                        } else if (msg.type === 'order_status') {
+                            this.updateLiveOrderStatus(msg.orderNumber, msg.status, msg);
+                        } else if (msg.type === 'order_deleted') {
+                            this.liveOrders = this.liveOrders.filter(o => o.orderNumber !== msg.orderNumber);
+                            this.renderOrders();
+                            this.updateDashboard();
+                        } else if (msg.type === 'orders_cleared' || msg.type === 'day_reset') {
+                            this.liveOrders = [];
+                            this.renderOrders();
+                            this.updateDashboard();
                         }
                     });
                 } catch (e) {}
@@ -1830,10 +1842,12 @@
                     this.ws.onmessage = (event) => {
                         try {
                             const msg = JSON.parse(event.data);
-                            if (msg.type === 'new_order' && msg.order) {
+                            if (msg.type === 'registered') {
+                                console.log(`[Admin WS] ✅ 등록 완료 — 서버 주문 ${msg.dailyOrderCount || 0}건`);
+                            } else if (msg.type === 'new_order' && msg.order) {
                                 this.addLiveOrder(msg.order);
                             } else if (msg.type === 'order_status') {
-                                this.updateLiveOrderStatus(msg.orderNumber, msg.status);
+                                this.updateLiveOrderStatus(msg.orderNumber, msg.status, msg);
                             } else if (msg.type === 'order_deleted') {
                                 this.liveOrders = this.liveOrders.filter(o => o.orderNumber !== msg.orderNumber);
                                 this.renderOrders();
@@ -1842,8 +1856,21 @@
                                 this.liveOrders = [];
                                 this.renderOrders();
                                 this.updateDashboard();
+                            } else if (msg.type === 'day_reset') {
+                                console.log('[Admin WS] 🔄 Day reset received');
+                                this.liveOrders = [];
+                                this.renderOrders();
+                                this.updateDashboard();
+                            } else if (msg.type === 'client_connected' || msg.type === 'client_disconnected') {
+                                // 연결 클라이언트 수 업데이트
+                                if (msg.connectedClients) {
+                                    const total = (msg.connectedClients.pos || 0) + (msg.connectedClients.kitchen || 0) + (msg.connectedClients.kiosk || 0);
+                                    console.log(`[Admin WS] 클라이언트: POS ${msg.connectedClients.pos || 0}, Kitchen ${msg.connectedClients.kitchen || 0}, Kiosk ${msg.connectedClients.kiosk || 0}`);
+                                }
                             }
-                        } catch (e) {}
+                        } catch (e) {
+                            console.error('[Admin WS] 메시지 처리 오류:', e);
+                        }
                     };
 
                     this.ws.onclose = () => {
@@ -1853,7 +1880,9 @@
                         this.wsReconnectTimer = setTimeout(() => this.connectWebSocket(), 5000);
                     };
 
-                    this.ws.onerror = () => {};
+                    this.ws.onerror = (err) => {
+                        console.error('[Admin WS] ❌ 연결 에러:', err);
+                    };
                 } catch (e) {
                     setTimeout(() => this.connectWebSocket(), 5000);
                 }
@@ -1872,10 +1901,16 @@
                 this.showToast(`📋 New Order: ${order.orderNumber}`, 'success');
             },
 
-            updateLiveOrderStatus(orderNumber, status) {
+            updateLiveOrderStatus(orderNumber, status, msgData) {
                 const order = this.liveOrders.find(o => o.orderNumber === orderNumber);
                 if (order) {
                     order.status = status;
+                    if (msgData) {
+                        if (msgData.paymentStatus) order.paymentStatus = msgData.paymentStatus;
+                        if (msgData.paymentMethod) order.paymentMethod = msgData.paymentMethod;
+                        if (msgData.amountPaid !== undefined) order.amountPaid = msgData.amountPaid;
+                        if (msgData.staff) order.staff = msgData.staff;
+                    }
                     if (this.currentSection === 'orders') this.renderOrders();
                     this.updateDashboard();
                 }
@@ -2525,16 +2560,17 @@
                 }
 
                 const tabsContainer = document.getElementById('categoryTabs');
-                tabsContainer.innerHTML = categories.map((cat, idx) => `
-                    <button class="tab-btn ${idx === 0 ? 'active' : ''}" onclick="app.filterMenuByCategory('${cat.id}')">${cat.name}</button>
+                tabsContainer.innerHTML = `<button class="tab-btn active" onclick="app.filterMenuByCategory('__all__')">All</button>` +
+                    categories.map(cat => `
+                    <button class="tab-btn" onclick="app.filterMenuByCategory('${cat.id}')">${cat.name}</button>
                 `).join('');
 
-                this.filterMenuByCategory(categories[0]?.id || 'kfood');
+                this.filterMenuByCategory('__all__');
             },
 
             filterMenuByCategory(categoryId) {
                 const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
-                const filtered = items.filter(i => (i.category || i.catId) === categoryId);
+                const filtered = categoryId === '__all__' ? items : items.filter(i => (i.category || i.catId) === categoryId);
 
                 document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
                 const activeBtn = document.querySelector(`[onclick="app.filterMenuByCategory('${categoryId}')"]`);
@@ -3065,7 +3101,7 @@
                 this.updateOrdersSummary(filtered);
 
                 if (filtered.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; color: #999;">No orders found</td></tr>';
+                    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; color: #999;">No orders found</td></tr>';
                     return;
                 }
 
@@ -3093,6 +3129,14 @@
                           </select>`
                         : `<span style="color:${statusColor};font-weight:600;">${(order.status || 'unknown').toUpperCase()}</span>`;
 
+                    const isPaid = order.paymentStatus === 'paid';
+                    const payBadge = isPaid
+                        ? '<span style="background:#22C55E;color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;">PAID</span>'
+                        : (order.paymentMethod === 'pay_at_counter' || order.source === 'kiosk'
+                            ? '<span style="background:#EF4444;color:#fff;padding:2px 6px;border-radius:4px;font-size:11px;font-weight:600;">UNPAID</span>'
+                            : '<span style="color:#ccc;">-</span>');
+                    const payMethodStr = order.paymentMethod ? ` (${order.paymentMethod})` : '';
+
                     const actionsCell = isLive
                         ? `<button class="btn-danger btn-small" onclick="app.deleteOrder('${order.orderNumber}')">Delete</button>`
                         : `<span style="color:#ccc;">-</span>`;
@@ -3104,6 +3148,7 @@
                         <td>${order.branchCode || '-'}</td>
                         <td title="${itemsSummary}">${itemsSummary || '-'}</td>
                         <td>£${(order.total || order.subtotal || 0).toFixed(2)}</td>
+                        <td>${payBadge}${payMethodStr}</td>
                         <td>${statusCell}</td>
                         <td>${timeStr}</td>
                         <td>${actionsCell}</td>
