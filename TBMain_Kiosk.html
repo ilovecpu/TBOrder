@@ -2654,6 +2654,7 @@
                         <div class="menu-item-body">
                             <div class="menu-item-name" title="${item.nameEn}">${item.nameEn}</div>
                             <div class="menu-item-name-kr">${item.nameKr}</div>
+                            ${item.spicyLevel ? `<div style="font-size:14px;margin:2px 0">${'🌶️'.repeat(item.spicyLevel)}</div>` : ''}
                             <div class="menu-item-price">£${item.basePrice.toFixed(2)}</div>
                             <div class="menu-item-actions" style="display:flex;gap:4px;">
                                 <button class="btn-secondary btn-small" style="font-size:11px;padding:3px 8px;" onclick="app.editMenuItem('${item.id}')">Edit</button>
