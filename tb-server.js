@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * ════════════════════════════════════════════════════════════
- *  🍚 The Bap (더밥) — TBOrder Local Server v1.9
+ *  🍚 The Bap (더밥) — TBOrder Local Server v2.0
  *  Last Updated: 2026-03-10
  * ════════════════════════════════════════════════════════════
  *
@@ -68,10 +68,10 @@ const printer = require('./tb-printer');
 
 const PORT = parseInt(process.env.TB_PORT) || 8080;
 const BRANCH_CODE = process.env.TB_BRANCH || 'TB';   // 지점코드: TB, PAB 등 (실행: TB_BRANCH=PAB node tb-server.js)
-const SERVER_VERSION = '1.9';
+const SERVER_VERSION = '2.0';
 const SERVER_START_TIME = new Date().toISOString();
-const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbwzRdh2grvGlE1YKH58lEYXf9XrchkGQJGDslzx80OfkRkKcbHRk-pguJd74cGpfrpBUQ/exec';
-const GOOGLE_API = process.env.GOOGLE_API || 'https://script.google.com/macros/s/AKfycbwzRdh2grvGlE1YKH58lEYXf9XrchkGQJGDslzx80OfkRkKcbHRk-pguJd74cGpfrpBUQ/exec';
+const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbwleB1U6eLEVtGpzaXlzeUkm0Wi35myeYm1bAyIvWc09slWctAGsGOt33uK0VRtn2_Odg/exec';
+const GOOGLE_API = process.env.GOOGLE_API || 'https://script.google.com/macros/s/AKfycbwleB1U6eLEVtGpzaXlzeUkm0Wi35myeYm1bAyIvWc09slWctAGsGOt33uK0VRtn2_Odg/exec';
 
 // ─── 메뉴 데이터 로드/캐시 ───
 const MENU_FILE = path.join(__dirname, 'data', 'menu.json');
@@ -147,6 +147,11 @@ async function syncMenuToGoogle(menuData) {
       categories: menuData.categories,
       items: menuData.items,
       sauces: menuData.sauces,
+      branchPricing: menuData.branchPricing,
+      branches: menuData.branches,
+      branchVisibility: menuData.branchVisibility,
+      allergens: menuData.allergens,
+      nutrition: menuData.nutrition,
     });
     const urlObj = new URL(GOOGLE_MENU_API);
     const options = {
@@ -1546,6 +1551,9 @@ const server = http.createServer(async (req, res) => {
           if (src.sauces) menuCache.sauces = src.sauces;
           if (src.branchPricing) menuCache.branchPricing = src.branchPricing;
           if (src.branches) menuCache.branches = src.branches;
+          if (src.branchVisibility) menuCache.branchVisibility = src.branchVisibility;
+          if (src.allergens) menuCache.allergens = src.allergens;
+          if (src.nutrition) menuCache.nutrition = src.nutrition;
         } else if (action === 'addItem' && data.item) {
           menuCache.items.push(data.item);
         } else if (action === 'updateItem' && data.item) {

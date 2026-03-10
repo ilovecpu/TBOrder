@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Order Kiosk v1.4 | 2026-03-07 -->
+<!-- The Bap Order Kiosk v1.5 | 2026-03-10 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -2028,7 +2028,7 @@
 
     <script>
         // ========== CONFIGURATION DATA ==========
-        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbwzRdh2grvGlE1YKH58lEYXf9XrchkGQJGDslzx80OfkRkKcbHRk-pguJd74cGpfrpBUQ/exec';
+        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbwleB1U6eLEVtGpzaXlzeUkm0Wi35myeYm1bAyIvWc09slWctAGsGOt33uK0VRtn2_Odg/exec';
         let BRANCHES = []; // loaded dynamically — no hardcoded fallback
 
         // ═══ Menu data loaded from server API ═══
@@ -2036,6 +2036,21 @@
         let MENU_ITEMS = [];
         let SAUCES = [];
         let MENU_BRANCH_PRICING = {};
+
+        // 카테고리 기본 아이콘 맵
+        const _CAT_ICON_MAP = {
+            'combe':'🍱','combo':'🍱',
+            'k-food':'🍚','kfood':'🍚','korean':'🍚',
+            'kchicken':'🍗','chicken':'🍗','k-chicken':'🍗',
+            'kbbq':'🥩','bbq':'🥩','bulgogi':'🥩',
+            'bbm':'🥗','bibim':'🥗','bibimbap':'🥗',
+            'soup':'🍜','noodle':'🍜','ramen':'🍜',
+            'side':'🥟','sides':'🥟','snack':'🥟',
+            'drink':'🥤','drinks':'🥤','beverage':'🥤',
+            'dessert':'🍰','sweet':'🍰',
+            'rice':'🍚','set':'🍽️','special':'⭐'
+        };
+        function _defaultCatIcon(id) { return _CAT_ICON_MAP[(id||'').toLowerCase()] || '📋'; }
 
         async function loadMenuFromAPI() {
             try {
@@ -2046,7 +2061,7 @@
                 CATEGORIES = (data.categories || [])
                     .filter(c => c.active !== false)
                     .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
-                    .map(c => ({ id: c.id, name: c.nameEn, nameKr: c.nameKr, icon: c.icon || '🍱', color: c.color }));
+                    .map(c => ({ id: c.id, name: c.nameEn, nameKr: c.nameKr, icon: c.icon || _defaultCatIcon(c.id), color: c.color, descEn: c.descEn || '', descKr: c.descKr || '' }));
                 // Map items: server uses string IDs like 'M001', keep as-is
                 MENU_ITEMS = (data.items || [])
                     .filter(i => i.active !== false && i.showOnKiosk !== false)
@@ -2258,19 +2273,28 @@
             return '🔥'.repeat(spiceLevel);
         }
 
-        function renderDietaryBadges(dietary, container, spicyLevel) {
-            container.innerHTML = '';
-            dietary.forEach(type => {
-                const badge = document.createElement('div');
-                badge.className = `dietary-badge ${type === 'spicy' ? 'spicy' : ''}`;
-                if (type === 'V') badge.textContent = 'V (Vegetarian)';
-                else if (type === 'VG') badge.textContent = 'VG (Vegan)';
-                else if (type === 'spicy') {
-                    const lvl = spicyLevel || 1;
-                    badge.innerHTML = '🌶️'.repeat(lvl) + ' Spicy';
+        const _DIETARY_ICONS = {
+            'vegan':       { icon: '🌱', label: 'Vegan',       color: '#16A34A' },
+            'vegetarian':  { icon: '🥬', label: 'Vegetarian',  color: '#22C55E' },
+            'pescatarian': { icon: '🐟', label: 'Pescatarian', color: '#0EA5E9' },
+            'glutenFree':  { icon: '🌾', label: 'Gluten Free', color: '#D97706' },
+            'spicy':       { icon: '🌶️', label: 'Spicy',       color: '#DC2626' },
+            'V':           { icon: '🥬', label: 'Vegetarian',  color: '#22C55E' },
+            'VG':          { icon: '🌱', label: 'Vegan',       color: '#16A34A' },
+        };
+        function getDietaryBadgeHtml(dietary, spicyLevel) {
+            if (!dietary || !dietary.length) return '';
+            return dietary.map(d => {
+                const info = _DIETARY_ICONS[d];
+                if (!info) return '';
+                if (d === 'spicy' && spicyLevel) {
+                    return `<span style="font-size:13px">${info.icon.repeat(spicyLevel)}</span>`;
                 }
-                container.appendChild(badge);
-            });
+                return `<span style="display:inline-flex;align-items:center;gap:2px;font-size:10px;background:${info.color}15;color:${info.color};border:1px solid ${info.color}30;border-radius:10px;padding:1px 5px;font-weight:600"><span style="font-size:12px">${info.icon}</span>${info.label}</span>`;
+            }).filter(Boolean).join(' ');
+        }
+        function renderDietaryBadges(dietary, container, spicyLevel) {
+            container.innerHTML = getDietaryBadgeHtml(dietary, spicyLevel);
         }
 
         function getImageUrl(idOrUrl, categoryId) {
@@ -2483,6 +2507,25 @@
                 categoryScroll.appendChild(pill);
             });
 
+            // 카테고리 설명 표시
+            const activeCat = CATEGORIES.find(c => c.id === categoryId);
+            let catDescEl = document.getElementById('kioskCatDesc');
+            if (!catDescEl) {
+                catDescEl = document.createElement('div');
+                catDescEl.id = 'kioskCatDesc';
+                catDescEl.style.cssText = 'text-align:center;padding:6px 16px 2px;font-size:13px;color:#6B7280;min-height:20px;transition:opacity .2s';
+                const categoryScroll = document.getElementById('categoryScroll');
+                categoryScroll.parentNode.insertBefore(catDescEl, categoryScroll.nextSibling);
+            }
+            if (activeCat && (activeCat.descEn || activeCat.descKr)) {
+                const desc = activeCat.descEn ? (activeCat.descKr ? `${activeCat.descEn} · ${activeCat.descKr}` : activeCat.descEn) : activeCat.descKr;
+                catDescEl.textContent = desc;
+                catDescEl.style.opacity = '1';
+            } else {
+                catDescEl.textContent = '';
+                catDescEl.style.opacity = '0';
+            }
+
             const menuGrid = document.getElementById('menuGrid');
             menuGrid.innerHTML = '';
 
@@ -2499,15 +2542,7 @@
                     imageHtml = `<div class="image-placeholder">${CATEGORIES.find(c => c.id === item.catId)?.icon || '🍱'}</div>`;
                 }
 
-                const dietaryHtml = item.dietary.map(d => {
-                    if (d === 'V') return '<div class="dietary-badge">V</div>';
-                    if (d === 'VG') return '<div class="dietary-badge">VG</div>';
-                    if (d === 'spicy') {
-                        const lvl = item.spicyLevel || 1;
-                        return '<div class="dietary-badge spicy">' + '🌶️'.repeat(lvl) + '</div>';
-                    }
-                    return '';
-                }).join('');
+                const dietaryHtml = getDietaryBadgeHtml(item.dietary, item.spicyLevel);
 
                 card.innerHTML = `
                     <div class="menu-item-image">${imageHtml}</div>

@@ -1,8 +1,9 @@
 /**
  * ════════════════════════════════════════════════════════════
- *  🍚 The Bap — Google Apps Script v1.7
+ *  🍚 The Bap — Google Apps Script v2.0
  *  Menu API + Orders + Image Upload + TBMS Stores + Users + DailySales
- *  Last Updated: 2026-03-07
+ *  + Branches, BranchVisibility, Allergens, Nutrition
+ *  Last Updated: 2026-03-10
  * ════════════════════════════════════════════════════════════
  *
  *  설정 방법:
@@ -18,11 +19,17 @@
  *     GOOGLE_MENU_API=https://script.google.com/macros/s/xxxxx/exec
  *
  *  시트 구조 (자동 생성):
- *   - Categories: 카테고리 목록 (id, nameEn, nameKr, icon, color, sortOrder, active)
- *   - MenuItems: 메뉴 아이템 (driveId = Google Drive File ID)
+ *   - Categories: 카테고리 목록 (id, nameEn, nameKr, icon, color, sortOrder, active, descEn, descKr, extra1-4)
+ *   - MenuItems: 메뉴 아이템 (driveId = Google Drive File ID, showOnKiosk, showOnPos, spicyLevel, vatApplicable, mainVat, subVat)
  *   - Sauces: 소스 목록
  *   - BranchPricing: 지점별 가격
+ *   - Branches: 지점 목록 (code, name, nameKr, address, phone, active)
  *   - Orders: 주문 기록
+ *   - DailySales: 일별 매출 요약
+ *  PropertiesService (JSON):
+ *   - branchVisibility: 지점별 메뉴 노출 설정
+ *   - allergens: 알레르겐 정보
+ *   - nutrition: 영양 정보
  *
  *  이미지 업로드:
  *   - Admin에서 이미지 업로드 → base64 → Apps Script → Google Drive 저장
@@ -63,6 +70,7 @@ function doGet(e) {
       case 'orders':     return jsonOut(getOrders(e));
       case 'pending':    return jsonOut(getPendingOrders(e));
       case 'branchPricing': return jsonOut(getBranchPricing());
+      case 'branches':   return jsonOut({ branches: getBranches() });
       case 'stores':     return jsonOut(getTBMSStores());
       case 'users':      return jsonOut(getTBMSUsers());
       case 'dailySales': return jsonOut(getDailySales(e));
@@ -213,6 +221,10 @@ function getFullMenu() {
     items: getItems(),
     sauces: getSauces(),
     branchPricing: getBranchPricing(),
+    branches: getBranches(),
+    branchVisibility: loadJsonProperty('branchVisibility'),
+    allergens: loadJsonProperty('allergens'),
+    nutrition: loadJsonProperty('nutrition'),
   };
 }
 
@@ -286,11 +298,16 @@ function updateFullMenu(data) {
   if (data.items) updateAllItems(data.items);
   if (data.sauces) updateAllSauces(data.sauces);
   if (data.branchPricing) updateBranchPricing(data.branchPricing);
+  // ─── 새 데이터 타입 (Branches 시트 + JSON PropertiesService) ───
+  if (data.branches) updateBranches(data.branches);
+  if (data.branchVisibility) saveJsonProperty('branchVisibility', data.branchVisibility);
+  if (data.allergens) saveJsonProperty('allergens', data.allergens);
+  if (data.nutrition) saveJsonProperty('nutrition', data.nutrition);
   incrementMenuVersion();
 }
 
 // ─── Categories CRUD ───
-const CAT_HEADERS = ['id','nameEn','nameKr','icon','color','sortOrder','active'];
+const CAT_HEADERS = ['id','nameEn','nameKr','icon','color','sortOrder','active','descEn','descKr','extra1','extra2','extra3','extra4'];
 
 function updateCategories(categories) {
   writeSheet(SH_CAT, CAT_HEADERS, categories);
@@ -341,7 +358,7 @@ function deleteCategory(catId) {
 }
 
 // ─── MenuItems ───
-const ITEM_HEADERS = ['id','catId','nameEn','nameKr','desc','price','driveId','dietary','isCombo','comboCount','hasTopping','toppingCount','btnColor','active','sortOrder'];
+const ITEM_HEADERS = ['id','catId','nameEn','nameKr','desc','price','driveId','dietary','isCombo','comboCount','hasTopping','toppingCount','btnColor','active','sortOrder','showOnKiosk','showOnPos','spicyLevel','vatApplicable','mainVat','subVat'];
 
 function updateAllItems(items) {
   writeSheet(SH_ITEM, ITEM_HEADERS, items, (item, h) => {
@@ -397,6 +414,73 @@ function deleteMenuItem(itemId) {
 // ─── Sauces ───
 function updateAllSauces(sauces) {
   writeSheet(SH_SAUCE, ['id','nameEn','nameKr','price','spiceLevel'], sauces);
+}
+
+// ─── Branches (지점 목록) ───
+const SH_BRANCHES = 'Branches';
+const BRANCH_HEADERS = ['code','name','nameKr','address','phone','active'];
+
+function updateBranches(branches) {
+  if (!Array.isArray(branches) || branches.length === 0) return;
+  writeSheet(SH_BRANCHES, BRANCH_HEADERS, branches);
+}
+
+function getBranches() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SH_BRANCHES);
+  if (!sheet || sheet.getLastRow() < 2) return [];
+  const data = sheet.getDataRange().getValues();
+  const headers = data[0];
+  return data.slice(1).filter(row => row[0]).map(row => {
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = row[i]; });
+    if (obj.active !== undefined) {
+      obj.active = obj.active === true || obj.active === 'TRUE' || obj.active === 'true';
+    }
+    return obj;
+  });
+}
+
+// ─── JSON PropertiesService (복잡한 중첩 객체 저장용) ───
+// branchVisibility, allergens, nutrition 등 시트에 맞지 않는 데이터
+// PropertiesService는 9KB/property 제한 → 큰 데이터는 분할 저장
+function saveJsonProperty(key, value) {
+  const json = JSON.stringify(value);
+  const props = PropertiesService.getScriptProperties();
+  // 단일 property에 저장 (9KB 미만이면 OK)
+  if (json.length < 8000) {
+    props.setProperty('json_' + key, json);
+    props.deleteProperty('json_' + key + '_chunks');
+  } else {
+    // 분할 저장 (8000자씩)
+    const chunks = [];
+    for (let i = 0; i < json.length; i += 8000) {
+      chunks.push(json.substring(i, i + 8000));
+    }
+    props.setProperty('json_' + key + '_chunks', chunks.length.toString());
+    for (let i = 0; i < chunks.length; i++) {
+      props.setProperty('json_' + key + '_' + i, chunks[i]);
+    }
+    props.deleteProperty('json_' + key);
+  }
+}
+
+function loadJsonProperty(key) {
+  const props = PropertiesService.getScriptProperties();
+  // 단일 property 시도
+  const single = props.getProperty('json_' + key);
+  if (single) {
+    try { return JSON.parse(single); } catch(e) { return null; }
+  }
+  // 분할 저장 확인
+  const chunkCount = parseInt(props.getProperty('json_' + key + '_chunks') || '0');
+  if (chunkCount > 0) {
+    let json = '';
+    for (let i = 0; i < chunkCount; i++) {
+      json += props.getProperty('json_' + key + '_' + i) || '';
+    }
+    try { return JSON.parse(json); } catch(e) { return null; }
+  }
+  return null;
 }
 
 // ─── Branch Pricing ───
@@ -639,6 +723,12 @@ function initializeSheets() {
     { id:'S006', nameEn:'Extra Sauce', nameKr:'소스 추가', price:0.30, spiceLevel:0 },
   ]);
 
+  // ─── Branches 시트 ───
+  const brSheet = getOrCreateSheet(SH_BRANCHES);
+  brSheet.clear();
+  brSheet.appendRow(BRANCH_HEADERS);
+  formatHeader(brSheet, BRANCH_HEADERS.length);
+
   // ─── BranchPricing 시트 헤더 ───
   const bpSheet = getOrCreateSheet(SH_BRANCH);
   bpSheet.clear();
@@ -660,11 +750,11 @@ function initializeSheets() {
 
   // 웹앱에서 호출 시 JSON 결과 반환, 에디터에서 실행 시 alert
   try {
-    SpreadsheetApp.getUi().alert('✅ 초기화 완료!\n\nSheets: Categories, MenuItems, Sauces, BranchPricing, Orders\nDrive Folders: TheBap_MenuImages, TheBap_Thumbnails\n\n이제 Deploy > New deployment 으로 웹앱을 배포하세요.');
+    SpreadsheetApp.getUi().alert('✅ 초기화 완료!\n\nSheets: Categories, MenuItems, Sauces, Branches, BranchPricing, Orders, DailySales\nDrive Folders: TheBap_MenuImages, TheBap_Thumbnails\n\n이제 Deploy > New deployment 으로 웹앱을 배포하세요.');
   } catch (e) {
     // 웹앱 모드 — getUi() 불가, 무시
   }
-  return { success: true, message: 'Initialized: Categories, MenuItems, Sauces, BranchPricing, Orders + Drive folders' };
+  return { success: true, message: 'Initialized: Categories, MenuItems, Sauces, Branches, BranchPricing, Orders, DailySales + Drive folders' };
 }
 
 /**

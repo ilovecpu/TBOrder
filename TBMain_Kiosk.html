@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Admin v2.5 | 2026-03-10 -->
+<!-- The Bap Admin v2.7 | 2026-03-10 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -964,7 +964,7 @@
             </div>
             <button id="pinClearBtn" class="btn-secondary" style="width: 100%; margin-bottom: 8px;">Clear</button>
             <button id="pinEnterBtn" class="btn-primary" style="width: 100%;">Enter</button>
-            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v2.5</div>
+            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v2.7</div>
         </div>
     </div>
 
@@ -972,7 +972,7 @@
     <div class="container" id="mainContainer" style="display: none;">
         <!-- SIDEBAR -->
         <div class="sidebar">
-            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v2.5</span></div>
+            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v2.7</span></div>
             <div class="nav-menu">
                 <div class="nav-item active" data-section="dashboard">
                     <div class="nav-icon">📊</div>
@@ -1019,7 +1019,7 @@
                     <span>Settings</span>
                 </div>
             </div>
-            <div class="sidebar-footer">v2.5 | The Bap Group</div>
+            <div class="sidebar-footer">v2.7 | The Bap Group</div>
         </div>
 
         <!-- MAIN CONTENT -->
@@ -1443,19 +1443,23 @@
                     <div class="checkbox-group">
                         <div class="checkbox-item">
                             <input type="checkbox" id="menuVegan" value="vegan">
-                            <label for="menuVegan" style="margin: 0;">Vegan</label>
+                            <label for="menuVegan" style="margin: 0;">🌱 Vegan</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="menuVegetarian" value="vegetarian">
-                            <label for="menuVegetarian" style="margin: 0;">Vegetarian</label>
+                            <label for="menuVegetarian" style="margin: 0;">🥬 Vegetarian</label>
+                        </div>
+                        <div class="checkbox-item">
+                            <input type="checkbox" id="menuPescatarian" value="pescatarian">
+                            <label for="menuPescatarian" style="margin: 0;">🐟 Pescatarian</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="menuGlutenFree" value="glutenFree">
-                            <label for="menuGlutenFree" style="margin: 0;">Gluten Free</label>
+                            <label for="menuGlutenFree" style="margin: 0;">🌾 Gluten Free</label>
                         </div>
                         <div class="checkbox-item">
                             <input type="checkbox" id="menuSpicy" value="spicy" onchange="document.getElementById('spicyLevelRow').style.display=this.checked?'flex':'none'">
-                            <label for="menuSpicy" style="margin: 0;">Spicy</label>
+                            <label for="menuSpicy" style="margin: 0;">🌶️ Spicy</label>
                         </div>
                     </div>
                     <div id="spicyLevelRow" style="display:none;align-items:center;gap:8px;margin-top:8px;padding:8px 12px;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px">
@@ -1572,6 +1576,34 @@
                     </div>
                 </div>
                 <div class="form-group">
+                    <label>📱 Kiosk Description <small style="color:#9CA3AF;font-weight:400">(키오스크에 표시될 설명)</small></label>
+                    <input type="text" id="catDescEn" placeholder="e.g. Korean style fried chicken" maxlength="80">
+                </div>
+                <div class="form-group">
+                    <label>📱 Kiosk Description (한국어) <small style="color:#9CA3AF;font-weight:400">(선택)</small></label>
+                    <input type="text" id="catDescKr" placeholder="e.g. 바삭한 한국식 치킨" maxlength="80">
+                </div>
+                <div style="border-top:1px dashed #E5E7EB;margin:12px 0 8px;padding-top:8px">
+                    <div style="font-size:11px;color:#9CA3AF;margin-bottom:6px">📦 Extra Fields (여유 필드)</div>
+                </div>
+                <div class="form-group">
+                    <label>Extra 1 <small style="color:#9CA3AF;font-weight:400">(여유 필드 1)</small></label>
+                    <input type="text" id="catExtra1" placeholder="" maxlength="200">
+                </div>
+                <div class="form-group">
+                    <label>Extra 2 <small style="color:#9CA3AF;font-weight:400">(여유 필드 2)</small></label>
+                    <input type="text" id="catExtra2" placeholder="" maxlength="200">
+                </div>
+                <div class="form-group">
+                    <label>Extra 3 <small style="color:#9CA3AF;font-weight:400">(여유 필드 3)</small></label>
+                    <input type="text" id="catExtra3" placeholder="" maxlength="200">
+                </div>
+                <div class="form-group">
+                    <label>Extra 4 <small style="color:#9CA3AF;font-weight:400">(여유 필드 4)</small></label>
+                    <input type="text" id="catExtra4" placeholder="" maxlength="200">
+                </div>
+                <div style="border-top:1px dashed #E5E7EB;margin:12px 0 8px;padding-top:8px"></div>
+                <div class="form-group">
                     <label>Color</label>
                     <div style="display:flex;gap:8px;align-items:center">
                         <input type="color" id="catColor" value="#D97706" style="width:50px;height:36px;border:none;cursor:pointer">
@@ -1676,7 +1708,7 @@
         const ALLERGENS_LIST = ['Sesame', 'Soy', 'Egg', 'Peanuts', 'Tree Nuts', 'Milk', 'Gluten', 'Fish', 'Shellfish', 'Mustard', 'Celery', 'Lupin', 'Molluscs', 'Sulphites'];
 
         // ─── Google Apps Script API (직접 통신) ───
-        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbwzRdh2grvGlE1YKH58lEYXf9XrchkGQJGDslzx80OfkRkKcbHRk-pguJd74cGpfrpBUQ/exec';
+        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbwleB1U6eLEVtGpzaXlzeUkm0Wi35myeYm1bAyIvWc09slWctAGsGOt33uK0VRtn2_Odg/exec';
 
         // 원격 모드 감지 (GitHub Pages, file://, ?remote=true 등)
         function isRemote() {
@@ -2388,6 +2420,26 @@
                 return this._defaultCategoryIcons[key] || '📋';
             },
 
+            // ─── Dietary 아이콘 매핑 ───
+            _DIETARY_ICONS: {
+                'vegan': { icon: '🌱', label: 'Vegan', color: '#16A34A' },
+                'vegetarian': { icon: '🥬', label: 'Vegetarian', color: '#22C55E' },
+                'pescatarian': { icon: '🐟', label: 'Pescatarian', color: '#0EA5E9' },
+                'glutenFree': { icon: '🌾', label: 'Gluten Free', color: '#D97706' },
+                'spicy': { icon: '🌶️', label: 'Spicy', color: '#DC2626' },
+            },
+            getDietaryBadges(dietary, spicyLevel) {
+                if (!dietary || !dietary.length) return '';
+                return dietary.map(d => {
+                    const info = this._DIETARY_ICONS[d];
+                    if (!info) return '';
+                    if (d === 'spicy' && spicyLevel) {
+                        return `<span title="${info.label}" style="font-size:14px">${info.icon.repeat(spicyLevel)}</span>`;
+                    }
+                    return `<span title="${info.label}" style="display:inline-flex;align-items:center;gap:2px;font-size:11px;background:${info.color}15;color:${info.color};border:1px solid ${info.color}30;border-radius:10px;padding:1px 6px;font-weight:600"><span style="font-size:13px">${info.icon}</span>${info.label}</span>`;
+                }).filter(Boolean).join(' ');
+            },
+
             async renderCategories() {
                 // Load categories from server menu.json first, then localStorage fallback
                 let cats = [];
@@ -2437,8 +2489,8 @@
                         <td>${i+1}</td>
                         <td><code style="font-size:12px;background:#f0f0f0;padding:2px 6px;border-radius:4px">${c.id}</code></td>
                         <td style="font-size:24px">${c.icon || this.getCategoryIcon(c)}</td>
-                        <td><strong>${c.nameEn}</strong></td>
-                        <td>${c.nameKr || ''}</td>
+                        <td><strong>${c.nameEn}</strong>${c.descEn ? `<div style="font-size:11px;color:#6B7280;margin-top:2px">${c.descEn}</div>` : ''}</td>
+                        <td>${c.nameKr || ''}${c.descKr ? `<div style="font-size:11px;color:#6B7280;margin-top:2px">${c.descKr}</div>` : ''}</td>
                         <td><span style="display:inline-block;width:28px;height:28px;border-radius:6px;background:${c.color||'#999'};vertical-align:middle"></span> <small>${c.color||''}</small></td>
                         <td>${c.sortOrder || ''}</td>
                         <td>${c.active !== false ? '✅' : '❌'}</td>
@@ -2478,6 +2530,12 @@
                 document.getElementById('catNameEn').value = cat.nameEn || '';
                 document.getElementById('catNameKr').value = cat.nameKr || '';
                 document.getElementById('catIcon').value = cat.icon || '';
+                document.getElementById('catDescEn').value = cat.descEn || '';
+                document.getElementById('catDescKr').value = cat.descKr || '';
+                document.getElementById('catExtra1').value = cat.extra1 || '';
+                document.getElementById('catExtra2').value = cat.extra2 || '';
+                document.getElementById('catExtra3').value = cat.extra3 || '';
+                document.getElementById('catExtra4').value = cat.extra4 || '';
                 document.getElementById('catColor').value = cat.color || '#D97706';
                 document.getElementById('catColorText').value = cat.color || '#D97706';
                 document.getElementById('catSortOrder').value = cat.sortOrder || 1;
@@ -2499,6 +2557,12 @@
                     nameEn: document.getElementById('catNameEn').value.trim(),
                     nameKr: document.getElementById('catNameKr').value.trim(),
                     icon: document.getElementById('catIcon').value.trim(),
+                    descEn: document.getElementById('catDescEn').value.trim(),
+                    descKr: document.getElementById('catDescKr').value.trim(),
+                    extra1: document.getElementById('catExtra1').value.trim(),
+                    extra2: document.getElementById('catExtra2').value.trim(),
+                    extra3: document.getElementById('catExtra3').value.trim(),
+                    extra4: document.getElementById('catExtra4').value.trim(),
                     color: document.getElementById('catColor').value,
                     sortOrder: parseInt(document.getElementById('catSortOrder').value) || 1,
                     active: document.getElementById('catActive').checked,
@@ -2722,7 +2786,7 @@
                         <div class="menu-item-body">
                             <div class="menu-item-name" title="${item.nameEn}">${item.nameEn}</div>
                             <div class="menu-item-name-kr">${item.nameKr}</div>
-                            ${item.spicyLevel ? `<div style="font-size:14px;margin:2px 0">${'🌶️'.repeat(item.spicyLevel)}</div>` : ''}
+                            ${item.dietary && item.dietary.length ? `<div style="display:flex;flex-wrap:wrap;gap:3px;margin:3px 0">${app.getDietaryBadges(item.dietary, item.spicyLevel)}</div>` : ''}
                             <div class="menu-item-price">£${item.basePrice.toFixed(2)}</div>
                             <div class="menu-item-actions" style="display:flex;gap:4px;">
                                 <button class="btn-secondary btn-small" style="font-size:11px;padding:3px 8px;" onclick="app.editMenuItem('${item.id}')">Edit</button>
@@ -2780,6 +2844,7 @@
 
                 document.getElementById('menuVegan').checked = item.dietary.includes('vegan');
                 document.getElementById('menuVegetarian').checked = item.dietary.includes('vegetarian');
+                document.getElementById('menuPescatarian').checked = item.dietary.includes('pescatarian');
                 document.getElementById('menuGlutenFree').checked = item.dietary.includes('glutenFree');
                 document.getElementById('menuSpicy').checked = item.dietary.includes('spicy');
                 document.getElementById('spicyLevelRow').style.display = item.dietary.includes('spicy') ? 'flex' : 'none';
@@ -2808,6 +2873,7 @@
                 const dietary = [];
                 if (document.getElementById('menuVegan').checked) dietary.push('vegan');
                 if (document.getElementById('menuVegetarian').checked) dietary.push('vegetarian');
+                if (document.getElementById('menuPescatarian').checked) dietary.push('pescatarian');
                 if (document.getElementById('menuGlutenFree').checked) dietary.push('glutenFree');
                 if (document.getElementById('menuSpicy').checked) dietary.push('spicy');
 
@@ -2982,6 +3048,7 @@
                 if (!visibility[branchCode]) visibility[branchCode] = {};
                 visibility[branchCode][itemId] = visible;
                 localStorage.setItem('tb_branch_visibility', JSON.stringify(visibility));
+                this.autoSyncToServer();
                 this.showToast('Visibility updated', 'success');
             },
 
@@ -2996,6 +3063,7 @@
                 }
 
                 localStorage.setItem('tb_branch_pricing', JSON.stringify(pricing));
+                this.autoSyncToServer();
                 this.showToast('Price updated', 'success');
             },
 
@@ -3026,6 +3094,7 @@
                 localStorage.setItem('tb_branch_pricing', JSON.stringify(pricing));
 
                 this.loadBranchMenuSettings();
+                this.autoSyncToServer();
                 this.showToast('Menu copied successfully', 'success');
             },
 
@@ -3154,6 +3223,7 @@
 
                 localStorage.setItem('tb_allergens', JSON.stringify(allergens));
                 this.renderAllergenMatrix();
+                this.autoSyncToServer();
             },
 
             // NUTRITION
@@ -3184,6 +3254,7 @@
                 if (!nutrition[itemId]) nutrition[itemId] = { calories: 0, carbs: 0, protein: 0, fat: 0, sugar: 0 };
                 nutrition[itemId][field] = parseFloat(value) || 0;
                 localStorage.setItem('tb_nutrition', JSON.stringify(nutrition));
+                this.autoSyncToServer();
                 this.showToast('Nutrition updated', 'success');
             },
 
@@ -3409,6 +3480,8 @@
                 const sauces = JSON.parse(localStorage.getItem('tb_sauces') || '[]');
                 const visibility = JSON.parse(localStorage.getItem('tb_branch_visibility') || '{}');
                 const pricing = JSON.parse(localStorage.getItem('tb_branch_pricing') || '{}');
+                const allergens = JSON.parse(localStorage.getItem('tb_allergens') || '{}');
+                const nutrition = JSON.parse(localStorage.getItem('tb_nutrition') || '{}');
 
                 // Map admin items → server format
                 const serverItems = items.map((item, idx) => ({
@@ -3445,7 +3518,10 @@
                     items: serverItems,
                     sauces: sauces,
                     branchPricing: pricing,
-                    branches: branches
+                    branches: branches,
+                    branchVisibility: visibility,
+                    allergens: allergens,
+                    nutrition: nutrition
                 };
             },
 
@@ -3539,6 +3615,23 @@
                     }
                     if (data.categories) {
                         localStorage.setItem('tb_categories', JSON.stringify(data.categories));
+                    }
+                    // ─── 지점 간 공유 데이터 복원 ───
+                    if (data.branches && data.branches.length) {
+                        localStorage.setItem('tb_branches', JSON.stringify(data.branches));
+                        console.log('[Pull] Branches 복원:', data.branches.length, '개 지점');
+                    }
+                    if (data.branchVisibility && Object.keys(data.branchVisibility).length) {
+                        localStorage.setItem('tb_branch_visibility', JSON.stringify(data.branchVisibility));
+                        console.log('[Pull] Branch Visibility 복원');
+                    }
+                    if (data.allergens && Object.keys(data.allergens).length) {
+                        localStorage.setItem('tb_allergens', JSON.stringify(data.allergens));
+                        console.log('[Pull] Allergens 복원:', Object.keys(data.allergens).length, '개 아이템');
+                    }
+                    if (data.nutrition && Object.keys(data.nutrition).length) {
+                        localStorage.setItem('tb_nutrition', JSON.stringify(data.nutrition));
+                        console.log('[Pull] Nutrition 복원:', Object.keys(data.nutrition).length, '개 아이템');
                     }
 
                     // Re-render
