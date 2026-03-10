@@ -1454,9 +1454,20 @@
                             <label for="menuGlutenFree" style="margin: 0;">Gluten Free</label>
                         </div>
                         <div class="checkbox-item">
-                            <input type="checkbox" id="menuSpicy" value="spicy">
+                            <input type="checkbox" id="menuSpicy" value="spicy" onchange="document.getElementById('spicyLevelRow').style.display=this.checked?'flex':'none'">
                             <label for="menuSpicy" style="margin: 0;">Spicy</label>
                         </div>
+                    </div>
+                    <div id="spicyLevelRow" style="display:none;align-items:center;gap:8px;margin-top:8px;padding:8px 12px;background:#FEF2F2;border:1px solid #FECACA;border-radius:8px">
+                        <span style="font-size:13px;font-weight:600;color:#991B1B">Spicy Level</span>
+                        <div id="spicyLevelPicker" style="display:flex;gap:4px;margin-left:8px">
+                            <span onclick="setSpicyLevel(1)" class="spicy-chili" data-level="1" style="cursor:pointer;font-size:22px;opacity:0.3">🌶️</span>
+                            <span onclick="setSpicyLevel(2)" class="spicy-chili" data-level="2" style="cursor:pointer;font-size:22px;opacity:0.3">🌶️</span>
+                            <span onclick="setSpicyLevel(3)" class="spicy-chili" data-level="3" style="cursor:pointer;font-size:22px;opacity:0.3">🌶️</span>
+                            <span onclick="setSpicyLevel(4)" class="spicy-chili" data-level="4" style="cursor:pointer;font-size:22px;opacity:0.3">🌶️</span>
+                            <span onclick="setSpicyLevel(5)" class="spicy-chili" data-level="5" style="cursor:pointer;font-size:22px;opacity:0.3">🌶️</span>
+                        </div>
+                        <span id="spicyLevelVal" style="font-weight:700;font-size:14px;color:#DC2626;min-width:20px">0</span>
                     </div>
                 </div>
                 <div class="form-group">
@@ -1695,6 +1706,18 @@
                 console.error('googlePost error:', e);
                 throw e;
             }
+        }
+
+        // Spicy Level picker
+        let _currentSpicyLevel = 0;
+        function setSpicyLevel(level) {
+            _currentSpicyLevel = level;
+            document.querySelectorAll('#spicyLevelPicker .spicy-chili').forEach(el => {
+                const l = parseInt(el.getAttribute('data-level'));
+                el.style.opacity = l <= level ? '1' : '0.3';
+            });
+            const valEl = document.getElementById('spicyLevelVal');
+            if (valEl) valEl.textContent = level;
         }
 
         // APP STATE
@@ -2650,6 +2673,8 @@
                 document.getElementById('menuSubVat').value = 0;
                 document.getElementById('subVatVal').textContent = '0%';
                 document.getElementById('vatRateFields').style.display = '';
+                document.getElementById('spicyLevelRow').style.display = 'none';
+                setSpicyLevel(0);
                 document.getElementById('menuImagePreview').style.display = 'none';
                 document.getElementById('menuModal').classList.add('active');
             },
@@ -2683,6 +2708,8 @@
                 document.getElementById('menuVegetarian').checked = item.dietary.includes('vegetarian');
                 document.getElementById('menuGlutenFree').checked = item.dietary.includes('glutenFree');
                 document.getElementById('menuSpicy').checked = item.dietary.includes('spicy');
+                document.getElementById('spicyLevelRow').style.display = item.dietary.includes('spicy') ? 'flex' : 'none';
+                setSpicyLevel(item.spicyLevel || (item.dietary.includes('spicy') ? 1 : 0));
                 document.getElementById('menuCombo').checked = item.isCombo;
                 document.getElementById('menuTopping').checked = item.hasTopping;
                 // VAT fields
@@ -2727,6 +2754,7 @@
                     dietary: dietary,
                     isCombo: document.getElementById('menuCombo').checked,
                     hasTopping: document.getElementById('menuTopping').checked,
+                    spicyLevel: document.getElementById('menuSpicy').checked ? (_currentSpicyLevel || 1) : 0,
                     vatApplicable: document.getElementById('menuVatApplicable').checked,
                     mainVat: parseInt(document.getElementById('menuMainVat').value) || 20,
                     subVat: parseInt(document.getElementById('menuSubVat').value) || 0,
@@ -3319,6 +3347,7 @@
                     hasTopping: item.hasTopping || false,
                     toppingCount: item.toppingCount || 1,
                     btnColor: item.btnColor || '',
+                    spicyLevel: item.spicyLevel || 0,
                     vatApplicable: item.vatApplicable !== false,
                     mainVat: item.mainVat || 20,
                     subVat: item.subVat || 0,
@@ -3404,6 +3433,7 @@
                             hasTopping: i.hasTopping || false,
                             toppingCount: i.toppingCount || 1,
                             btnColor: i.btnColor || '',
+                            spicyLevel: i.spicyLevel || 0,
                             vatApplicable: i.vatApplicable !== false,
                             mainVat: i.mainVat || 20,
                             subVat: i.subVat || 0,
