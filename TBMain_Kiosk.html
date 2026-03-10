@@ -1556,6 +1556,20 @@
                 <div class="form-group">
                     <label>Icon (Emoji)</label>
                     <input type="text" id="catIcon" placeholder="🍚" style="font-size:24px">
+                    <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px">
+                        <span onclick="document.getElementById('catIcon').value=this.textContent" style="cursor:pointer;font-size:22px;padding:2px 6px;border-radius:6px;background:#f5f5f5;transition:background .15s" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f5f5f5'">🍱</span>
+                        <span onclick="document.getElementById('catIcon').value=this.textContent" style="cursor:pointer;font-size:22px;padding:2px 6px;border-radius:6px;background:#f5f5f5;transition:background .15s" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f5f5f5'">🍚</span>
+                        <span onclick="document.getElementById('catIcon').value=this.textContent" style="cursor:pointer;font-size:22px;padding:2px 6px;border-radius:6px;background:#f5f5f5;transition:background .15s" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f5f5f5'">🍗</span>
+                        <span onclick="document.getElementById('catIcon').value=this.textContent" style="cursor:pointer;font-size:22px;padding:2px 6px;border-radius:6px;background:#f5f5f5;transition:background .15s" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f5f5f5'">🥩</span>
+                        <span onclick="document.getElementById('catIcon').value=this.textContent" style="cursor:pointer;font-size:22px;padding:2px 6px;border-radius:6px;background:#f5f5f5;transition:background .15s" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f5f5f5'">🥗</span>
+                        <span onclick="document.getElementById('catIcon').value=this.textContent" style="cursor:pointer;font-size:22px;padding:2px 6px;border-radius:6px;background:#f5f5f5;transition:background .15s" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f5f5f5'">🍜</span>
+                        <span onclick="document.getElementById('catIcon').value=this.textContent" style="cursor:pointer;font-size:22px;padding:2px 6px;border-radius:6px;background:#f5f5f5;transition:background .15s" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f5f5f5'">🥟</span>
+                        <span onclick="document.getElementById('catIcon').value=this.textContent" style="cursor:pointer;font-size:22px;padding:2px 6px;border-radius:6px;background:#f5f5f5;transition:background .15s" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f5f5f5'">🥤</span>
+                        <span onclick="document.getElementById('catIcon').value=this.textContent" style="cursor:pointer;font-size:22px;padding:2px 6px;border-radius:6px;background:#f5f5f5;transition:background .15s" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f5f5f5'">🍰</span>
+                        <span onclick="document.getElementById('catIcon').value=this.textContent" style="cursor:pointer;font-size:22px;padding:2px 6px;border-radius:6px;background:#f5f5f5;transition:background .15s" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f5f5f5'">🍽️</span>
+                        <span onclick="document.getElementById('catIcon').value=this.textContent" style="cursor:pointer;font-size:22px;padding:2px 6px;border-radius:6px;background:#f5f5f5;transition:background .15s" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f5f5f5'">⭐</span>
+                        <span onclick="document.getElementById('catIcon').value=this.textContent" style="cursor:pointer;font-size:22px;padding:2px 6px;border-radius:6px;background:#f5f5f5;transition:background .15s" onmouseover="this.style.background='#e0e0e0'" onmouseout="this.style.background='#f5f5f5'">🔥</span>
+                    </div>
                 </div>
                 <div class="form-group">
                     <label>Color</label>
@@ -2354,6 +2368,26 @@
             },
 
             // ═══════ CATEGORIES ═══════
+            // 카테고리 기본 아이콘 맵 — 아이콘이 비어있으면 자동 매핑
+            _defaultCategoryIcons: {
+                'combe': '🍱', 'combo': '🍱',
+                'k-food': '🍚', 'kfood': '🍚', 'korean': '🍚',
+                'kchicken': '🍗', 'chicken': '🍗', 'k-chicken': '🍗',
+                'kbbq': '🥩', 'bbq': '🥩', 'bulgogi': '🥩',
+                'bbm': '🥗', 'bibim': '🥗', 'bibimbap': '🥗',
+                'soup': '🍜', 'noodle': '🍜', 'ramen': '🍜',
+                'side': '🥟', 'sides': '🥟', 'snack': '🥟',
+                'drink': '🥤', 'drinks': '🥤', 'beverage': '🥤',
+                'dessert': '🍰', 'sweet': '🍰',
+                'rice': '🍚', 'set': '🍽️', 'special': '⭐'
+            },
+
+            getCategoryIcon(cat) {
+                if (cat.icon && cat.icon.trim()) return cat.icon;
+                const key = (cat.id || '').toLowerCase();
+                return this._defaultCategoryIcons[key] || '📋';
+            },
+
             async renderCategories() {
                 // Load categories from server menu.json first, then localStorage fallback
                 let cats = [];
@@ -2374,7 +2408,27 @@
                 if (!cats.length) {
                     cats = JSON.parse(localStorage.getItem('tb_categories') || '[]');
                 }
+
+                // 빈 아이콘 자동 채우기 & 서버 동기화
+                let iconUpdated = false;
+                cats.forEach(c => {
+                    if (!c.icon || !c.icon.trim()) {
+                        c.icon = this.getCategoryIcon(c);
+                        iconUpdated = true;
+                    }
+                });
+
                 localStorage.setItem('tb_categories', JSON.stringify(cats));
+
+                // 아이콘이 업데이트되었으면 서버에도 반영
+                if (iconUpdated) {
+                    try {
+                        const menuData = JSON.parse(localStorage.getItem('tb_server_menu') || '{}');
+                        menuData.categories = cats;
+                        localStorage.setItem('tb_server_menu', JSON.stringify(menuData));
+                        this.autoSyncToServer();
+                    } catch (e) {}
+                }
 
                 const tbody = document.getElementById('categoriesTable');
                 if (!tbody) return;
@@ -2382,7 +2436,7 @@
                     <tr>
                         <td>${i+1}</td>
                         <td><code style="font-size:12px;background:#f0f0f0;padding:2px 6px;border-radius:4px">${c.id}</code></td>
-                        <td style="font-size:24px">${c.icon || '🍱'}</td>
+                        <td style="font-size:24px">${c.icon || this.getCategoryIcon(c)}</td>
                         <td><strong>${c.nameEn}</strong></td>
                         <td>${c.nameKr || ''}</td>
                         <td><span style="display:inline-block;width:28px;height:28px;border-radius:6px;background:${c.color||'#999'};vertical-align:middle"></span> <small>${c.color||''}</small></td>
