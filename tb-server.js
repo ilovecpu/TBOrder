@@ -68,7 +68,7 @@ const printer = require('./tb-printer');
 
 const PORT = parseInt(process.env.TB_PORT) || 8080;
 const BRANCH_CODE = process.env.TB_BRANCH || 'TB';   // 지점코드: TB, PAB 등 (실행: TB_BRANCH=PAB node tb-server.js)
-const SERVER_VERSION = '2.7';
+const SERVER_VERSION = '2.8';
 const SERVER_START_TIME = new Date().toISOString();
 const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbx_E8vBxq3ZHp5JDUKlgLHajlY_T7szbs4BvE1VM_sJyHUeJSGaifIK73wJVA8QKWLj9A/exec';
 const GOOGLE_API = process.env.GOOGLE_API || 'https://script.google.com/macros/s/AKfycbx_E8vBxq3ZHp5JDUKlgLHajlY_T7szbs4BvE1VM_sJyHUeJSGaifIK73wJVA8QKWLj9A/exec';
@@ -90,6 +90,16 @@ function loadMenuData() {
 function saveMenuData(menuData) {
   menuData.lastUpdated = new Date().toISOString();
   menuData.version = (menuData.version || 0) + 1;
+  // 카테고리 중복 제거 (같은 ID → 마지막 것 유지)
+  if (menuData.categories && menuData.categories.length > 0) {
+    const catSeen = new Map();
+    menuData.categories.forEach(c => catSeen.set(c.id, c));
+    const catBefore = menuData.categories.length;
+    menuData.categories = [...catSeen.values()];
+    if (menuData.categories.length < catBefore) {
+      console.log(`  🔧 중복 카테고리 제거: ${catBefore} → ${menuData.categories.length}`);
+    }
+  }
   // 아이템 중복 제거 (같은 ID → 마지막 것 유지)
   if (menuData.items && menuData.items.length > 0) {
     const seen = new Map();

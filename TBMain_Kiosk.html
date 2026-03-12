@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Admin v3.6 | 2026-03-12 | Drag & drop menu item reordering + auto sortOrder -->
+<!-- The Bap Admin v3.7 | 2026-03-12 | Category/item dedup on pull + new Google API URL -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -3773,7 +3773,14 @@
                                 sortOrder: i.sortOrder || 0
                             };
                         });
-                        localStorage.setItem('tb_menu_items', JSON.stringify(adminItems));
+                        // 중복 제거 (같은 ID → 마지막 것 유지)
+                        const itemMap = new Map();
+                        adminItems.forEach(ai => itemMap.set(ai.id, ai));
+                        const dedupedItems = [...itemMap.values()];
+                        if (dedupedItems.length < adminItems.length) {
+                            console.log(`[Pull] 아이템 중복 제거: ${adminItems.length} → ${dedupedItems.length}`);
+                        }
+                        localStorage.setItem('tb_menu_items', JSON.stringify(dedupedItems));
                     }
                     if (data.sauces) {
                         localStorage.setItem('tb_sauces', JSON.stringify(data.sauces));
@@ -3782,14 +3789,21 @@
                         localStorage.setItem('tb_branch_pricing', JSON.stringify(data.branchPricing));
                     }
                     if (data.categories) {
-                        // 서버 데이터 기준 — showInKiosk/showInPos 명시적 기본값 보장
-                        const mergedCats = data.categories.map(sc => ({
-                            ...sc,
-                            showInKiosk: sc.showInKiosk !== undefined ? sc.showInKiosk : true,
-                            showInPos: sc.showInPos !== undefined ? sc.showInPos : true,
-                            sortOrder: sc.sortOrder !== undefined ? sc.sortOrder : 0,
-                        }));
+                        // 중복 제거 (같은 ID → 마지막 것 유지) + 기본값 보장
+                        const catMap = new Map();
+                        data.categories.forEach(sc => {
+                            catMap.set(sc.id, {
+                                ...sc,
+                                showInKiosk: sc.showInKiosk !== undefined ? sc.showInKiosk : true,
+                                showInPos: sc.showInPos !== undefined ? sc.showInPos : true,
+                                sortOrder: sc.sortOrder !== undefined ? sc.sortOrder : 0,
+                            });
+                        });
+                        const mergedCats = [...catMap.values()];
                         localStorage.setItem('tb_categories', JSON.stringify(mergedCats));
+                        if (mergedCats.length < data.categories.length) {
+                            console.log(`[Pull] 카테고리 중복 제거: ${data.categories.length} → ${mergedCats.length}`);
+                        }
                     }
                     // ─── 지점 간 공유 데이터 복원 ───
                     if (data.branches && data.branches.length) {
