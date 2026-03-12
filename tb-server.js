@@ -68,10 +68,10 @@ const printer = require('./tb-printer');
 
 const PORT = parseInt(process.env.TB_PORT) || 8080;
 const BRANCH_CODE = process.env.TB_BRANCH || 'TB';   // 지점코드: TB, PAB 등 (실행: TB_BRANCH=PAB node tb-server.js)
-const SERVER_VERSION = '2.5';
+const SERVER_VERSION = '2.7';
 const SERVER_START_TIME = new Date().toISOString();
-const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbwleB1U6eLEVtGpzaXlzeUkm0Wi35myeYm1bAyIvWc09slWctAGsGOt33uK0VRtn2_Odg/exec';
-const GOOGLE_API = process.env.GOOGLE_API || 'https://script.google.com/macros/s/AKfycbwleB1U6eLEVtGpzaXlzeUkm0Wi35myeYm1bAyIvWc09slWctAGsGOt33uK0VRtn2_Odg/exec';
+const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbx_E8vBxq3ZHp5JDUKlgLHajlY_T7szbs4BvE1VM_sJyHUeJSGaifIK73wJVA8QKWLj9A/exec';
+const GOOGLE_API = process.env.GOOGLE_API || 'https://script.google.com/macros/s/AKfycbx_E8vBxq3ZHp5JDUKlgLHajlY_T7szbs4BvE1VM_sJyHUeJSGaifIK73wJVA8QKWLj9A/exec';
 
 // ─── 메뉴 데이터 로드/캐시 ───
 const MENU_FILE = path.join(__dirname, 'data', 'menu.json');
@@ -136,7 +136,7 @@ async function syncMenuFromGoogle() {
     });
     const parsed = JSON.parse(data);
     if (parsed.categories && parsed.items) {
-      // 카테고리 병합: Google에 없는 필드(showInKiosk, showInPos 등) 기존값 보존
+      // 카테고리 병합: showInKiosk/showInPos는 서버 로컬값이 항상 우선 (Admin에서 설정하므로)
       if (parsed.categories && menuCache.categories) {
         const existMap = {};
         menuCache.categories.forEach(c => { existMap[c.id] = c; });
@@ -144,12 +144,12 @@ async function syncMenuFromGoogle() {
           const existing = existMap[gc.id] || {};
           return {
             ...gc,
-            showInKiosk: gc.showInKiosk !== undefined ? gc.showInKiosk : existing.showInKiosk,
-            showInPos: gc.showInPos !== undefined ? gc.showInPos : existing.showInPos,
+            showInKiosk: existing.showInKiosk !== undefined ? existing.showInKiosk : gc.showInKiosk,
+            showInPos: existing.showInPos !== undefined ? existing.showInPos : gc.showInPos,
           };
         });
       }
-      // 아이템 병합: Google에 없는 필드(showOnKiosk, showOnPos 등) 기존값 보존
+      // 아이템 병합: showOnKiosk/showOnPos는 서버 로컬값이 항상 우선
       if (parsed.items && menuCache.items) {
         const existItemMap = {};
         menuCache.items.forEach(i => { existItemMap[i.id] = i; });
@@ -157,8 +157,8 @@ async function syncMenuFromGoogle() {
           const existing = existItemMap[gi.id] || {};
           return {
             ...gi,
-            showOnKiosk: gi.showOnKiosk !== undefined ? gi.showOnKiosk : existing.showOnKiosk,
-            showOnPos: gi.showOnPos !== undefined ? gi.showOnPos : existing.showOnPos,
+            showOnKiosk: existing.showOnKiosk !== undefined ? existing.showOnKiosk : gi.showOnKiosk,
+            showOnPos: existing.showOnPos !== undefined ? existing.showOnPos : gi.showOnPos,
           };
         });
       }

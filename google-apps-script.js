@@ -1,9 +1,10 @@
 /**
  * ════════════════════════════════════════════════════════════
- *  🍚 The Bap — Google Apps Script v2.0
+ *  🍚 The Bap — Google Apps Script v2.1
  *  Menu API + Orders + Image Upload + TBMS Stores + Users + DailySales
  *  + Branches, BranchVisibility, Allergens, Nutrition
- *  Last Updated: 2026-03-10
+ *  + Category showInKiosk/showInPos + Item showOnKiosk/showOnPos boolean parsing
+ *  Last Updated: 2026-03-12
  * ════════════════════════════════════════════════════════════
  *
  *  설정 방법:
@@ -19,7 +20,7 @@
  *     GOOGLE_MENU_API=https://script.google.com/macros/s/xxxxx/exec
  *
  *  시트 구조 (자동 생성):
- *   - Categories: 카테고리 목록 (id, nameEn, nameKr, icon, color, sortOrder, active, descEn, descKr, extra1-4)
+ *   - Categories: 카테고리 목록 (id, nameEn, nameKr, icon, color, sortOrder, active, descEn, descKr, extra1-4, showInKiosk, showInPos)
  *   - MenuItems: 메뉴 아이템 (driveId = Google Drive File ID, showOnKiosk, showOnPos, spicyLevel, vatApplicable, mainVat, subVat)
  *   - Sauces: 소스 목록
  *   - BranchPricing: 지점별 가격
@@ -254,6 +255,8 @@ function getCategories() {
     ...c,
     sortOrder: parseInt(c.sortOrder) || 0,
     active: c.active === true || c.active === 'TRUE' || c.active === 'true',
+    showInKiosk: c.showInKiosk === '' || c.showInKiosk === undefined ? true : (c.showInKiosk === true || c.showInKiosk === 'TRUE' || c.showInKiosk === 'true'),
+    showInPos: c.showInPos === '' || c.showInPos === undefined ? true : (c.showInPos === true || c.showInPos === 'TRUE' || c.showInPos === 'true'),
   }));
 }
 
@@ -267,6 +270,8 @@ function getItems() {
     hasTopping: item.hasTopping === true || item.hasTopping === 'TRUE' || item.hasTopping === 'true',
     comboCount: parseInt(item.comboCount) || 0,
     toppingCount: parseInt(item.toppingCount) || 0,
+    showOnKiosk: item.showOnKiosk === '' || item.showOnKiosk === undefined ? true : (item.showOnKiosk === true || item.showOnKiosk === 'TRUE' || item.showOnKiosk === 'true'),
+    showOnPos: item.showOnPos === '' || item.showOnPos === undefined ? true : (item.showOnPos === true || item.showOnPos === 'TRUE' || item.showOnPos === 'true'),
     dietary: typeof item.dietary === 'string'
       ? item.dietary.split(',').map(s => s.trim()).filter(Boolean) : [],
   }));
@@ -307,7 +312,7 @@ function updateFullMenu(data) {
 }
 
 // ─── Categories CRUD ───
-const CAT_HEADERS = ['id','nameEn','nameKr','icon','color','sortOrder','active','descEn','descKr','extra1','extra2','extra3','extra4'];
+const CAT_HEADERS = ['id','nameEn','nameKr','icon','color','sortOrder','active','descEn','descKr','extra1','extra2','extra3','extra4','showInKiosk','showInPos'];
 
 function updateCategories(categories) {
   writeSheet(SH_CAT, CAT_HEADERS, categories);
