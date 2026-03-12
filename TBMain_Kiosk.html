@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Admin v3.0 | 2026-03-12 | Drag & drop menu item reordering + auto sortOrder -->
+<!-- The Bap Admin v3.1 | 2026-03-12 | Drag & drop menu item reordering + auto sortOrder -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -978,7 +978,7 @@
             </div>
             <button id="pinClearBtn" class="btn-secondary" style="width: 100%; margin-bottom: 8px;">Clear</button>
             <button id="pinEnterBtn" class="btn-primary" style="width: 100%;">Enter</button>
-            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v3.0</div>
+            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v3.1</div>
         </div>
     </div>
 
@@ -1033,7 +1033,7 @@
                     <span>Settings</span>
                 </div>
             </div>
-            <div class="sidebar-footer">v3.0 | The Bap Group</div>
+            <div class="sidebar-footer">v3.1 | The Bap Group</div>
         </div>
 
         <!-- MAIN CONTENT -->
@@ -3635,7 +3635,7 @@
                     mainVat: item.mainVat || 20,
                     subVat: item.subVat || 0,
                     active: item.active !== false,
-                    sortOrder: idx + 1
+                    sortOrder: item.sortOrder || (idx + 1)
                 }));
 
                 // Include branches for POS/Kiosk consumption
@@ -3732,7 +3732,8 @@
                                 vatApplicable: i.vatApplicable !== undefined ? i.vatApplicable : (local.vatApplicable !== false),
                                 mainVat: i.mainVat !== undefined ? i.mainVat : (local.mainVat || 20),
                                 subVat: i.subVat !== undefined ? i.subVat : (local.subVat || 0),
-                                active: i.active !== false
+                                active: i.active !== false,
+                                sortOrder: i.sortOrder || 0
                             };
                         });
                         localStorage.setItem('tb_menu_items', JSON.stringify(adminItems));
