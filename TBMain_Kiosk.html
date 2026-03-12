@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Admin v2.7 | 2026-03-10 -->
+<!-- The Bap Admin v2.8 | 2026-03-12 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -964,7 +964,7 @@
             </div>
             <button id="pinClearBtn" class="btn-secondary" style="width: 100%; margin-bottom: 8px;">Clear</button>
             <button id="pinEnterBtn" class="btn-primary" style="width: 100%;">Enter</button>
-            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v2.7</div>
+            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v2.8</div>
         </div>
     </div>
 
@@ -1019,7 +1019,7 @@
                     <span>Settings</span>
                 </div>
             </div>
-            <div class="sidebar-footer">v2.7 | The Bap Group</div>
+            <div class="sidebar-footer">v2.8 | The Bap Group</div>
         </div>
 
         <!-- MAIN CONTENT -->
@@ -2064,10 +2064,8 @@
                 if (pinStored) this.currentPin = pinStored;
 
                 try {
-                // TBMS에서 지점 데이터 가져오기 (원격 모드 — 백그라운드)
-                if (isRemote()) {
-                    await this.loadTBMSStores();
-                }
+                // TBMS에서 지점 데이터 가져오기 (항상 — 누락 방지)
+                await this.loadTBMSStores();
                 if (!localStorage.getItem('tb_branches')) {
                     localStorage.setItem('tb_branches', JSON.stringify(DEFAULT_BRANCHES));
                 }

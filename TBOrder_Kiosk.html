@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Order Kiosk v1.5 | 2026-03-10 -->
+<!-- The Bap Order Kiosk v1.6 | 2026-03-12 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -2350,7 +2350,6 @@
 
         async function initStaffBoot() {
             const branchGrid = document.getElementById('branchGrid');
-            // Show loading spinner
             branchGrid.innerHTML = '<div class="branch-loading-msg"><div class="branch-loading-spinner"></div>Loading branches…</div>';
 
             let loaded = false;
@@ -2369,30 +2368,41 @@
                 }
             } catch(e) {}
 
-            // 2) Try TBMS API directly
-            if (!loaded) {
-                try {
-                    const url = GOOGLE_API + '?action=stores';
-                    const resp = await fetch(url, { redirect: 'follow' });
-                    const data = await resp.json();
-                    const stores = data.stores?.data || data.stores || [];
-                    if (stores.length > 0) {
-                        BRANCHES = stores
-                            .filter(s => s.active !== false && s.active !== 'false')
-                            .map(s => ({
-                                code: s.code || s.id, name: s.name,
-                                nameKr: s.nameKr || '', phone: String(s.phone || ''),
-                                company: s.company || '', companyNo: s.companyNo || '',
-                                vatNo: s.vatNo || '', vatQuarter: s.vatQuarter || '',
-                                address: s.address || '', email: s.email || '',
-                                manager: s.manager || '', active: true
-                            }));
-                        renderBranchCards();
-                        loaded = true;
-                        console.log('[Kiosk] Branches loaded from TBMS API:', BRANCHES.length);
+            // 2) Always also check TBMS — merge any missing branches
+            try {
+                const url = GOOGLE_API + '?action=stores';
+                const resp = await fetch(url, { redirect: 'follow' });
+                const data = await resp.json();
+                const stores = data.stores?.data || data.stores || [];
+                if (stores.length > 0) {
+                    const tbmsBranches = stores
+                        .filter(s => s.active !== false && s.active !== 'false')
+                        .map(s => ({
+                            code: s.code || s.id, name: s.name,
+                            nameKr: s.nameKr || '', phone: String(s.phone || ''),
+                            company: s.company || '', companyNo: s.companyNo || '',
+                            vatNo: s.vatNo || '', vatQuarter: s.vatQuarter || '',
+                            address: s.address || '', email: s.email || '',
+                            manager: s.manager || '', active: true
+                        }));
+                    if (!loaded) {
+                        // Server failed — use TBMS as primary source
+                        BRANCHES = tbmsBranches;
+                    } else {
+                        // Merge: add any TBMS branches not already in local list
+                        const existingCodes = new Set(BRANCHES.map(b => b.code));
+                        tbmsBranches.forEach(tb => {
+                            if (!existingCodes.has(tb.code)) {
+                                BRANCHES.push(tb);
+                                console.log(`[Kiosk] Branch merged from TBMS: ${tb.code} (${tb.name})`);
+                            }
+                        });
                     }
-                } catch(e) { console.log('[Kiosk] TBMS API error:', e.message); }
-            }
+                    renderBranchCards();
+                    loaded = true;
+                    console.log('[Kiosk] Final branch count:', BRANCHES.length, BRANCHES.map(b => b.code).join(', '));
+                }
+            } catch(e) { console.log('[Kiosk] TBMS API error:', e.message); }
 
             // 3) All sources failed
             if (!loaded) {

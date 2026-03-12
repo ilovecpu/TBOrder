@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap POS v2.6 | 2026-03-10 -->
+<!-- The Bap POS v2.7 | 2026-03-12 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -922,14 +922,14 @@ button { font-family: inherit; cursor: pointer; }
         </div>
     </div>
     <div style="text-align:center;padding:10px 0 0;color:#B0B0B0;font-size:11px;line-height:1.6;" id="loginFooter">
-        POS v2.6 <span id="loginServerVer"></span>&nbsp;|&nbsp; © 2026 The Bap. All rights reserved. &nbsp;|&nbsp; Program by DJ Kim
+        POS v2.7 <span id="loginServerVer"></span>&nbsp;|&nbsp; © 2026 The Bap. All rights reserved. &nbsp;|&nbsp; Program by DJ Kim
     </div>
 </div>
 
 <!-- ═══════════ SCREEN: MAIN MENU ═══════════ -->
 <div class="screen main-menu-screen" id="screenMainMenu">
     <div class="main-menu-header">
-        <div class="main-menu-header-title">The Bap POS <span style="font-size:10px;color:#9CA3AF;font-weight:400">v2.6</span></div>
+        <div class="main-menu-header-title">The Bap POS <span style="font-size:10px;color:#9CA3AF;font-weight:400">v2.7</span></div>
         <div class="main-menu-header-branch" id="mainMenuBranch">TBS</div>
         <div class="main-menu-header-spacer"></div>
         <div class="main-menu-header-time" id="mainMenuTime">12:00:00</div>
@@ -1915,27 +1915,38 @@ async function initLogin() {
         } catch(e2) {}
     } catch(e) {}
 
-    // 2) If local didn't have branches, try TBMS API directly (no Push needed)
-    if (!loaded) {
-        try {
-            const url = GOOGLE_API + '?action=stores';
-            const resp = await fetch(url, { redirect: 'follow' });
-            const data = await resp.json();
-            const stores = data.stores?.data || data.stores || [];
-            if (stores.length > 0) {
-                BRANCHES = stores
-                    .filter(s => s.active !== false && s.active !== 'false')
-                    .map(s => ({
-                        code: s.code || s.id, name: s.name,
-                        nameKr: s.nameKr || '', phone: String(s.phone || ''),
-                        active: true
-                    }));
-                renderBranchGrid();
-                loaded = true;
-                console.log('[POS] Branches loaded from TBMS API:', BRANCHES.length);
+    // 2) Always also check TBMS — merge any missing branches
+    try {
+        const url = GOOGLE_API + '?action=stores';
+        const resp = await fetch(url, { redirect: 'follow' });
+        const data = await resp.json();
+        const stores = data.stores?.data || data.stores || [];
+        if (stores.length > 0) {
+            const tbmsBranches = stores
+                .filter(s => s.active !== false && s.active !== 'false')
+                .map(s => ({
+                    code: s.code || s.id, name: s.name,
+                    nameKr: s.nameKr || '', phone: String(s.phone || ''),
+                    active: true
+                }));
+            if (!loaded) {
+                // Server failed — use TBMS as primary source
+                BRANCHES = tbmsBranches;
+            } else {
+                // Merge: add any TBMS branches not already in local list
+                const existingCodes = new Set(BRANCHES.map(b => b.code));
+                tbmsBranches.forEach(tb => {
+                    if (!existingCodes.has(tb.code)) {
+                        BRANCHES.push(tb);
+                        console.log(`[POS] Branch merged from TBMS: ${tb.code} (${tb.name})`);
+                    }
+                });
             }
-        } catch(e) { console.log('[POS] TBMS API error:', e.message); }
-    }
+            renderBranchGrid();
+            loaded = true;
+            console.log('[POS] Final branch count:', BRANCHES.length, BRANCHES.map(b => b.code).join(', '));
+        }
+    } catch(e) { console.log('[POS] TBMS API error:', e.message); }
 
     // 3) If all sources failed, show error message
     if (!loaded) {
@@ -2305,6 +2316,7 @@ function addToOrder(itemId) {
     POS.cart.push({ id: item.id, nameEn: item.nameEn, nameKr: item.nameKr, unitPrice: price, quantity: 1, totalPrice: price, vatRate: item.vatRate || 20, note: '', free: false });
     POS.selectedCartIdx = POS.cart.length - 1;
     renderOrderList();
+    poleDisplayItem(item.nameEn, price);
 }
 
 function renderOrderList() {
@@ -2685,6 +2697,7 @@ function completePayment(printCount) {
     renderOrderList();
 
     toast(`Order ${orderNum} completed — ${fp(total)} (${payMethod.toUpperCase()})`, 'success');
+    poleDisplayPayment(payMethod, paid, change);
     updateKioskBadge();
 
     // Cash: show change popup if needed
@@ -4924,6 +4937,7 @@ async function gotoSettings() {
     showScreen('screenSettings');
     loadServerInfo();
     loadPrinterConfig();
+    loadPoleDisplayConfig();
 }
 
 async function loadServerInfo() {
@@ -5050,6 +5064,46 @@ function renderSettings() {
         </div>
     `;
 
+    // ── Pole Display (Customer VFD) section ──
+    const pd = _poleDisplayConfig;
+    html += `
+        <div class="settings-section-title">📟 CUSTOMER POLE DISPLAY</div>
+        <div class="settings-card">
+            <h3>HP LD220 Pole Display (USB)</h3>
+            <p style="font-size:12px;color:#6B7280;margin:0 0 12px">2-line VFD display showing order info to customers</p>
+            <div class="settings-row">
+                <span class="label">Enable</span>
+                <label style="display:flex;align-items:center;gap:6px;cursor:pointer">
+                    <input type="checkbox" id="poleDisplayEnabled" ${pd.enabled ? 'checked' : ''}>
+                    <span style="font-size:13px;font-weight:500">${pd.enabled ? 'ON' : 'OFF'}</span>
+                </label>
+            </div>
+            <div class="settings-row">
+                <span class="label">COM Port</span>
+                <select id="poleDisplayPort" style="padding:6px 10px;border:1px solid #D1D5DB;border-radius:6px;font-size:13px;min-width:120px">
+                    <option value="">Auto Detect</option>
+                    ${Array.from({length:20}, (_, i) => `<option value="COM${i+1}" ${pd.port === 'COM'+(i+1) ? 'selected' : ''}>COM${i+1}</option>`).join('')}
+                </select>
+            </div>
+            <div class="settings-row">
+                <span class="label">Baud Rate</span>
+                <select id="poleDisplayBaud" style="padding:6px 10px;border:1px solid #D1D5DB;border-radius:6px;font-size:13px;min-width:120px">
+                    ${[9600,19200,38400,115200].map(b => `<option value="${b}" ${pd.baudRate === b ? 'selected' : ''}>${b}</option>`).join('')}
+                </select>
+            </div>
+            <div class="settings-row">
+                <span class="label">Welcome Message</span>
+                <input type="text" id="poleDisplayWelcome" value="${(pd.welcomeMsg || 'Thank you for Visiting!').replace(/"/g, '&quot;')}" maxlength="20" style="padding:6px 10px;border:1px solid #D1D5DB;border-radius:6px;font-size:13px;width:200px">
+            </div>
+            <div style="display:flex;gap:8px;margin-top:12px">
+                <button onclick="savePoleDisplayConfig()" style="padding:8px 20px;background:#006AFF;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">SAVE</button>
+                <button onclick="testPoleDisplay()" style="padding:8px 20px;background:#059669;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">TEST</button>
+                <button onclick="detectPoleDisplay()" style="padding:8px 20px;background:#7C3AED;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">DETECT</button>
+            </div>
+            <div id="poleDisplayStatus" style="margin-top:8px;font-size:12px;color:#6B7280"></div>
+        </div>
+    `;
+
     // ── Server Monitor section (needs server info) ──
     if (!s) {
         html += `<div class="settings-section-title">SERVER MONITOR</div>
@@ -5123,7 +5177,7 @@ function renderSettings() {
             </div>
 
             <div style="text-align:center;padding:12px;color:#9CA3AF;font-size:11px">
-                The Bap POS v2.6 | Server v${s.serverVersion} | ${s.nodeVersion}
+                The Bap POS v2.7 | Server v${s.serverVersion} | ${s.nodeVersion}
             </div>
         `;
     }
@@ -5193,6 +5247,112 @@ async function loadAllBranchesSummary() {
     } catch (e) {
         bodyEl.innerHTML = `<div style="color:#DC2626">Failed to load: ${e.message}</div>`;
     }
+}
+
+// ═══════════════════════════════════════════
+//  POLE DISPLAY (HP LD220 Customer VFD)
+// ═══════════════════════════════════════════
+let _poleDisplayConfig = { enabled: false, port: '', baudRate: 9600, welcomeMsg: 'Thank you for Visiting!' };
+
+async function loadPoleDisplayConfig() {
+    try {
+        const resp = await fetch('/api/pole-display/config');
+        if (resp.ok) {
+            const cfg = await resp.json();
+            _poleDisplayConfig = { ..._poleDisplayConfig, ...cfg };
+        }
+    } catch (e) { console.warn('[PoleDisplay] Config load failed:', e.message); }
+}
+
+async function savePoleDisplayConfig() {
+    const cfg = {
+        enabled: document.getElementById('poleDisplayEnabled')?.checked || false,
+        port: document.getElementById('poleDisplayPort')?.value || '',
+        baudRate: parseInt(document.getElementById('poleDisplayBaud')?.value) || 9600,
+        welcomeMsg: document.getElementById('poleDisplayWelcome')?.value || 'Thank you for Visiting!'
+    };
+    try {
+        const resp = await fetch('/api/pole-display/config', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(cfg)
+        });
+        if (resp.ok) {
+            _poleDisplayConfig = cfg;
+            document.getElementById('poleDisplayStatus').textContent = '✅ Saved';
+        }
+    } catch (e) {
+        document.getElementById('poleDisplayStatus').textContent = '❌ Save failed: ' + e.message;
+    }
+}
+
+async function testPoleDisplay() {
+    const st = document.getElementById('poleDisplayStatus');
+    st.textContent = '⏳ Testing...';
+    try {
+        const resp = await fetch('/api/pole-display/send', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ line1: 'HP LD220 Test OK!', line2: '\\xA3 1,234.56  READY' })
+        });
+        const data = await resp.json();
+        st.textContent = data.success ? '✅ Display OK' : '❌ ' + (data.error || 'Failed');
+    } catch (e) { st.textContent = '❌ ' + e.message; }
+}
+
+async function detectPoleDisplay() {
+    const st = document.getElementById('poleDisplayStatus');
+    st.textContent = '⏳ Detecting COM ports...';
+    try {
+        const resp = await fetch('/api/pole-display/detect');
+        const data = await resp.json();
+        if (data.ports && data.ports.length > 0) {
+            st.innerHTML = '🔍 Found: ' + data.ports.map(p =>
+                `<b>${p.port}</b> (${p.manufacturer || p.pnpId || 'Unknown'})`
+            ).join(', ');
+            // Auto-select first HP/LD220 port if found
+            const hpPort = data.ports.find(p => (p.manufacturer || '').toLowerCase().includes('hp') || (p.pnpId || '').toLowerCase().includes('vid_03f0'));
+            if (hpPort) {
+                document.getElementById('poleDisplayPort').value = hpPort.port;
+                st.innerHTML += '<br>✅ HP device auto-selected: <b>' + hpPort.port + '</b>';
+            }
+        } else {
+            st.textContent = '⚠️ No COM ports found';
+        }
+    } catch (e) { st.textContent = '❌ ' + e.message; }
+}
+
+// ★ POS → Pole Display: 카트 변경 시 디스플레이 업데이트
+function updatePoleDisplay(line1, line2) {
+    if (!_poleDisplayConfig.enabled) return;
+    fetch('/api/pole-display/send', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ line1: (line1 || '').substring(0, 20), line2: (line2 || '').substring(0, 20) })
+    }).catch(() => {});
+}
+
+function poleDisplayItem(itemName, price) {
+    const name = (itemName || '').substring(0, 13);
+    const priceStr = '\xA3' + (Number(price) || 0).toFixed(2);
+    updatePoleDisplay(name.padEnd(14) + priceStr.padStart(6), 'TOTAL ' + ('\xA3' + getOrderTotal().toFixed(2)).padStart(14));
+}
+
+function poleDisplayTotal() {
+    const total = getOrderTotal();
+    updatePoleDisplay('     YOUR ORDER     ', '  TOTAL  \xA3' + total.toFixed(2).padStart(9));
+}
+
+function poleDisplayPayment(method, paid, change) {
+    if (method === 'cash' && change > 0.005) {
+        // 현금 결제 + 거스름돈 있을 때만 표시
+        updatePoleDisplay('CHANGE DUE          ', ('\xA3' + change.toFixed(2)).padStart(20));
+        setTimeout(poleDisplayWelcome, 8000);
+    } else {
+        // 카드 또는 거스름돈 없으면 바로 감사 메시지
+        poleDisplayWelcome();
+    }
+}
+
+function poleDisplayWelcome() {
+    updatePoleDisplay(' Thank you for      ', '       Visiting!    ');
 }
 
 // ═══════════════════════════════════════════

@@ -68,7 +68,7 @@ const printer = require('./tb-printer');
 
 const PORT = parseInt(process.env.TB_PORT) || 8080;
 const BRANCH_CODE = process.env.TB_BRANCH || 'TB';   // 지점코드: TB, PAB 등 (실행: TB_BRANCH=PAB node tb-server.js)
-const SERVER_VERSION = '2.0';
+const SERVER_VERSION = '2.3';
 const SERVER_START_TIME = new Date().toISOString();
 const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbwleB1U6eLEVtGpzaXlzeUkm0Wi35myeYm1bAyIvWc09slWctAGsGOt33uK0VRtn2_Odg/exec';
 const GOOGLE_API = process.env.GOOGLE_API || 'https://script.google.com/macros/s/AKfycbwleB1U6eLEVtGpzaXlzeUkm0Wi35myeYm1bAyIvWc09slWctAGsGOt33uK0VRtn2_Odg/exec';
@@ -180,11 +180,53 @@ async function syncMenuToGoogle(menuData) {
   }
 }
 
+// ★ TBMS에서 브랜치(지점) 목록 동기화
+async function syncBranchesFromTBMS() {
+  if (!GOOGLE_API) return;
+  try {
+    const https = require('https');
+    const url = GOOGLE_API + '?action=stores';
+    const data = await new Promise((resolve, reject) => {
+      const proto = url.startsWith('https') ? https : require('http');
+      proto.get(url, { timeout: 10000 }, (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
+          proto.get(res.headers.location, { timeout: 10000 }, (res2) => {
+            let d = ''; res2.on('data', c => d += c); res2.on('end', () => resolve(d));
+          }).on('error', reject);
+          return;
+        }
+        let d = ''; res.on('data', c => d += c); res.on('end', () => resolve(d));
+      }).on('error', reject);
+    });
+    const parsed = JSON.parse(data);
+    const stores = parsed.stores?.data || parsed.stores || [];
+    if (stores.length > 0) {
+      const branches = stores
+        .filter(s => s.active !== false && s.active !== 'false')
+        .map(s => ({
+          code: s.code || s.id, name: s.name,
+          nameKr: s.nameKr || '', phone: String(s.phone || ''),
+          company: s.company || '', companyNo: s.companyNo || '',
+          vatNo: s.vatNo || '', vatQuarter: s.vatQuarter || '',
+          address: s.address || '', email: s.email || '',
+          manager: s.manager || '', active: true
+        }));
+      menuCache.branches = branches;
+      saveMenuData(menuCache);
+      console.log(`  🏪 TBMS 브랜치 동기화 완료: ${branches.length}개 지점 (${branches.map(b=>b.code).join(', ')})`);
+    }
+  } catch (e) {
+    console.log(`  ⚠️ TBMS 브랜치 동기화 실패: ${e.message}`);
+  }
+}
+
 // Google Sheets 동기화: 시작 시 + 5분마다
 if (GOOGLE_MENU_API) {
   console.log(`  ☁️  Google Sheets 연동 활성화`);
   setTimeout(syncMenuFromGoogle, 3000);
+  setTimeout(syncBranchesFromTBMS, 4000); // 메뉴 로드 직후 브랜치 동기화
   setInterval(syncMenuFromGoogle, 5 * 60 * 1000);
+  setInterval(syncBranchesFromTBMS, 10 * 60 * 1000); // 10분마다 브랜치 동기화
 }
 
 // ─── 로컬 IP 자동 감지 ───
@@ -922,6 +964,95 @@ const server = http.createServer(async (req, res) => {
   // ─── Printer Config ───
   const PRINTER_CONFIG_FILE = path.join(DATA_DIR, 'printer-config.json');
   const POS_SETTINGS_FILE = path.join(DATA_DIR, 'pos-settings.json');
+  const POLE_DISPLAY_CONFIG_FILE = path.join(DATA_DIR, 'pole-display.json');
+
+  // ─── Pole Display (HP LD220 VFD) ───
+  if (url === '/api/pole-display/config' && req.method === 'GET') {
+    try {
+      const cfg = JSON.parse(fs.readFileSync(POLE_DISPLAY_CONFIG_FILE, 'utf8'));
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(cfg));
+    } catch (e) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ enabled: false, port: '', baudRate: 9600, welcomeMsg: 'Welcome to The Bap!' }));
+    }
+    return;
+  }
+
+  if (url === '/api/pole-display/config' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const cfg = JSON.parse(body);
+        fs.writeFileSync(POLE_DISPLAY_CONFIG_FILE, JSON.stringify(cfg, null, 2));
+        console.log(`  📟 Pole display config saved: ${cfg.port || 'auto'} @ ${cfg.baudRate}`);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url === '/api/pole-display/send' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const { line1, line2 } = JSON.parse(body);
+        let cfg;
+        try { cfg = JSON.parse(fs.readFileSync(POLE_DISPLAY_CONFIG_FILE, 'utf8')); } catch (e) { cfg = {}; }
+        if (!cfg.enabled) { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ success: true, skipped: true })); return; }
+        const port = cfg.port || 'COM1';
+        const baud = cfg.baudRate || 9600;
+        // HP LD220: 2 lines x 20 chars, ESC/POS-like protocol
+        // 0x0C = clear, 0x1B40 = init, then send text
+        const pad = (s, n) => (s || '').substring(0, n).padEnd(n);
+        const displayText = pad(line1, 20) + pad(line2, 20);
+        // Use PowerShell to send via serial port (Windows)
+        const psScript = `
+$port = New-Object System.IO.Ports.SerialPort '${port}', ${baud}, 'None', 8, 'One'
+$port.Open()
+$initBytes = [byte[]]@(0x0C)
+$port.Write($initBytes, 0, $initBytes.Length)
+Start-Sleep -Milliseconds 50
+$textBytes = [System.Text.Encoding]::GetEncoding(1252).GetBytes('${displayText.replace(/'/g, "''")}')
+$port.Write($textBytes, 0, $textBytes.Length)
+$port.Close()
+`;
+        const { exec } = require('child_process');
+        exec(`powershell -NoProfile -Command "${psScript.replace(/\n/g, '; ').replace(/"/g, '\\"')}"`, { timeout: 5000 }, (err, stdout, stderr) => {
+          if (err) {
+            console.log(`  📟 Pole display error: ${err.message}`);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: err.message }));
+          } else {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true }));
+          }
+        });
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url === '/api/pole-display/detect' && req.method === 'GET') {
+    // Detect available COM ports using PowerShell
+    const { exec } = require('child_process');
+    const psDetect = `[System.IO.Ports.SerialPort]::GetPortNames() | ForEach-Object { $_ }`;
+    exec(`powershell -NoProfile -Command "${psDetect}"`, { timeout: 5000 }, (err, stdout) => {
+      const ports = (stdout || '').trim().split(/\r?\n/).filter(Boolean).map(p => ({ port: p.trim(), manufacturer: '' }));
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ports }));
+    });
+    return;
+  }
 
   // ─── POS Settings (persistent) ───
   if (url === '/api/pos-settings' && req.method === 'GET') {
