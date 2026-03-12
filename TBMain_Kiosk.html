@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Admin v3.4 | 2026-03-12 | Drag & drop menu item reordering + auto sortOrder -->
+<!-- The Bap Admin v3.5 | 2026-03-12 | Drag & drop menu item reordering + auto sortOrder -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -978,7 +978,7 @@
             </div>
             <button id="pinClearBtn" class="btn-secondary" style="width: 100%; margin-bottom: 8px;">Clear</button>
             <button id="pinEnterBtn" class="btn-primary" style="width: 100%;">Enter</button>
-            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v3.4</div>
+            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v3.5</div>
         </div>
     </div>
 
@@ -1033,7 +1033,7 @@
                     <span>Settings</span>
                 </div>
             </div>
-            <div class="sidebar-footer">v3.4 | The Bap Group</div>
+            <div class="sidebar-footer">v3.5 | The Bap Group</div>
         </div>
 
         <!-- MAIN CONTENT -->
@@ -2133,11 +2133,28 @@
                     console.log('[Admin] TBMS branch sync skipped:', e.message);
                 }
 
-                // 4) 병합된 데이터를 서버/Google에 다시 Push
+                // 4) 지점 병합 결과만 서버에 Push (메뉴/카테고리는 건드리지 않음)
+                // 주의: 여기서 전체 autoSyncToServer() 호출하면 서버의 showInKiosk 등 설정이 리셋될 수 있음
                 try {
-                    await this.autoSyncToServer();
+                    const branchPayload = {
+                        action: 'updateAll',
+                        branches: JSON.parse(localStorage.getItem('tb_branches') || '[]').map(b => ({
+                            code: b.code || b.id, name: b.name, nameKr: b.nameKr || '',
+                            phone: String(b.phone || ''), active: b.active !== false
+                        }))
+                    };
+                    if (isRemote()) {
+                        await googlePost({ action: 'updateBranches', branches: branchPayload.branches });
+                    } else {
+                        await fetch('/api/menu', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(branchPayload)
+                        });
+                    }
+                    console.log('[Admin] Branches synced to server');
                 } catch (e) {
-                    console.log('[Admin] Auto-sync failed:', e.message);
+                    console.log('[Admin] Branch sync failed:', e.message);
                 }
 
                 this.updateDashboard();

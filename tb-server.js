@@ -68,7 +68,7 @@ const printer = require('./tb-printer');
 
 const PORT = parseInt(process.env.TB_PORT) || 8080;
 const BRANCH_CODE = process.env.TB_BRANCH || 'TB';   // 지점코드: TB, PAB 등 (실행: TB_BRANCH=PAB node tb-server.js)
-const SERVER_VERSION = '2.3';
+const SERVER_VERSION = '2.5';
 const SERVER_START_TIME = new Date().toISOString();
 const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbwleB1U6eLEVtGpzaXlzeUkm0Wi35myeYm1bAyIvWc09slWctAGsGOt33uK0VRtn2_Odg/exec';
 const GOOGLE_API = process.env.GOOGLE_API || 'https://script.google.com/macros/s/AKfycbwleB1U6eLEVtGpzaXlzeUkm0Wi35myeYm1bAyIvWc09slWctAGsGOt33uK0VRtn2_Odg/exec';
@@ -90,6 +90,16 @@ function loadMenuData() {
 function saveMenuData(menuData) {
   menuData.lastUpdated = new Date().toISOString();
   menuData.version = (menuData.version || 0) + 1;
+  // 아이템 중복 제거 (같은 ID → 마지막 것 유지)
+  if (menuData.items && menuData.items.length > 0) {
+    const seen = new Map();
+    menuData.items.forEach(i => seen.set(i.id, i));
+    const before = menuData.items.length;
+    menuData.items = [...seen.values()];
+    if (menuData.items.length < before) {
+      console.log(`  🔧 중복 아이템 제거: ${before} → ${menuData.items.length}`);
+    }
+  }
   try {
     fs.writeFileSync(MENU_FILE, JSON.stringify(menuData, null, 2), 'utf8');
     console.log(`  📝 메뉴 저장 완료 (v${menuData.version}, ${menuData.items?.length || 0}개 아이템)`);
@@ -126,6 +136,32 @@ async function syncMenuFromGoogle() {
     });
     const parsed = JSON.parse(data);
     if (parsed.categories && parsed.items) {
+      // 카테고리 병합: Google에 없는 필드(showInKiosk, showInPos 등) 기존값 보존
+      if (parsed.categories && menuCache.categories) {
+        const existMap = {};
+        menuCache.categories.forEach(c => { existMap[c.id] = c; });
+        parsed.categories = parsed.categories.map(gc => {
+          const existing = existMap[gc.id] || {};
+          return {
+            ...gc,
+            showInKiosk: gc.showInKiosk !== undefined ? gc.showInKiosk : existing.showInKiosk,
+            showInPos: gc.showInPos !== undefined ? gc.showInPos : existing.showInPos,
+          };
+        });
+      }
+      // 아이템 병합: Google에 없는 필드(showOnKiosk, showOnPos 등) 기존값 보존
+      if (parsed.items && menuCache.items) {
+        const existItemMap = {};
+        menuCache.items.forEach(i => { existItemMap[i.id] = i; });
+        parsed.items = parsed.items.map(gi => {
+          const existing = existItemMap[gi.id] || {};
+          return {
+            ...gi,
+            showOnKiosk: gi.showOnKiosk !== undefined ? gi.showOnKiosk : existing.showOnKiosk,
+            showOnPos: gi.showOnPos !== undefined ? gi.showOnPos : existing.showOnPos,
+          };
+        });
+      }
       menuCache = { ...menuCache, ...parsed, lastSynced: new Date().toISOString() };
       saveMenuData(menuCache);
       console.log(`  ☁️  Google Sheets 메뉴 동기화 완료 (${parsed.items.length}개 아이템)`);

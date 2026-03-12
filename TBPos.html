@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap POS v2.7 | 2026-03-12 -->
+<!-- The Bap POS v2.8 | 2026-03-12 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -922,14 +922,14 @@ button { font-family: inherit; cursor: pointer; }
         </div>
     </div>
     <div style="text-align:center;padding:10px 0 0;color:#B0B0B0;font-size:11px;line-height:1.6;" id="loginFooter">
-        POS v2.7 <span id="loginServerVer"></span>&nbsp;|&nbsp; © 2026 The Bap. All rights reserved. &nbsp;|&nbsp; Program by DJ Kim
+        POS v2.8 <span id="loginServerVer"></span>&nbsp;|&nbsp; © 2026 The Bap. All rights reserved. &nbsp;|&nbsp; Program by DJ Kim
     </div>
 </div>
 
 <!-- ═══════════ SCREEN: MAIN MENU ═══════════ -->
 <div class="screen main-menu-screen" id="screenMainMenu">
     <div class="main-menu-header">
-        <div class="main-menu-header-title">The Bap POS <span style="font-size:10px;color:#9CA3AF;font-weight:400">v2.7</span></div>
+        <div class="main-menu-header-title">The Bap POS <span style="font-size:10px;color:#9CA3AF;font-weight:400">v2.8</span></div>
         <div class="main-menu-header-branch" id="mainMenuBranch">TBS</div>
         <div class="main-menu-header-spacer"></div>
         <div class="main-menu-header-time" id="mainMenuTime">12:00:00</div>
@@ -1366,8 +1366,14 @@ function getItemsForCategory(catId) {
 // Helper: get active categories sorted
 function getActiveCategories() {
     if (!POS.menuData || !POS.menuData.categories) return [];
+    // POS에서 보이는 아이템이 있는 카테고리만 표시
+    const visibleCatIds = new Set(
+        (POS.menuData.items || [])
+            .filter(i => i.active !== false && i.showOnPos !== false)
+            .map(i => i.catId)
+    );
     return POS.menuData.categories
-        .filter(c => c.active !== false && c.showInPos !== false)
+        .filter(c => c.active !== false && c.showInPos !== false && visibleCatIds.has(c.id))
         .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 }
 
@@ -5171,7 +5177,7 @@ function renderSettings() {
             </div>
 
             <div style="text-align:center;padding:12px;color:#9CA3AF;font-size:11px">
-                The Bap POS v2.7 | Server v${s.serverVersion} | ${s.nodeVersion}
+                The Bap POS v2.8 | Server v${s.serverVersion} | ${s.nodeVersion}
             </div>
         `;
     }
