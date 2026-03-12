@@ -2059,7 +2059,7 @@
                 const data = await resp.json();
                 // Map categories: server uses nameEn, kiosk uses name
                 CATEGORIES = (data.categories || [])
-                    .filter(c => c.active !== false)
+                    .filter(c => c.active !== false && c.showInKiosk !== false)
                     .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
                     .map(c => ({ id: c.id, name: c.nameEn, nameKr: c.nameKr, icon: c.icon || _defaultCatIcon(c.id), color: c.color, descEn: c.descEn || '', descKr: c.descKr || '' }));
                 // Map items: server uses string IDs like 'M001', keep as-is

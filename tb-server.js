@@ -503,7 +503,11 @@ function handleMessage(clientId, rawData) {
         serverIP: LOCAL_IP,
         branchCode: BRANCH_CODE,
         connectedClients: getClientSummary(),
-        dailyOrderCount: dailyOrders.length
+        // ★ max 주문번호 사용 (length가 아닌 실제 최대 번호 — 번호 충돌 방지)
+        dailyOrderCount: dailyOrders.reduce((mx, o) => {
+          const m = (o.orderNumber || '').match(/-(\d+)$/);
+          return m ? Math.max(mx, parseInt(m[1])) : mx;
+        }, 0)
       });
       broadcastMsg({
         type: 'client_connected',
@@ -514,9 +518,9 @@ function handleMessage(clientId, rawData) {
       // 주방/관리자/POS가 새로 연결되면 기존 주문 전송
       // 같은 서버 = 같은 지점이므로 branch 필터 불필요
       if ((msg.clientType === 'kitchen' || msg.clientType === 'admin' || msg.clientType === 'pos' || msg.clientType === 'customer_display') && dailyOrders.length > 0) {
-        // 주방: 완료되지 않은 주문만 / 관리자,POS: 전부
+        // 주방: 완료되지 않은 주문만 + skipKitchen 제외 / 관리자,POS: 전부
         const ordersToSend = (msg.clientType === 'kitchen' || msg.clientType === 'customer_display')
-          ? dailyOrders.filter(o => o.status !== 'done' && o.status !== 'completed')
+          ? dailyOrders.filter(o => o.status !== 'done' && o.status !== 'completed' && !o.skipKitchen)
           : dailyOrders;
         console.log(`    📦 기존 주문 ${ordersToSend.length}/${dailyOrders.length}건 전송 → #${clientId} (${msg.clientType})`);
         ordersToSend.forEach(order => {
@@ -550,11 +554,20 @@ function handleMessage(clientId, rawData) {
       if (order.orderNumber !== newOrderNumber) {
         console.log(`    🔢 주문번호 재발급: ${order.orderNumber} → ${newOrderNumber}`);
       }
+      const originalOrderNumber = order.orderNumber;
       order.orderNumber = newOrderNumber;
 
       console.log(`  📋 [주문] ${order.orderNumber} (${BRANCH_CODE}) — £${order.total}`);
       dailyOrders.push({ ...order, receivedAt: new Date().toISOString() });
       saveOrders();
+
+      // ★ 발신자에게 확정된 주문번호 알림 (POS 로컬 번호와 서버 번호 동기화)
+      sendTo(clientId, {
+        type: 'order_confirmed',
+        originalOrderNumber,
+        confirmedOrderNumber: newOrderNumber,
+        order
+      });
 
       // 같은 서버의 모든 클라이언트에게 전달 (같은 지점이므로 branch 필터 불필요)
       const skipKitchen = !!order.skipKitchen;
@@ -941,6 +954,45 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // ─── Cash Drawer Log ───
+  const DRAWER_LOG_FILE = path.join(DATA_DIR, 'drawer-log.json');
+
+  if (url === '/api/drawer-log' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const entry = JSON.parse(body);
+        entry.serverTime = new Date().toISOString();
+        let logs = [];
+        try { logs = JSON.parse(fs.readFileSync(DRAWER_LOG_FILE, 'utf8')); } catch(e) {}
+        logs.push(entry);
+        // Keep last 500 entries
+        if (logs.length > 500) logs = logs.slice(-500);
+        fs.writeFileSync(DRAWER_LOG_FILE, JSON.stringify(logs, null, 2));
+        console.log(`[Drawer] Log: ${entry.staff || 'unknown'} @ ${entry.branch || ''} — ${entry.reason || ''}`);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch(e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  if (url === '/api/drawer-log' && req.method === 'GET') {
+    try {
+      const logs = fs.existsSync(DRAWER_LOG_FILE) ? JSON.parse(fs.readFileSync(DRAWER_LOG_FILE, 'utf8')) : [];
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(logs));
+    } catch(e) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify([]));
+    }
+    return;
+  }
+
   if (url === '/api/printer-config' && req.method === 'GET') {
     try {
       const cfg = fs.existsSync(PRINTER_CONFIG_FILE) ? JSON.parse(fs.readFileSync(PRINTER_CONFIG_FILE, 'utf8')) : {};
@@ -981,7 +1033,9 @@ const server = http.createServer(async (req, res) => {
         const cfgRaw = fs.existsSync(PRINTER_CONFIG_FILE) ? fs.readFileSync(PRINTER_CONFIG_FILE, 'utf8') : '{}';
         const cfg = JSON.parse(cfgRaw);
 
-        if (!cfg.ip && !cfg.device) {
+        console.log(`[Printer] Request: type=${data.type} | config: ip=${cfg.ip||''} device=${cfg.device||''} printerName=${cfg.printerName||''}`);
+
+        if (!cfg.ip && !cfg.device && !cfg.printerName) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Printer not configured. Go to Settings > Printer Setup.' }));
           return;
@@ -991,6 +1045,11 @@ const server = http.createServer(async (req, res) => {
         if (data.type === 'receipt') {
           const branchName = data.branchName || cfg.branchName || '';
           escData = printer.buildOrderReceipt(data.order, branchName);
+          // Cash payment: prepend drawer kick command so it opens with the receipt
+          if (data.openDrawer) {
+            escData = printer.buildOpenDrawer() + escData;
+            console.log('[Printer] Drawer kick prepended to receipt (cash payment)');
+          }
         } else if (data.type === 'report') {
           escData = printer.buildReportReceipt(data.report);
         } else if (data.type === 'daily_report') {
@@ -1010,22 +1069,36 @@ const server = http.createServer(async (req, res) => {
             totalVat: (d.vatData && d.vatData.totalVat) || 0
           });
         } else if (data.type === 'open_drawer') {
+          // ── Cash Drawer: sendToPrinter handles ip/device/printerName automatically ──
           escData = printer.buildOpenDrawer();
+          try {
+            const result = await printer.sendToPrinter(cfg, escData);
+            console.log('[Printer] Drawer opened via', result.method);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, method: result.method }));
+          } catch (e) {
+            console.warn('[Printer] Drawer open failed:', e.message);
+            res.writeHead(500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ error: e.message }));
+          }
+          return;
+
         } else {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'Unknown print type: ' + data.type }));
           return;
         }
 
-        // Print multiple copies
+        // Print multiple copies (for receipt/report types)
         const copies = data.copies || 1;
         for (let i = 0; i < copies; i++) {
           await printer.sendToPrinter(cfg, escData);
         }
 
-        console.log(`[Printer] ${data.type} printed (${copies}x) → ${cfg.ip || cfg.device}`);
+        const target = cfg.ip || cfg.device || cfg.printerName || 'unknown';
+        console.log(`[Printer] ${data.type} printed (${copies}x) → ${target}`);
         res.writeHead(200, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ success: true, copies, target: cfg.ip || cfg.device }));
+        res.end(JSON.stringify({ success: true, copies, target }));
       } catch (e) {
         console.error('[Printer] Error:', e.message);
         res.writeHead(500, { 'Content-Type': 'application/json' });
@@ -1043,26 +1116,27 @@ const server = http.createServer(async (req, res) => {
       try {
         let testCfg = JSON.parse(body);
         // If no ip/device in body, use saved config
-        if (!testCfg.ip && !testCfg.device) {
+        if (!testCfg.ip && !testCfg.device && !testCfg.printerName) {
           const cfgRaw = fs.existsSync(PRINTER_CONFIG_FILE) ? fs.readFileSync(PRINTER_CONFIG_FILE, 'utf8') : '{}';
           testCfg = JSON.parse(cfgRaw);
         }
-        if (!testCfg.ip && !testCfg.device) {
+        if (!testCfg.ip && !testCfg.device && !testCfg.printerName) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
           res.end(JSON.stringify({ error: 'No printer configured. Save config first.' }));
           return;
         }
         // Build test print
-        let d = printer.CMD.INIT;
+        let d = printer.CMD.INIT + printer.CMD.CODEPAGE;
         d += printer.CMD.ALIGN_CENTER + printer.CMD.SIZE_DOUBLE + printer.CMD.BOLD_ON;
         d += 'PRINTER TEST' + printer.CMD.FEED;
         d += printer.CMD.SIZE_NORMAL + printer.CMD.BOLD_OFF;
         d += 'The Bap POS' + printer.CMD.FEED;
         d += printer.CMD.DASHES + printer.CMD.FEED;
         d += 'Connection: OK' + printer.CMD.FEED;
-        d += `Target: ${testCfg.ip || testCfg.device}` + printer.CMD.FEED;
+        d += `Target: ${testCfg.ip || testCfg.device || testCfg.printerName}` + printer.CMD.FEED;
         d += `Time: ${new Date().toLocaleString('en-GB')}` + printer.CMD.FEED;
         d += printer.CMD.DASHES + printer.CMD.FEED;
+        d += 'Test: \xA3 symbol OK?' + printer.CMD.FEED;
         d += 'If you can read this,' + printer.CMD.FEED;
         d += 'the printer is working!' + printer.CMD.FEED;
         d += printer.CMD.FEED + printer.CMD.FEED + printer.CMD.FEED;

@@ -1367,7 +1367,7 @@ function getItemsForCategory(catId) {
 function getActiveCategories() {
     if (!POS.menuData || !POS.menuData.categories) return [];
     return POS.menuData.categories
-        .filter(c => c.active !== false)
+        .filter(c => c.active !== false && c.showInPos !== false)
         .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 }
 
@@ -1422,6 +1422,8 @@ function calcVatBreakdown(orders) {
 }
 
 function toast(msg, type='info', duration=3000) {
+    // Only show error toasts — suppress info/success/warning
+    if (type !== 'error') return;
     const c = document.getElementById('toastContainer');
     const el = document.createElement('div');
     el.className = 'toast ' + type; el.textContent = msg;
@@ -1524,6 +1526,37 @@ function gotoPayment() {
 //  PIN PROMPT POPUP (separate overlay from tbPopup)
 // ═══════════════════════════════════════════
 let POS_USERS = []; // loaded from TBMS — users with pin, role
+let BRANCH_STAFF = []; // loaded from TBMS — staff for current branch (name, id, active)
+
+// ─── TBMS Kiosk API for Staff data ───
+const TBMS_KIOSK_API = 'https://script.google.com/macros/s/AKfycbwaC6b6WTo4Gw_UpgbpbrVDj52ooG-qqcqPeR4Tgne_bWbzDomXw14SlD0q6QiszZw5/exec';
+const TBMS_API_KEY = 'tBaP2026xKr!mGt9Qz';
+
+async function loadBranchStaff(branchCode) {
+    if (!branchCode) { BRANCH_STAFF = []; return; }
+    try {
+        const url = TBMS_KIOSK_API + '?action=getStoreData&store=' + encodeURIComponent(branchCode) + '&sheets=Staff&apikey=' + encodeURIComponent(TBMS_API_KEY);
+        const resp = await fetch(url, { redirect: 'follow' });
+        const result = await resp.json();
+        const raw = (result && result.data && result.data.Staff) || [];
+        // Normalize and filter active staff for this branch
+        BRANCH_STAFF = raw.map(r => {
+            const m = {};
+            for (const k in r) m[k.replace(/[\s_\-]+/g, '').toLowerCase()] = r[k];
+            return { id: m.id || '', name: m.name || '', nickName: m.nickname || '', storeId: m.storeid || '', active: m.active, kioskLogin: m.kiosklogin };
+        }).filter(s => {
+            const a = s.active;
+            const kl = s.kioskLogin;
+            return String(s.storeId) === branchCode
+                && (a === true || a === 'true' || a === 'TRUE')
+                && (kl !== false && kl !== 'false' && kl !== 'FALSE');
+        });
+        console.log('[POS] Branch staff loaded for', branchCode, ':', BRANCH_STAFF.length, 'members');
+    } catch (e) {
+        console.warn('[POS] Branch staff load failed:', e.message);
+        BRANCH_STAFF = [];
+    }
+}
 
 let _pinResolve = null;
 let _pinBuf = '';
@@ -1624,32 +1657,203 @@ async function gotoTakings() {
     loadTakingsData();
 }
 function gotoOrders() { showScreen('screenOrders'); renderAllOrders(); }
-// ─── OPEN TILL = physically open cash drawer via POS printer ───
-async function openCashDrawer() {
-    const entered = await tbPromptPin('Branch PIN Required', '💰');
-    if (entered === false) return;
-    const branch = BRANCHES.find(b => b.code === POS.branch);
-    const digits = (branch?.phone || '').replace(/\D/g, '');
-    const correctPin = digits.length >= 4 ? digits.slice(-4) : null;
-    if (correctPin && entered !== correctPin) {
-        toast('Wrong PIN', 'error'); return;
-    }
-    // Send ESC/POS command to open cash drawer
-    // Standard kick pulse: ESC p 0 25 250 (pin 2) or ESC p 1 25 250 (pin 5)
-    try {
-        const resp = await fetch('/api/open-drawer', { method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ branch: POS.branch })
-        });
-        if (resp.ok) {
-            toast('Cash drawer opened', 'success');
-        } else {
-            toast('Drawer command sent (printer not connected)', 'info');
+// ─── Cash Drawer: try server API first, fallback to browser print ───
+function sendDrawerCommand() {
+    return fetch('/api/print', { method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type: 'open_drawer' })
+    }).then(async resp => {
+        const result = await resp.json().catch(() => ({}));
+        if (resp.ok && result.success) {
+            console.log('[Drawer] Opened via server:', result.method, result.target || '');
+            return true;
         }
-    } catch(e) {
-        // Fallback: just confirm action
-        toast('Cash drawer open command sent', 'info');
+        console.error('[Drawer] Server failed:', result.error || resp.status);
+        toast('Drawer error: ' + (result.error || 'Server error'), 'error');
+        return false;
+    }).catch(e => {
+        console.error('[Drawer] Fetch failed:', e.message);
+        toast('Drawer: server not available', 'error');
+        return false;
+    });
+}
+
+// ─── OPEN TILL = PIN → Staff Select → Reason Select → Open ───
+async function openCashDrawer() {
+    const entered = await tbPromptPin('Cash Drawer PIN', '💰');
+    if (entered === false) return;
+    const user = checkUserPin(entered, ['admin', 'senior manager', 'manager', 'staff']);
+    if (!user) { toast('Wrong PIN — access denied', 'error'); return; }
+    // Show staff selection popup
+    showDrawerStaffSelect();
+}
+
+function showDrawerStaffSelect() {
+    const staffList = BRANCH_STAFF.length > 0 ? BRANCH_STAFF : [];
+    const popup = document.createElement('div');
+    popup.id = '_drawerPopup';
+    popup.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+    popup.onclick = (e) => { if (e.target === popup) popup.remove(); };
+
+    let staffGrid = '';
+    if (staffList.length === 0) {
+        staffGrid = '<div style="color:#9CA3AF;text-align:center;padding:16px">No staff loaded</div>';
+    } else {
+        staffGrid = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;max-height:240px;overflow-y:auto;padding:4px">';
+        staffList.forEach(s => {
+            const dn = s.nickName || s.name || '?';
+            const initial = dn.charAt(0).toUpperCase();
+            staffGrid += `<div class="_drs-btn" data-name="${dn}" style="padding:10px 6px;background:#FFF7ED;border:2px solid #F97316;border-radius:12px;text-align:center;cursor:pointer" onmouseover="this.style.background='#FFEDD5';this.style.borderColor='#EA580C'" onmouseout="this.style.background='#FFF7ED';this.style.borderColor='#F97316'">
+                <div style="width:44px;height:44px;background:#F97316;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-weight:700;font-size:18px">${initial}</div>
+                <div style="font-size:12px;font-weight:600;line-height:1.2;word-break:keep-all">${dn}</div>
+            </div>`;
+        });
+        staffGrid += '</div>';
     }
+
+    popup.innerHTML = `
+        <div style="background:#fff;border-radius:16px;width:380px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column">
+            <div style="padding:16px 20px;text-align:center;border-bottom:1px solid #E5E7EB">
+                <div style="font-size:28px;margin-bottom:4px">💰</div>
+                <div style="font-size:16px;font-weight:700">Who is opening the drawer?</div>
+                <div style="font-size:12px;color:#6B7280;margin-top:2px">${POS.branchName || POS.branch || ''}</div>
+            </div>
+            <div style="padding:16px;overflow-y:auto;flex:1">
+                ${staffGrid}
+            </div>
+            <div style="border-top:1px solid #E5E7EB;padding:10px 20px;text-align:center">
+                <button onclick="this.closest('#_drawerPopup').remove()" style="padding:8px 24px;background:none;border:1px solid #D1D5DB;border-radius:8px;font-size:13px;color:#6B7280;cursor:pointer">Cancel</button>
+            </div>
+        </div>`;
+
+    document.body.appendChild(popup);
+
+    // Staff button clicks → go to reason select
+    popup.querySelectorAll('._drs-btn').forEach(btn => {
+        btn.onclick = () => {
+            const staffName = btn.dataset.name;
+            popup.remove();
+            showDrawerReasonPopup(staffName);
+        };
+    });
+}
+
+function showDrawerReasonPopup(staffName) {
+    const popup = document.createElement('div');
+    popup.id = '_drawerPopup';
+    popup.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+    popup.onclick = (e) => { if (e.target === popup) popup.remove(); };
+
+    popup.innerHTML = `
+        <div style="background:#fff;border-radius:16px;width:340px;overflow:hidden;display:flex;flex-direction:column">
+            <div style="padding:16px 20px;text-align:center;border-bottom:1px solid #E5E7EB">
+                <div style="font-size:28px;margin-bottom:4px">💰</div>
+                <div style="font-size:15px;font-weight:700;margin-bottom:6px">Open Drawer</div>
+                <div style="background:#DBEAFE;border-radius:8px;padding:6px 14px;display:inline-block">
+                    <span style="font-size:14px;font-weight:700;color:#1D4ED8">${staffName}</span>
+                </div>
+            </div>
+            <div style="padding:16px">
+                <div style="font-size:13px;color:#6B7280;margin-bottom:10px;text-align:center">Select reason</div>
+                <div style="display:flex;flex-direction:column;gap:8px">
+                    <button class="_dr-btn" data-reason="change" data-label="Change" style="padding:14px 16px;border:2px solid #E5E7EB;border-radius:10px;background:#fff;font-size:15px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px">
+                        <span style="font-size:22px">🪙</span> Change
+                    </button>
+                    <button class="_dr-btn" data-reason="expense" data-label="Expense" style="padding:14px 16px;border:2px solid #E5E7EB;border-radius:10px;background:#fff;font-size:15px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px">
+                        <span style="font-size:22px">🛒</span> Expense
+                    </button>
+                    <button class="_dr-btn" data-reason="other" data-label="Other" style="padding:14px 16px;border:2px solid #E5E7EB;border-radius:10px;background:#fff;font-size:15px;font-weight:600;cursor:pointer;text-align:left;display:flex;align-items:center;gap:10px">
+                        <span style="font-size:22px">📝</span> Other
+                    </button>
+                </div>
+                <div id="_drawerOtherInput" style="display:none;margin-top:10px">
+                    <input type="text" id="_drawerOtherText" readonly placeholder="Tap to type reason..." maxlength="100" style="width:100%;padding:12px;border:2px solid #3B82F6;border-radius:8px;font-size:15px;box-sizing:border-box;background:#F9FAFB" onfocus="_showTouchKB(this)">
+                    <div id="_touchKB" style="display:none;margin-top:8px"></div>
+                    <button id="_drawerOtherConfirm" style="margin-top:8px;width:100%;padding:14px;background:#006AFF;color:#fff;border:none;border-radius:8px;font-size:15px;font-weight:700;cursor:pointer">Confirm</button>
+                </div>
+            </div>
+            <div style="border-top:1px solid #E5E7EB;padding:10px 20px;text-align:center">
+                <button onclick="this.closest('#_drawerPopup').remove()" style="padding:8px 24px;background:none;border:1px solid #D1D5DB;border-radius:8px;font-size:13px;color:#6B7280;cursor:pointer">Cancel</button>
+            </div>
+        </div>`;
+
+    document.body.appendChild(popup);
+
+    // Reason buttons
+    popup.querySelectorAll('._dr-btn').forEach(btn => {
+        btn.onclick = () => {
+            const reason = btn.dataset.reason;
+            const label = btn.dataset.label;
+            if (reason === 'other') {
+                document.getElementById('_drawerOtherInput').style.display = 'block';
+                document.getElementById('_drawerOtherText').focus();
+                return;
+            }
+            popup.remove();
+            executeDrawerOpen(staffName, 'manual_' + reason, label);
+        };
+    });
+
+    // Other confirm
+    const otherConfirm = popup.querySelector('#_drawerOtherConfirm');
+    if (otherConfirm) {
+        otherConfirm.onclick = () => {
+            const text = document.getElementById('_drawerOtherText').value.trim();
+            if (!text) { toast('Enter a reason', 'error'); return; }
+            popup.remove();
+            executeDrawerOpen(staffName, 'manual_other', text);
+        };
+    }
+}
+
+// ─── Touch Keyboard for "Other" reason input ───
+function _showTouchKB(inputEl) {
+    const kb = document.getElementById('_touchKB');
+    if (!kb) return;
+    if (kb.style.display === 'block') return;
+    kb.style.display = 'block';
+
+    const rows = [
+        ['Q','W','E','R','T','Y','U','I','O','P'],
+        ['A','S','D','F','G','H','J','K','L'],
+        ['Z','X','C','V','B','N','M','⌫'],
+        ['Space','Done']
+    ];
+
+    let html = '';
+    rows.forEach(row => {
+        html += '<div style="display:flex;gap:4px;justify-content:center;margin-bottom:4px">';
+        row.forEach(key => {
+            let w = '32px', bg = '#F3F4F6', fs = '14px';
+            if (key === 'Space') { w = '140px'; }
+            else if (key === 'Done') { w = '80px'; bg = '#006AFF'; }
+            else if (key === '⌫') { w = '50px'; bg = '#FEE2E2'; }
+            html += `<button data-key="${key}" style="width:${w};height:38px;border:1px solid #D1D5DB;border-radius:6px;background:${bg};font-size:${fs};font-weight:600;cursor:pointer;color:${key==='Done'?'#fff':'#111'};flex-shrink:0">${key === 'Space' ? '␣' : key}</button>`;
+        });
+        html += '</div>';
+    });
+    kb.innerHTML = html;
+
+    kb.onclick = (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+        const key = btn.dataset.key;
+        if (key === 'Done') {
+            kb.style.display = 'none';
+        } else if (key === '⌫') {
+            inputEl.value = inputEl.value.slice(0, -1);
+        } else if (key === 'Space') {
+            inputEl.value += ' ';
+        } else {
+            inputEl.value += key.toLowerCase();
+        }
+    };
+}
+
+function executeDrawerOpen(staffName, reasonCode, reasonDetail) {
+    sendDrawerCommand();
+    logDrawerOpen(reasonCode, staffName, reasonDetail);
+    toast('Drawer opened — ' + staffName + ' (' + reasonDetail + ')', 'success');
 }
 
 async function switchUser() {
@@ -1755,6 +1959,8 @@ function selectBranch(code) {
     document.getElementById('loginBranchDate').textContent = 'Date : ' + dd + '/' + mm + '/' + yyyy;
     POS.pin = '';
     updatePinDots();
+    // Load branch staff from TBMS (background)
+    loadBranchStaff(code);
 }
 
 function updatePinDots() {
@@ -1829,8 +2035,14 @@ async function restoreCompletedOrdersFromServer() {
         const branchOrders = orders.filter(o => o.branchCode === POS.branch);
         if (branchOrders.length > 0) {
             POS.completedOrders = branchOrders;
-            POS.dailyOrderCount = branchOrders.length;
-            console.log('[POS] Restored', branchOrders.length, 'completed orders from server');
+            // ★ Use max order number (not array length) to prevent number collisions
+            const maxNum = branchOrders.reduce((mx, o) => {
+                const m = (o.orderNumber || '').match(/-(\d+)$/);
+                return m ? Math.max(mx, parseInt(m[1])) : mx;
+            }, 0);
+            // ★ Only increase, never decrease (prevent race condition with order placement)
+            if (maxNum > POS.dailyOrderCount) POS.dailyOrderCount = maxNum;
+            console.log(`[POS] Restored ${branchOrders.length} orders, maxNum=${maxNum}, dailyOrderCount=${POS.dailyOrderCount}`);
         }
     } catch (e) {
         console.warn('[POS] Orders restore failed:', e.message);
@@ -1850,6 +2062,8 @@ function connectWebSocket() {
         POS.ws.send(JSON.stringify({ type: 'register', clientType: 'pos' }));
         // Suppress toasts for first 2 seconds (initial order sync)
         setTimeout(() => { POS.wsReady = true; }, 2000);
+        // Restore completed orders on every reconnect (server restart recovery)
+        restoreCompletedOrdersFromServer();
     };
     POS.ws.onclose = () => {
         POS.connected = false; updateConnDots(false);
@@ -1871,14 +2085,46 @@ function updateConnDots(connected) {
 function handleWSMessage(msg) {
     switch (msg.type) {
         case 'registered':
-            POS.dailyOrderCount = msg.dailyOrderCount || 0;
+            // ★ Only increase, never decrease (서버 재연결 시 번호 역행 방지)
+            const serverCount = msg.dailyOrderCount || 0;
+            if (serverCount > POS.dailyOrderCount) POS.dailyOrderCount = serverCount;
             // 연결/재연결 시 최신 메뉴 로드
             loadMenuFromAPI().then(() => {
                 renderCategoryTabs();
                 if (POS.currentScreen === 'screenOrder') renderOrderMenu();
                 console.log('[POS] Menu refreshed on connect');
             }).catch(e => console.warn('[POS] Menu refresh failed:', e));
+            // ★ 서버 재시작 후 복구: 서버에서 오늘 주문 다시 로드
+            restoreCompletedOrdersFromServer().then(() => {
+                console.log('[POS] Orders restored after register, completedOrders:', POS.completedOrders.length);
+            });
             break;
+        case 'order_confirmed': {
+            // ★ 서버가 확정한 주문번호로 로컬 기록 동기화
+            const origNum = msg.originalOrderNumber;
+            const confirmedNum = msg.confirmedOrderNumber;
+            if (origNum !== confirmedNum) {
+                console.log(`[POS] 주문번호 동기화: ${origNum} → ${confirmedNum}`);
+                // completedOrders 업데이트
+                const co = POS.completedOrders.find(x => x.orderNumber === origNum);
+                if (co) co.orderNumber = confirmedNum;
+                // register transactions 업데이트
+                const tx = POS.register.transactions.find(x => x.orderNum === origNum);
+                if (tx) tx.orderNum = confirmedNum;
+                // dailyOrderCount를 서버 번호 기준으로 갱신
+                const m = confirmedNum.match(/-(\d+)$/);
+                if (m) {
+                    const serverNum = parseInt(m[1]);
+                    if (serverNum > POS.dailyOrderCount) POS.dailyOrderCount = serverNum;
+                }
+            }
+            // 확정된 주문을 POS.orders에 추가 (ALL ORDERS에서 보이게)
+            if (msg.order && !POS.orders.some(x => x.orderNumber === confirmedNum)) {
+                POS.orders.push(msg.order);
+                if (POS.currentScreen === 'screenOrders') renderAllOrders();
+            }
+            break;
+        }
         case 'new_order': {
             const order = msg.order;
             // ★ 중복 방지: 같은 주문번호가 이미 있으면 무시
@@ -2359,8 +2605,14 @@ function completePayment(printCount) {
             wsSend({ type: 'order_status', orderNumber: kioskOrderNum, status: kioskOrder.status, paymentStatus: 'paid', paymentMethod: payMethod, amountPaid: paid, staff: POS.staffName, order: kioskOrder });
             syncRegisterToServer();
 
-            // Print receipt
-            if (printCount > 0) printReceipt(kioskOrder, printCount);
+            // Print receipt (cash: drawer kick included in print job)
+            const isCashKiosk = (payMethod === 'cash');
+            if (printCount > 0) {
+                printReceipt(kioskOrder, printCount, isCashKiosk);
+            } else if (isCashKiosk) {
+                sendDrawerCommand();
+            }
+            if (isCashKiosk) logDrawerOpen('cash_payment_kiosk', POS.staffName);
 
             // Clear cart & kiosk ref
             POS.cart = []; POS.selectedCartIdx = -1;
@@ -2371,13 +2623,10 @@ function completePayment(printCount) {
             toast(`Kiosk ${kioskOrderNum} paid — ${fp(total)} (${payMethod.toUpperCase()})`, 'success');
             updateKioskBadge();
 
-            // Cash: open drawer + show change popup if needed
-            if (payMethod === 'cash') {
-                openCashDrawer();
-                if (change > 0.005) {
-                    showChangePopup(change, paid, total);
-                    return; // changePopup OK will go to main
-                }
+            // Cash: show change popup if needed
+            if (isCashKiosk && change > 0.005) {
+                showChangePopup(change, paid, total);
+                return;
             }
             showScreen('screenMainMenu');
             return;
@@ -2421,8 +2670,14 @@ function completePayment(printCount) {
     // Sync register to server after payment
     syncRegisterToServer();
 
-    // Print receipt
-    if (printCount > 0) printReceipt(orderData, printCount);
+    // Print receipt (cash: drawer kick included in print job)
+    const isCashPOS = (payMethod === 'cash');
+    if (printCount > 0) {
+        printReceipt(orderData, printCount, isCashPOS);
+    } else if (isCashPOS) {
+        sendDrawerCommand();
+    }
+    if (isCashPOS) logDrawerOpen('cash_payment', POS.staffName);
 
     // Clear cart
     POS.cart = []; POS.selectedCartIdx = -1;
@@ -2432,13 +2687,10 @@ function completePayment(printCount) {
     toast(`Order ${orderNum} completed — ${fp(total)} (${payMethod.toUpperCase()})`, 'success');
     updateKioskBadge();
 
-    // Cash: open drawer + show change popup if needed
-    if (payMethod === 'cash') {
-        openCashDrawer();
-        if (change > 0.005) {
-            showChangePopup(change, paid, total);
-            return; // changePopup OK will go to main
-        }
+    // Cash: show change popup if needed
+    if (isCashPOS && change > 0.005) {
+        showChangePopup(change, paid, total);
+        return;
     }
     showScreen('screenMainMenu');
 }
@@ -2446,17 +2698,7 @@ function completePayment(printCount) {
 // ═══════════════════════════════════════════
 //  CASH DRAWER & CHANGE POPUP
 // ═══════════════════════════════════════════
-function openCashDrawer() {
-    // ESC/POS command to open cash drawer: ESC p 0 25 250
-    // Send via hidden iframe print to POS printer, or via server API
-    try {
-        // Method: Send raw ESC/POS command via server
-        fetch('/api/cashdrawer', { method: 'POST' }).catch(() => {});
-        console.log('[POS] Cash drawer open command sent');
-    } catch (e) {
-        console.warn('[POS] Cash drawer open failed:', e);
-    }
-}
+// openCashDrawer() — PIN 인증 버전이 위에 정의됨 (line ~1628). 중복 제거됨.
 
 let _changePopupTimer = null;
 function showChangePopup(changeAmount, paid, total) {
@@ -2519,29 +2761,33 @@ function checkPickupReady(order, newStatus) {
     }
 }
 
-async function printReceipt(order, count) {
+// printReceipt(order, count, openDrawer)
+// openDrawer: true = cash payment (drawer kick included in print job)
+//             false = card payment (no drawer kick)
+async function printReceipt(order, count, openDrawer) {
     const b = BRANCHES.find(x => x.code === order.branchCode);
     const branchName = b ? b.name : order.branchCode;
 
-    // ★ Try direct ESC/POS print first (no preview)
+    // ★ Try direct ESC/POS print (no preview, no browser dialog)
     try {
         const resp = await fetch('/api/print', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: 'receipt', order, branchName, copies: count })
+            body: JSON.stringify({ type: 'receipt', order, branchName, copies: count, openDrawer: !!openDrawer })
         });
         const result = await resp.json();
         if (result.success) {
-            console.log(`[Print] Receipt ${order.orderNumber} → ${result.target} (${count}x)`);
-            return; // Direct print success — skip browser print
+            console.log(`[Print] Receipt ${order.orderNumber} → ${result.target} (${count}x) drawer:${!!openDrawer}`);
+            return; // ✅ Direct print success
         }
-        console.warn('[Print] Direct print failed:', result.error);
+        console.warn('[Print] Direct print response error:', result.error);
     } catch (e) {
-        console.warn('[Print] Direct print unavailable:', e.message);
+        console.warn('[Print] Direct print fetch error:', e.message);
     }
 
-    // ★ Fallback: browser window.print() — show warning
-    toast('Direct print failed — using browser print', 'warn');
+    // ★ Fallback: browser window.print()
+    console.warn('[Print] Falling back to browser print');
+    toast('Server print failed — using browser print', 'warn');
     document.getElementById('receiptBranch').textContent = branchName;
     document.getElementById('receiptDate').textContent = new Date(order.timestamp).toLocaleString('en-GB');
     document.getElementById('receiptOrderNum').textContent = order.orderNumber;
@@ -2568,18 +2814,25 @@ async function printReceipt(order, count) {
     setTimeout(() => { document.getElementById('receiptPrint').style.display = 'none'; }, count * 600);
 }
 
-// ★ Direct print for cash drawer
-async function openCashDrawerDirect() {
-    try {
-        const resp = await fetch('/api/print', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: 'open_drawer' })
-        });
-        const result = await resp.json();
-        if (result.success) console.log('[Print] Cash drawer opened');
-        else console.warn('[Print] Drawer open failed:', result.error);
-    } catch (e) { console.warn('[Print] Drawer command error:', e.message); }
+// ★ Direct print for cash drawer (no browser fallback)
+function openCashDrawerDirect() {
+    sendDrawerCommand();
+}
+
+// ─── Drawer open log ───
+function logDrawerOpen(reason, staffName, reasonDetail) {
+    fetch('/api/drawer-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            timestamp: new Date().toISOString(),
+            branch: POS.branch,
+            branchName: POS.branchName,
+            staff: staffName || POS.staffName || 'unknown',
+            reason: reason || 'unknown',
+            reasonDetail: reasonDetail || ''
+        })
+    }).catch(e => console.warn('[Drawer] Log failed:', e.message));
 }
 
 // ═══════════════════════════════════════════
@@ -3002,7 +3255,7 @@ function reprintOrder(orderNum) {
     const o = POS.orders.find(x => x.orderNumber === orderNum) ||
               POS.completedOrders.find(x => x.orderNumber === orderNum);
     if (!o) { toast('Order not found', 'error'); return; }
-    printReceipt(o, 1);
+    confirmReprint(o);
 }
 async function reprintOrderByDate(orderNum, dateStr) {
     // First try local
@@ -3019,7 +3272,38 @@ async function reprintOrderByDate(orderNum, dateStr) {
         } catch (e) {}
     }
     if (!o) { toast('Order not found', 'error'); return; }
-    printReceipt(o, 1);
+    confirmReprint(o);
+}
+
+function confirmReprint(order) {
+    const total = fp(order.total || 0);
+    const items = (order.items || []).length;
+    const payMethod = (order.paymentMethod || '').toUpperCase() || '?';
+    const popup = document.createElement('div');
+    popup.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+    popup.onclick = (e) => { if (e.target === popup) popup.remove(); };
+    popup.innerHTML = `
+        <div style="background:#fff;border-radius:16px;width:320px;overflow:hidden">
+            <div style="padding:20px;text-align:center">
+                <div style="font-size:36px;margin-bottom:8px">🖨️</div>
+                <div style="font-size:16px;font-weight:700;margin-bottom:4px">영수증 재인쇄</div>
+                <div style="font-size:13px;color:#6B7280;margin-bottom:12px">Reprint Receipt?</div>
+                <div style="background:#F3F4F6;border-radius:8px;padding:10px;text-align:left;font-size:13px">
+                    <div><b>Order:</b> ${order.orderNumber || '-'}</div>
+                    <div><b>Items:</b> ${items}  <b>Total:</b> ${total}</div>
+                    <div><b>Payment:</b> ${payMethod}</div>
+                </div>
+            </div>
+            <div style="display:flex;border-top:1px solid #E5E7EB">
+                <button onclick="this.closest('[style*=fixed]').remove()" style="flex:1;padding:14px;border:none;background:#fff;font-size:14px;font-weight:700;color:#6B7280;cursor:pointer;border-right:1px solid #E5E7EB">Cancel</button>
+                <button id="_reprintConfirmBtn" style="flex:1;padding:14px;border:none;background:#fff;font-size:14px;font-weight:700;color:#006AFF;cursor:pointer">Print</button>
+            </div>
+        </div>`;
+    document.body.appendChild(popup);
+    document.getElementById('_reprintConfirmBtn').onclick = () => {
+        popup.remove();
+        printReceipt(order, 1, false); // reprint: never open drawer
+    };
 }
 
 // ═══════════════════════════════════════════
@@ -4696,11 +4980,27 @@ function renderSettings() {
     `;
 
     // ── Printer Setup section ──
+    const isWin = _serverInfo && _serverInfo.platform === 'win32';
     html += `
         <div class="settings-section-title">🖨️ PRINTER SETUP</div>
         <div class="settings-card" id="printerSetupCard">
             <h3>Receipt Printer (ESC/POS Direct Print)</h3>
             <div style="color:#6B7280;font-size:12px;margin-bottom:12px">프린터를 설정하면 미리보기 없이 바로 인쇄됩니다</div>
+
+            ${isWin ? `
+            <!-- Windows: Printer Name is PRIMARY -->
+            <div style="padding:10px 12px;background:#DBEAFE;border:2px solid #3B82F6;border-radius:8px;margin-bottom:12px">
+                <div style="font-weight:700;color:#1D4ED8;font-size:13px;margin-bottom:6px">★ Windows Printer Name (필수)</div>
+                <div style="color:#1E40AF;font-size:11px;margin-bottom:8px">Windows에서는 Printer Name으로만 인쇄 가능합니다 (Spooler API)</div>
+                <input type="text" id="printerWinName" placeholder="POS-80C" style="padding:8px 12px;border:2px solid #3B82F6;border-radius:8px;font-size:14px;width:100%;box-sizing:border-box;font-weight:700">
+                <div style="color:#6B7280;font-size:10px;margin-top:4px">제어판 → 장치 및 프린터 → 프린터 이름 확인</div>
+            </div>
+            <div style="padding:8px 12px;background:#FEF3C7;border-radius:8px;margin-bottom:8px">
+                <div style="color:#92400E;font-size:11px;font-weight:700">⚠️ POS-80C 드라이버 설정 확인</div>
+                <div style="color:#78350F;font-size:10px;margin-top:2px">프린터 속성 → Cash Drawer → <b>"#1 Before Printing" = None</b>으로 설정<br>서랍 제어는 POS가 직접 합니다 (카드 결제 시 서랍 안 열림)</div>
+            </div>
+            ` : `
+            <!-- Mac/Linux: Device Path or Network -->
             <div class="settings-row">
                 <span class="label">Connection Type</span>
                 <select id="printerConnType" onchange="_updatePrinterFields()" style="padding:6px 10px;border:1px solid #D1D5DB;border-radius:8px;font-size:13px">
@@ -4709,9 +5009,11 @@ function renderSettings() {
                     <option value="none">Not configured</option>
                 </select>
             </div>
-            <div id="printerNetFields">
+            `}
+
+            <div id="printerNetFields" ${isWin ? 'style="display:none"' : ''}>
                 <div class="settings-row">
-                    <span class="label">Printer IP</span>
+                    <span class="label">Printer IP ${isWin ? '<br><span style="color:#6B7280;font-size:10px">네트워크 프린터일 경우만</span>' : ''}</span>
                     <input type="text" id="printerIP" placeholder="192.168.1.100" style="padding:6px 10px;border:1px solid #D1D5DB;border-radius:8px;font-size:13px;width:180px">
                 </div>
                 <div class="settings-row">
@@ -4721,13 +5023,28 @@ function renderSettings() {
             </div>
             <div id="printerUsbFields" style="display:none">
                 <div class="settings-row">
-                    <span class="label">Device Path</span>
+                    <span class="label">Device Path<br><span style="color:#059669;font-size:10px">/dev/usb/lp0 (Linux/Mac only)</span></span>
                     <input type="text" id="printerDevice" placeholder="/dev/usb/lp0" style="padding:6px 10px;border:1px solid #D1D5DB;border-radius:8px;font-size:13px;width:220px">
                 </div>
             </div>
-            <div style="display:flex;gap:8px;margin-top:12px">
+
+            ${!isWin ? `
+            <div class="settings-row" style="margin-top:8px">
+                <span class="label" style="font-size:12px">Printer Name (optional)</span>
+                <input type="text" id="printerWinName" placeholder="POS-80C" style="padding:6px 10px;border:1px solid #D1D5DB;border-radius:8px;font-size:13px;width:180px">
+            </div>
+            ` : `
+            <div style="margin-top:8px">
+                <span style="color:#6B7280;font-size:11px;cursor:pointer;text-decoration:underline" onclick="document.getElementById('printerNetFields').style.display=document.getElementById('printerNetFields').style.display==='none'?'':'none'">▸ 네트워크 프린터 설정 (IP)</span>
+            </div>
+            `}
+
+            <div style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap">
                 <button onclick="savePrinterConfig()" style="padding:8px 20px;background:#006AFF;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">SAVE</button>
                 <button onclick="testPrinter()" style="padding:8px 20px;background:#059669;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">TEST PRINT</button>
+                <button onclick="diagnosePrinter()" style="padding:8px 20px;background:#7C3AED;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">DIAGNOSE</button>
+                <button onclick="testDrawerOnly()" style="padding:8px 20px;background:#D97706;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">TEST DRAWER</button>
+                <button onclick="showDrawerLog()" style="padding:8px 20px;background:#374151;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">DRAWER LOG</button>
             </div>
             <div id="printerStatus" style="margin-top:8px;font-size:12px;color:#6B7280"></div>
         </div>
@@ -4902,10 +5219,12 @@ async function loadPrinterConfig() {
         const ipEl = document.getElementById('printerIP');
         const portEl = document.getElementById('printerPort');
         const devEl = document.getElementById('printerDevice');
+        const winNameEl = document.getElementById('printerWinName');
         if (connEl) connEl.value = cfg.type || 'none';
         if (ipEl) ipEl.value = cfg.ip || '';
         if (portEl) portEl.value = cfg.port || 9100;
         if (devEl) devEl.value = cfg.device || '';
+        if (winNameEl) winNameEl.value = cfg.printerName || '';
         _updatePrinterFields();
     } catch (e) {
         console.warn('[Printer] Failed to load config:', e.message);
@@ -4913,22 +5232,35 @@ async function loadPrinterConfig() {
 }
 
 async function savePrinterConfig() {
-    const connType = document.getElementById('printerConnType')?.value || 'none';
+    const connTypeEl = document.getElementById('printerConnType');
+    const connType = connTypeEl ? connTypeEl.value : 'none';
     const ip = document.getElementById('printerIP')?.value?.trim() || '';
     const port = parseInt(document.getElementById('printerPort')?.value) || 9100;
     const device = document.getElementById('printerDevice')?.value?.trim() || '';
+    const printerName = document.getElementById('printerWinName')?.value?.trim() || '';
     const statusEl = document.getElementById('printerStatus');
+    const isWin = _serverInfo && _serverInfo.platform === 'win32';
 
-    const cfg = { type: connType, ip, port, device };
+    const cfg = { type: isWin ? 'none' : connType, ip, port, device, printerName };
 
     // Validation
-    if (connType === 'network' && !ip) {
-        if (statusEl) statusEl.innerHTML = '<span style="color:#DC2626">❌ IP address is required for network printer</span>';
+    if (isWin && !printerName && !ip) {
+        if (statusEl) statusEl.innerHTML = '<span style="color:#DC2626">❌ Printer Name을 입력하세요 (예: POS-80C)</span>';
         return;
     }
-    if (connType === 'usb' && !device) {
-        if (statusEl) statusEl.innerHTML = '<span style="color:#DC2626">❌ Device path is required for USB printer</span>';
-        return;
+    if (!isWin) {
+        if (connType === 'network' && !ip && !printerName) {
+            if (statusEl) statusEl.innerHTML = '<span style="color:#DC2626">❌ IP address or Printer Name is required</span>';
+            return;
+        }
+        if (connType === 'usb' && !device && !printerName) {
+            if (statusEl) statusEl.innerHTML = '<span style="color:#DC2626">❌ Device path or Printer Name is required</span>';
+            return;
+        }
+        if (connType === 'none' && !printerName && !ip) {
+            if (statusEl) statusEl.innerHTML = '<span style="color:#F59E0B">⚠️ Set Printer Name or select Network/USB</span>';
+            return;
+        }
     }
 
     try {
@@ -4957,8 +5289,8 @@ async function testPrinter() {
 
     // Save first, then test
     await savePrinterConfig();
-    if (_printerConfig.type === 'none') {
-        if (statusEl) statusEl.innerHTML = '<span style="color:#F59E0B">⚠️ No printer configured — select Network or USB first</span>';
+    if (_printerConfig.type === 'none' && !_printerConfig.printerName) {
+        if (statusEl) statusEl.innerHTML = '<span style="color:#F59E0B">⚠️ No printer configured — select Network/USB or set Windows Printer Name</span>';
         return;
     }
 
@@ -4979,6 +5311,129 @@ async function testPrinter() {
     } catch (e) {
         if (statusEl) statusEl.innerHTML = `<span style="color:#DC2626">❌ Test print failed: ${e.message}</span>`;
         toast('Test print failed: ' + e.message, 'error');
+    }
+}
+
+// ─── Printer Diagnostics ───
+async function diagnosePrinter() {
+    const statusEl = document.getElementById('printerStatus');
+    if (statusEl) statusEl.innerHTML = '<span style="color:#6B7280">Diagnosing...</span>';
+    try {
+        const resp = await fetch('/api/printer-config');
+        const cfg = await resp.json();
+        const platform = _serverInfo ? _serverInfo.platform : 'unknown';
+        const isWin = platform === 'win32';
+        let html = `<div style="background:#F3F4F6;padding:10px;border-radius:6px;font-family:monospace;font-size:11px;margin-top:4px">`;
+        html += `<b>Platform:</b> ${platform}<br>`;
+        html += `<b>Printer Name:</b> ${cfg.printerName || '<span style="color:#DC2626">(empty)</span>'}<br>`;
+        html += `<b>IP:</b> ${cfg.ip || '(empty)'} &nbsp; <b>Port:</b> ${cfg.port || 9100}<br>`;
+        if (!isWin) html += `<b>Device:</b> ${cfg.device || '(empty)'}<br>`;
+        html += `<hr style="margin:4px 0">`;
+
+        if (cfg.ip) {
+            html += `<b style="color:#059669">→ Method: Network TCP (${cfg.ip}:${cfg.port || 9100})</b>`;
+        } else if (isWin && cfg.printerName) {
+            html += `<b style="color:#059669">→ Method: C# Helper .exe → Spooler API (${cfg.printerName})</b><br>`;
+            html += `<span style="color:#6B7280">winspool.Drv → RAW datatype → ESC/POS 직접 전송</span><br>`;
+            html += `<span style="color:#059669">서랍 제어: ESC/POS 명령으로 직접 제어 ✓</span>`;
+        } else if (!isWin && cfg.device) {
+            html += `<b style="color:#059669">→ Method: USB Direct (${cfg.device})</b>`;
+        } else if (!isWin && cfg.printerName) {
+            html += `<b style="color:#D97706">→ Method: Spooler (${cfg.printerName})</b>`;
+        } else {
+            html += `<b style="color:#DC2626">→ Not configured!</b>`;
+            if (isWin) html += `<br><span style="color:#DC2626">Printer Name을 설정하세요 (예: POS-80C)</span>`;
+        }
+        html += `</div>`;
+        if (statusEl) statusEl.innerHTML = html;
+    } catch (e) {
+        if (statusEl) statusEl.innerHTML = `<span style="color:#DC2626">❌ ${e.message}</span>`;
+    }
+}
+
+async function testDrawerOnly() {
+    const statusEl = document.getElementById('printerStatus');
+    if (statusEl) statusEl.innerHTML = '<span style="color:#6B7280">Sending drawer command...</span>';
+    try {
+        const resp = await fetch('/api/print', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ type: 'open_drawer' })
+        });
+        const result = await resp.json();
+        if (result.success) {
+            if (statusEl) statusEl.innerHTML = `<span style="color:#059669">✅ Drawer command sent via: ${result.method || 'unknown'}</span>`;
+        } else {
+            if (statusEl) statusEl.innerHTML = `<span style="color:#DC2626">❌ ${result.error}</span>`;
+        }
+    } catch (e) {
+        if (statusEl) statusEl.innerHTML = `<span style="color:#DC2626">❌ ${e.message}</span>`;
+    }
+}
+
+// ─── Drawer Log Popup ───
+async function showDrawerLog() {
+    try {
+        const resp = await fetch('/api/drawer-log');
+        const logs = await resp.json();
+        const arr = Array.isArray(logs) ? logs : (logs.logs || []);
+
+        let rows = '';
+        if (arr.length === 0) {
+            rows = '<tr><td colspan="5" style="text-align:center;color:#9CA3AF;padding:20px">No drawer log entries</td></tr>';
+        } else {
+            // Show newest first
+            arr.slice().reverse().forEach(entry => {
+                const t = entry.serverTime || entry.timestamp || '';
+                const d = t ? new Date(t) : null;
+                const timeStr = d ? d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) + ' ' + d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',second:'2-digit'}) : '-';
+                const reasonMap = {
+                    'manual_change': '🪙 Change',
+                    'manual_expense': '🛒 Expense',
+                    'manual_other': '📝 Other',
+                    'manual_open': '🔑 Manual',
+                    'cash_payment': '💵 Cash (POS)',
+                    'cash_payment_kiosk': '💵 Cash (Kiosk)',
+                };
+                const reasonLabel = reasonMap[entry.reason] || entry.reason || '-';
+                const detail = entry.reasonDetail || '';
+                rows += `<tr>
+                    <td style="padding:4px 8px;font-size:11px;border-bottom:1px solid #F3F4F6">${timeStr}</td>
+                    <td style="padding:4px 8px;font-size:11px;border-bottom:1px solid #F3F4F6;font-weight:600">${entry.staff || '-'}</td>
+                    <td style="padding:4px 8px;font-size:11px;border-bottom:1px solid #F3F4F6">${reasonLabel}</td>
+                    <td style="padding:4px 8px;font-size:11px;border-bottom:1px solid #F3F4F6;color:#6B7280;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${detail}">${detail || '-'}</td>
+                    <td style="padding:4px 8px;font-size:11px;border-bottom:1px solid #F3F4F6">${entry.branchName || entry.branch || '-'}</td>
+                </tr>`;
+            });
+        }
+
+        const html = `
+            <div style="position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center" onclick="if(event.target===this)this.remove()">
+                <div style="background:#fff;border-radius:16px;width:92%;max-width:680px;max-height:80vh;display:flex;flex-direction:column;overflow:hidden">
+                    <div style="padding:16px 20px;border-bottom:1px solid #E5E7EB;display:flex;justify-content:space-between;align-items:center">
+                        <h3 style="margin:0;font-size:16px">💰 Cash Drawer Log</h3>
+                        <span style="font-size:12px;color:#6B7280">${arr.length} entries (max 500)</span>
+                    </div>
+                    <div style="overflow-y:auto;flex:1;padding:8px">
+                        <table style="width:100%;border-collapse:collapse">
+                            <thead><tr style="background:#F9FAFB">
+                                <th style="padding:6px 8px;text-align:left;font-size:11px;font-weight:700;color:#6B7280">Time</th>
+                                <th style="padding:6px 8px;text-align:left;font-size:11px;font-weight:700;color:#6B7280">Staff</th>
+                                <th style="padding:6px 8px;text-align:left;font-size:11px;font-weight:700;color:#6B7280">Reason</th>
+                                <th style="padding:6px 8px;text-align:left;font-size:11px;font-weight:700;color:#6B7280">Detail</th>
+                                <th style="padding:6px 8px;text-align:left;font-size:11px;font-weight:700;color:#6B7280">Branch</th>
+                            </tr></thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                    <div style="padding:12px 20px;border-top:1px solid #E5E7EB;text-align:right">
+                        <button onclick="this.closest('[style*=fixed]').remove()" style="padding:8px 24px;background:#374151;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer">CLOSE</button>
+                    </div>
+                </div>
+            </div>`;
+        document.body.insertAdjacentHTML('beforeend', html);
+    } catch (e) {
+        toast('Failed to load drawer log: ' + e.message, 'error');
     }
 }
 

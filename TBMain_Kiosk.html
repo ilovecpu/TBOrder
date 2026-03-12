@@ -1603,6 +1603,20 @@
                     <input type="text" id="catExtra4" placeholder="" maxlength="200">
                 </div>
                 <div style="border-top:1px dashed #E5E7EB;margin:12px 0 8px;padding-top:8px"></div>
+                <!-- Display Options -->
+                <div class="form-group">
+                    <label>Display Options</label>
+                    <div style="display:flex;gap:16px;margin-top:4px">
+                        <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;padding:6px 12px;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:6px;cursor:pointer">
+                            <input type="checkbox" id="catShowInKiosk" checked>
+                            <span>📱 Kiosk</span>
+                        </label>
+                        <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:500;padding:6px 12px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:6px;cursor:pointer">
+                            <input type="checkbox" id="catShowInPos" checked>
+                            <span>💻 POS</span>
+                        </label>
+                    </div>
+                </div>
                 <div class="form-group">
                     <label>Color</label>
                     <div style="display:flex;gap:8px;align-items:center">
@@ -2514,6 +2528,8 @@
                 document.getElementById('catEditId').value = '';
                 document.getElementById('categoryForm').reset();
                 document.getElementById('catActive').checked = true;
+                document.getElementById('catShowInKiosk').checked = true;
+                document.getElementById('catShowInPos').checked = true;
                 document.getElementById('catColor').value = '#D97706';
                 document.getElementById('catColorText').value = '#D97706';
                 document.getElementById('catId').disabled = false;
@@ -2539,6 +2555,8 @@
                 document.getElementById('catColor').value = cat.color || '#D97706';
                 document.getElementById('catColorText').value = cat.color || '#D97706';
                 document.getElementById('catSortOrder').value = cat.sortOrder || 1;
+                document.getElementById('catShowInKiosk').checked = cat.showInKiosk !== false;
+                document.getElementById('catShowInPos').checked = cat.showInPos !== false;
                 document.getElementById('catActive').checked = cat.active !== false;
                 document.getElementById('categoryModal').classList.add('active');
             },
@@ -2563,6 +2581,8 @@
                     extra2: document.getElementById('catExtra2').value.trim(),
                     extra3: document.getElementById('catExtra3').value.trim(),
                     extra4: document.getElementById('catExtra4').value.trim(),
+                    showInKiosk: document.getElementById('catShowInKiosk').checked,
+                    showInPos: document.getElementById('catShowInPos').checked,
                     color: document.getElementById('catColor').value,
                     sortOrder: parseInt(document.getElementById('catSortOrder').value) || 1,
                     active: document.getElementById('catActive').checked,
