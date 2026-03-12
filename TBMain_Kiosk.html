@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Admin v3.1 | 2026-03-12 | Drag & drop menu item reordering + auto sortOrder -->
+<!-- The Bap Admin v3.4 | 2026-03-12 | Drag & drop menu item reordering + auto sortOrder -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -978,7 +978,7 @@
             </div>
             <button id="pinClearBtn" class="btn-secondary" style="width: 100%; margin-bottom: 8px;">Clear</button>
             <button id="pinEnterBtn" class="btn-primary" style="width: 100%;">Enter</button>
-            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v3.1</div>
+            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v3.4</div>
         </div>
     </div>
 
@@ -1033,7 +1033,7 @@
                     <span>Settings</span>
                 </div>
             </div>
-            <div class="sidebar-footer">v3.1 | The Bap Group</div>
+            <div class="sidebar-footer">v3.4 | The Bap Group</div>
         </div>
 
         <!-- MAIN CONTENT -->
@@ -1252,31 +1252,29 @@
                     <div id="syncStatus" style="padding:12px;border-radius:8px;background:#f0f9ff;margin-bottom:12px;font-size:13px;color:#1e40af;display:none"></div>
 
                     <div class="grid-2">
-                        <!-- 로컬 서버 동기화 (원격 모드에선 숨김) -->
+                        <!-- 메뉴 저장 (서버 + Google 자동 동기화 + 브로드캐스트) -->
                         <div class="card" id="serverSyncCard">
                             <div style="margin-bottom: 16px;">
-                                <h3>Server Menu Sync</h3>
-                                <p style="font-size:12px;color:#888;margin-top:4px">Push/pull menu data to/from server (all clients will update)</p>
+                                <h3>💾 Save Menu</h3>
+                                <p style="font-size:12px;color:#888;margin-top:4px">서버 저장 → Google Sheets 자동 동기화 → 모든 클라이언트 업데이트</p>
                             </div>
-                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <button class="btn-primary" onclick="app.pushMenuToServer()" style="flex:1">⬆️ Push to Server</button>
-                                <button class="btn-secondary" onclick="app.pullMenuFromServer()" style="flex:1">⬇️ Pull from Server</button>
-                            </div>
-                            <div style="margin-top:12px;padding-top:12px;border-top:1px solid #e5e7eb">
-                                <p style="font-size:12px;color:#888;margin-bottom:8px">Broadcast menu update to all connected clients (Kiosk, POS, Kitchen)</p>
-                                <button class="btn-primary" onclick="app.broadcastMenuUpdate()" style="width:100%;background:#059669">📡 Broadcast Menu Update</button>
+                            <button class="btn-primary" onclick="app.saveMenuToServer()" style="width:100%;background:#059669;font-size:15px;padding:12px">💾 Save &amp; Sync All</button>
+                            <div style="margin-top:12px;font-size:11px;color:#9CA3AF;line-height:1.5">
+                                ✅ 로컬 서버(menu.json) 저장<br>
+                                ✅ Google Sheets 자동 동기화<br>
+                                ✅ POS / Kiosk / Kitchen 브로드캐스트
                             </div>
                         </div>
 
-                        <!-- Google Sheets 동기화 (항상 표시) -->
+                        <!-- Google Sheets에서 가져오기 -->
                         <div class="card">
                             <div style="margin-bottom: 16px;">
-                                <h3>☁️ Google Sheets Sync</h3>
-                                <p style="font-size:12px;color:#888;margin-top:4px" id="googleSyncDesc">Sync with Google Sheets</p>
+                                <h3>☁️ Google Sheets</h3>
+                                <p style="font-size:12px;color:#888;margin-top:4px" id="googleSyncDesc">Google Sheets에서 메뉴 데이터 가져오기</p>
                             </div>
-                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
-                                <button class="btn-primary" onclick="app.syncToGoogle()" style="flex:1">⬆️ Push to Google</button>
-                                <button class="btn-secondary" onclick="app.syncFromGoogle()" style="flex:1">⬇️ Pull from Google</button>
+                            <button class="btn-secondary" onclick="app.syncFromGoogle()" style="width:100%;font-size:15px;padding:12px">⬇️ Pull from Google</button>
+                            <div style="margin-top:12px;font-size:11px;color:#9CA3AF;line-height:1.5">
+                                다른 지점이나 외부에서 Google Sheets를<br>직접 수정했을 때 변경사항을 가져옵니다
                             </div>
                             <div style="margin-top:12px;font-size:12px;color:#888" id="googleSyncInfo">
                                 <strong>Google API:</strong> Connected
@@ -2083,8 +2081,7 @@
                 if (pinStored) this.currentPin = pinStored;
 
                 try {
-                // TBMS에서 지점 데이터 가져오기 (항상 — 누락 방지)
-                await this.loadTBMSStores();
+                // 1) 기본값 초기화
                 if (!localStorage.getItem('tb_branches')) {
                     localStorage.setItem('tb_branches', JSON.stringify(DEFAULT_BRANCHES));
                 }
@@ -2110,14 +2107,37 @@
                     this.initializeBranchPricing();
                 }
 
-                // 메뉴 데이터 로딩 (백그라운드 — PIN 화면 뒤에서)
+                // 2) 서버/Google에서 메뉴 데이터 Pull (branches 포함)
                 try {
                     await this.pullMenuFromServer(true);
                     console.log('[Admin] Menu loaded from ' + (isRemote() ? 'Google Sheets' : 'server'));
-                    // 새 필드(spicyLevel, VAT 등)가 서버에 없을 수 있으니 한번 Push
-                    await this.autoSyncToServer();
                 } catch (e) {
                     console.log('[Admin] API not available, using localStorage defaults');
+                }
+
+                // 3) TBMS에서 지점 가져와서 병합 (TBMS가 권위 소스)
+                try {
+                    const tbmsStores = await this.loadTBMSStores();
+                    if (tbmsStores && tbmsStores.length > 0) {
+                        const serverBranches = JSON.parse(localStorage.getItem('tb_branches') || '[]');
+                        // TBMS 기준, 서버에만 있는 지점은 추가
+                        const tbmsCodes = new Set(tbmsStores.map(b => b.code));
+                        const merged = [...tbmsStores];
+                        serverBranches.forEach(sb => {
+                            if (!tbmsCodes.has(sb.code)) merged.push(sb);
+                        });
+                        localStorage.setItem('tb_branches', JSON.stringify(merged));
+                        console.log(`[Admin] Branches merged: TBMS(${tbmsStores.length}) + server-only(${merged.length - tbmsStores.length}) = ${merged.length}`);
+                    }
+                } catch (e) {
+                    console.log('[Admin] TBMS branch sync skipped:', e.message);
+                }
+
+                // 4) 병합된 데이터를 서버/Google에 다시 Push
+                try {
+                    await this.autoSyncToServer();
+                } catch (e) {
+                    console.log('[Admin] Auto-sync failed:', e.message);
                 }
 
                 this.updateDashboard();
@@ -3745,7 +3765,20 @@
                         localStorage.setItem('tb_branch_pricing', JSON.stringify(data.branchPricing));
                     }
                     if (data.categories) {
-                        localStorage.setItem('tb_categories', JSON.stringify(data.categories));
+                        // 로컬 편집값(showInKiosk, showInPos 등) 보존하며 병합
+                        const localCats = JSON.parse(localStorage.getItem('tb_categories') || '[]');
+                        const localCatMap = {};
+                        localCats.forEach(lc => { localCatMap[lc.id] = lc; });
+                        const mergedCats = data.categories.map(sc => {
+                            const lc = localCatMap[sc.id] || {};
+                            return {
+                                ...sc,
+                                showInKiosk: sc.showInKiosk !== undefined ? sc.showInKiosk : (lc.showInKiosk !== undefined ? lc.showInKiosk : true),
+                                showInPos: sc.showInPos !== undefined ? sc.showInPos : (lc.showInPos !== undefined ? lc.showInPos : true),
+                                sortOrder: sc.sortOrder !== undefined ? sc.sortOrder : (lc.sortOrder || 0),
+                            };
+                        });
+                        localStorage.setItem('tb_categories', JSON.stringify(mergedCats));
                     }
                     // ─── 지점 간 공유 데이터 복원 ───
                     if (data.branches && data.branches.length) {
