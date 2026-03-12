@@ -1888,68 +1888,62 @@ function renderBranchGrid(loading) {
     }).join('');
 }
 async function initLogin() {
-    renderBranchGrid(true); // show "Loading…" — no hardcoded buttons
+    renderBranchGrid(true); // show "Loading…"
     loadTBMSUsers(); // load users in background (non-blocking)
-    let loaded = false;
 
-    // 1) Try local server first (fastest)
-    try {
-        const resp = await fetch('/api/menu');
-        if (resp.ok) {
-            const data = await resp.json();
-            if (data.branches && data.branches.length > 0) {
-                BRANCHES = data.branches.filter(b => b.active !== false);
-                renderBranchGrid();
-                loaded = true;
-                console.log('[POS] Branches loaded from local server:', BRANCHES.length);
-            }
+    // Fetch local server + TBMS + server info in parallel for speed
+    let serverBranches = [];
+    let tbmsBranches = [];
+
+    const serverPromise = fetch('/api/menu').then(async r => {
+        if (!r.ok) return;
+        const data = await r.json();
+        if (data.branches && data.branches.length > 0) {
+            serverBranches = data.branches.filter(b => b.active !== false);
+            console.log('[POS] Server branches:', serverBranches.length);
         }
-        // Fetch server version for login footer
-        try {
-            const si = await fetch('/api/server-info');
-            if (si.ok) {
-                const info = await si.json();
-                const el = document.getElementById('loginServerVer');
-                if (el) el.textContent = '| Server v' + info.serverVersion + ' (' + info.nodeVersion + ') ';
-            }
-        } catch(e2) {}
-    } catch(e) {}
+    }).catch(() => {});
 
-    // 2) Always also check TBMS — merge any missing branches
-    try {
-        const url = GOOGLE_API + '?action=stores';
-        const resp = await fetch(url, { redirect: 'follow' });
-        const data = await resp.json();
+    const tbmsPromise = fetch(GOOGLE_API + '?action=stores', { redirect: 'follow' }).then(async r => {
+        const data = await r.json();
         const stores = data.stores?.data || data.stores || [];
         if (stores.length > 0) {
-            const tbmsBranches = stores
+            tbmsBranches = stores
                 .filter(s => s.active !== false && s.active !== 'false')
                 .map(s => ({
                     code: s.code || s.id, name: s.name,
                     nameKr: s.nameKr || '', phone: String(s.phone || ''),
                     active: true
                 }));
-            if (!loaded) {
-                // Server failed — use TBMS as primary source
-                BRANCHES = tbmsBranches;
-            } else {
-                // Merge: add any TBMS branches not already in local list
-                const existingCodes = new Set(BRANCHES.map(b => b.code));
-                tbmsBranches.forEach(tb => {
-                    if (!existingCodes.has(tb.code)) {
-                        BRANCHES.push(tb);
-                        console.log(`[POS] Branch merged from TBMS: ${tb.code} (${tb.name})`);
-                    }
-                });
-            }
-            renderBranchGrid();
-            loaded = true;
-            console.log('[POS] Final branch count:', BRANCHES.length, BRANCHES.map(b => b.code).join(', '));
+            console.log('[POS] TBMS branches:', tbmsBranches.length);
         }
-    } catch(e) { console.log('[POS] TBMS API error:', e.message); }
+    }).catch(e => { console.log('[POS] TBMS API error:', e.message); });
 
-    // 3) If all sources failed, show error message
-    if (!loaded) {
+    const serverInfoPromise = fetch('/api/server-info').then(async si => {
+        if (!si.ok) return;
+        const info = await si.json();
+        const el = document.getElementById('loginServerVer');
+        if (el) el.textContent = '| Server v' + info.serverVersion + ' (' + info.nodeVersion + ') ';
+    }).catch(() => {});
+
+    // Wait for all to complete
+    await Promise.all([serverPromise, tbmsPromise, serverInfoPromise]);
+
+    // Merge: TBMS is authoritative, server fills in extra fields
+    if (tbmsBranches.length > 0) {
+        BRANCHES = tbmsBranches;
+        const tbmsCodes = new Set(tbmsBranches.map(b => b.code));
+        serverBranches.forEach(sb => {
+            if (!tbmsCodes.has(sb.code)) BRANCHES.push(sb);
+        });
+    } else if (serverBranches.length > 0) {
+        BRANCHES = serverBranches;
+    }
+
+    if (BRANCHES.length > 0) {
+        renderBranchGrid();
+        console.log('[POS] Final branch count:', BRANCHES.length, BRANCHES.map(b => b.code).join(', '));
+    } else {
         const grid = document.getElementById('loginBranchGrid');
         grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:32px 0;color:#DC2626;font-size:14px;">
             <div style="margin-bottom:8px;font-size:24px;">⚠️</div>Failed to load branches.<br>Check network connection.</div>`;

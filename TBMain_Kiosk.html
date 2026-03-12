@@ -1413,6 +1413,13 @@
                     <input type="number" id="menuPrice" step="0.01" required>
                 </div>
                 <div class="form-group">
+                    <label>Sort Order</label>
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <input type="number" id="menuSortOrder" min="0" max="999" value="0" style="width:80px">
+                        <span style="font-size:11px;color:#9CA3AF">낮을수록 먼저 표시 (0=자동)</span>
+                    </div>
+                </div>
+                <div class="form-group">
                     <label>Button Colour</label>
                     <div id="btnColorPicker" style="display:flex;gap:5px;flex-wrap:wrap;margin-top:4px;max-width:300px"></div>
                     <script>(function(){
@@ -2787,7 +2794,8 @@
 
             filterMenuByCategory(categoryId) {
                 const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
-                const filtered = categoryId === '__all__' ? items : items.filter(i => (i.category || i.catId) === categoryId);
+                const filtered = (categoryId === '__all__' ? items : items.filter(i => (i.category || i.catId) === categoryId))
+                    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
                 document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
                 const activeBtn = document.querySelector(`[onclick="app.filterMenuByCategory('${categoryId}')"]`);
@@ -2831,6 +2839,7 @@
                 document.getElementById('vatRateFields').style.display = '';
                 document.getElementById('spicyLevelRow').style.display = 'none';
                 setSpicyLevel(0);
+                document.getElementById('menuSortOrder').value = 0;
                 document.getElementById('menuImagePreview').style.display = 'none';
                 document.getElementById('menuModal').classList.add('active');
             },
@@ -2879,6 +2888,7 @@
                 document.getElementById('menuSubVat').value = item.subVat || 0;
                 document.getElementById('subVatVal').textContent = (item.subVat || 0) + '%';
                 document.getElementById('vatRateFields').style.display = vatApplicable ? '' : 'none';
+                document.getElementById('menuSortOrder').value = item.sortOrder || 0;
                 document.getElementById('menuActive').checked = item.active;
 
                 document.getElementById('menuModal').classList.add('active');
@@ -2920,6 +2930,7 @@
                     vatApplicable: document.getElementById('menuVatApplicable').checked,
                     mainVat: parseInt(document.getElementById('menuMainVat').value) || 20,
                     subVat: parseInt(document.getElementById('menuSubVat').value) || 0,
+                    sortOrder: parseInt(document.getElementById('menuSortOrder').value) || 0,
                     active: document.getElementById('menuActive').checked,
                     btnColor: (document.querySelector('#btnColorPicker input[name="btnColor"]:checked') || {}).value || ''
                 };
