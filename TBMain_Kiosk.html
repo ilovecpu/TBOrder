@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Admin v3.5 | 2026-03-12 | Drag & drop menu item reordering + auto sortOrder -->
+<!-- The Bap Admin v3.6 | 2026-03-12 | Drag & drop menu item reordering + auto sortOrder -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -978,7 +978,7 @@
             </div>
             <button id="pinClearBtn" class="btn-secondary" style="width: 100%; margin-bottom: 8px;">Clear</button>
             <button id="pinEnterBtn" class="btn-primary" style="width: 100%;">Enter</button>
-            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v3.5</div>
+            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v3.6</div>
         </div>
     </div>
 
@@ -1033,7 +1033,7 @@
                     <span>Settings</span>
                 </div>
             </div>
-            <div class="sidebar-footer">v3.5 | The Bap Group</div>
+            <div class="sidebar-footer">v3.6 | The Bap Group</div>
         </div>
 
         <!-- MAIN CONTENT -->
@@ -3782,19 +3782,13 @@
                         localStorage.setItem('tb_branch_pricing', JSON.stringify(data.branchPricing));
                     }
                     if (data.categories) {
-                        // 로컬 편집값(showInKiosk, showInPos 등) 보존하며 병합
-                        const localCats = JSON.parse(localStorage.getItem('tb_categories') || '[]');
-                        const localCatMap = {};
-                        localCats.forEach(lc => { localCatMap[lc.id] = lc; });
-                        const mergedCats = data.categories.map(sc => {
-                            const lc = localCatMap[sc.id] || {};
-                            return {
-                                ...sc,
-                                showInKiosk: sc.showInKiosk !== undefined ? sc.showInKiosk : (lc.showInKiosk !== undefined ? lc.showInKiosk : true),
-                                showInPos: sc.showInPos !== undefined ? sc.showInPos : (lc.showInPos !== undefined ? lc.showInPos : true),
-                                sortOrder: sc.sortOrder !== undefined ? sc.sortOrder : (lc.sortOrder || 0),
-                            };
-                        });
+                        // 서버 데이터 기준 — showInKiosk/showInPos 명시적 기본값 보장
+                        const mergedCats = data.categories.map(sc => ({
+                            ...sc,
+                            showInKiosk: sc.showInKiosk !== undefined ? sc.showInKiosk : true,
+                            showInPos: sc.showInPos !== undefined ? sc.showInPos : true,
+                            sortOrder: sc.sortOrder !== undefined ? sc.sortOrder : 0,
+                        }));
                         localStorage.setItem('tb_categories', JSON.stringify(mergedCats));
                     }
                     // ─── 지점 간 공유 데이터 복원 ───
