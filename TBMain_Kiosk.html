@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Admin v2.8 | 2026-03-12 -->
+<!-- The Bap Admin v2.9 | 2026-03-12 | Fix: dynamic category dropdown in menu item form -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -964,7 +964,7 @@
             </div>
             <button id="pinClearBtn" class="btn-secondary" style="width: 100%; margin-bottom: 8px;">Clear</button>
             <button id="pinEnterBtn" class="btn-primary" style="width: 100%;">Enter</button>
-            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v2.8</div>
+            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v2.9</div>
         </div>
     </div>
 
@@ -1019,7 +1019,7 @@
                     <span>Settings</span>
                 </div>
             </div>
-            <div class="sidebar-footer">v2.8 | The Bap Group</div>
+            <div class="sidebar-footer">v2.9 | The Bap Group</div>
         </div>
 
         <!-- MAIN CONTENT -->
@@ -1399,9 +1399,7 @@
                 <div class="form-group">
                     <label>Category</label>
                     <select id="menuCategory" required>
-                        <option value="Baps">Baps</option>
-                        <option value="Sides">Sides</option>
-                        <option value="Drinks">Drinks</option>
+                        <!-- Dynamically populated from categories -->
                     </select>
                 </div>
                 <div class="form-group">
@@ -2823,9 +2821,25 @@
                 `}).join('');
             },
 
+            populateMenuCategorySelect(selectedValue) {
+                const cats = JSON.parse(localStorage.getItem('tb_categories') || '[]');
+                const select = document.getElementById('menuCategory');
+                if (!select) return;
+                const activeCats = cats.filter(c => c.active !== false);
+                if (activeCats.length > 0) {
+                    select.innerHTML = activeCats.map(c =>
+                        `<option value="${c.id}">${c.nameEn} (${c.nameKr || c.id})</option>`
+                    ).join('');
+                } else {
+                    select.innerHTML = '<option value="">-- No categories --</option>';
+                }
+                if (selectedValue) select.value = selectedValue;
+            },
+
             openMenuForm() {
                 this.editingMenuId = null;
                 document.getElementById('menuForm').reset();
+                this.populateMenuCategorySelect();
                 document.getElementById('menuActive').checked = true;
                 // Display defaults
                 document.getElementById('menuShowOnKiosk').checked = true;
@@ -2850,9 +2864,9 @@
                 if (!item) return;
 
                 this.editingMenuId = id;
+                this.populateMenuCategorySelect(item.category);
                 document.getElementById('menuNameEn').value = item.nameEn;
                 document.getElementById('menuNameKr').value = item.nameKr;
-                document.getElementById('menuCategory').value = item.category;
                 document.getElementById('menuDescription').value = item.description || '';
                 document.getElementById('menuPrice').value = item.basePrice;
                 document.getElementById('menuImageUrl').value = item.driveId || item.imageUrl || '';
