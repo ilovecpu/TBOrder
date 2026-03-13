@@ -70,8 +70,8 @@ const PORT = parseInt(process.env.TB_PORT) || 8080;
 const BRANCH_CODE = process.env.TB_BRANCH || 'TB';   // 지점코드: TB, PAB 등 (실행: TB_BRANCH=PAB node tb-server.js)
 const SERVER_VERSION = '2.8';
 const SERVER_START_TIME = new Date().toISOString();
-const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbwFgdpRpbOnq6WN1cDfkWotKPy3oM1hVYiSdnr9ZYvxP21Wc6HXFVffWJtiDQJbP0IVpA/exec';
-const GOOGLE_API = process.env.GOOGLE_API || 'https://script.google.com/macros/s/AKfycbwFgdpRpbOnq6WN1cDfkWotKPy3oM1hVYiSdnr9ZYvxP21Wc6HXFVffWJtiDQJbP0IVpA/exec';
+const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbzoEItk-hU2BPDyj_Dy1Vwxzu-R7PQoZYVzwzVsdPuTJWYCykVIWdWTwG8nieWCwaUD7w/exec';
+const GOOGLE_API = process.env.GOOGLE_API || 'https://script.google.com/macros/s/AKfycbzoEItk-hU2BPDyj_Dy1Vwxzu-R7PQoZYVzwzVsdPuTJWYCykVIWdWTwG8nieWCwaUD7w/exec';
 
 // ─── 메뉴 데이터 로드/캐시 ───
 const MENU_FILE = path.join(__dirname, 'data', 'menu.json');
@@ -329,7 +329,7 @@ if (GOOGLE_MENU_API) {
   console.log(`  ☁️  Google Sheets 연동 활성화`);
   setTimeout(syncMenuFromGoogle, 3000);
   setTimeout(syncBranchesFromTBMS, 4000); // 메뉴 로드 직후 브랜치 동기화
-  setInterval(syncMenuFromGoogle, 5 * 60 * 1000);
+  setInterval(syncMenuFromGoogle, 3 * 60 * 1000);  // 3분마다 Google Sheets 동기화 (기존 5분→3분)
   setInterval(syncBranchesFromTBMS, 10 * 60 * 1000); // 10분마다 브랜치 동기화
 }
 

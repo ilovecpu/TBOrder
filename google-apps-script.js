@@ -1,10 +1,10 @@
 /**
  * ════════════════════════════════════════════════════════════
- *  🍚 The Bap — Google Apps Script v2.2
- *  Menu API + Orders + Image Upload + TBMS Stores + Users + DailySales
+ *  🍚 The Bap — Google Apps Script v2.3
+ *  Menu API + Orders + Image Upload + TBMS Stores + Users + DailySales + EndSales
  *  + Branches, BranchVisibility, Allergens, Nutrition
  *  + Category showInKiosk/showInPos + Item showOnKiosk/showOnPos boolean parsing
- *  Last Updated: 2026-03-12
+ *  Last Updated: 2026-03-13
  * ════════════════════════════════════════════════════════════
  *
  *  설정 방법:
@@ -27,6 +27,7 @@
  *   - Branches: 지점 목록 (code, name, nameKr, address, phone, active)
  *   - Orders: 주문 기록
  *   - DailySales: 일별 매출 요약
+ *   - EndSales: END Sales 정산 기록 (date, branchCode, periodFrom/To, totals, VAT)
  *  PropertiesService (JSON):
  *   - branchVisibility: 지점별 메뉴 노출 설정
  *   - allergens: 알레르겐 정보
@@ -75,6 +76,7 @@ function doGet(e) {
       case 'stores':     return jsonOut(getTBMSStores());
       case 'users':      return jsonOut(getTBMSUsers());
       case 'dailySales': return jsonOut(getDailySales(e));
+      case 'endSales':   return jsonOut(getEndSales(e));
       case 'init':       return jsonOut(initializeSheets());
       default:           return jsonOut(getFullMenu());
     }
@@ -120,6 +122,9 @@ function doPost(e) {
 
       // ─── Daily Sales Summary ───
       case 'saveDailySummary': return jsonOut(saveDailySummary(data.data || data));
+
+      // ─── END Sales ───
+      case 'saveEndSales': return jsonOut(saveEndSales(data.data || data));
 
       default: return jsonOut({ error: 'Unknown action: ' + action });
     }
@@ -186,6 +191,51 @@ function saveDailySummary(data) {
     data.grandTotal || 0, data.openingFloat || 0, new Date().toISOString()
   ]);
   return { success: true, date: data.date, branchCode: data.branchCode };
+}
+
+// ═══════════════════════════════════════════
+//  END Sales Summary (로컬 → Google Sheets)
+// ═══════════════════════════════════════════
+const SH_END_SALES = 'EndSales';
+const END_SALES_HEADERS = ['date','branchCode','branchName','periodFrom','periodTo','totalOrders','cashTotal','cardTotal','grandTotal','cashCustomers','cardCustomers','vatTotal','savedAt'];
+
+function saveEndSales(data) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName(SH_END_SALES);
+  if (!sheet) {
+    sheet = ss.insertSheet(SH_END_SALES);
+    sheet.appendRow(END_SALES_HEADERS);
+    sheet.getRange(1, 1, 1, END_SALES_HEADERS.length).setFontWeight('bold');
+  }
+  sheet.appendRow([
+    data.date, data.branchCode, data.branchName || '',
+    data.periodFrom || '', data.periodTo || '',
+    data.totalOrders || 0, data.cashTotal || 0, data.cardTotal || 0,
+    data.grandTotal || 0, data.cashCustomers || 0, data.cardCustomers || 0,
+    data.vatTotal || 0, new Date().toISOString()
+  ]);
+  return { success: true, date: data.date, branchCode: data.branchCode };
+}
+
+function getEndSales(e) {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sheet = ss.getSheetByName(SH_END_SALES);
+  if (!sheet) return { endSales: [] };
+  const rows = sheet.getDataRange().getValues();
+  if (rows.length <= 1) return { endSales: [] };
+  const headers = rows[0];
+  const from = e?.parameter?.from || '';
+  const to = e?.parameter?.to || '9999-12-31';
+  const branch = e?.parameter?.branch || '';
+  const sales = [];
+  for (let i = 1; i < rows.length; i++) {
+    const obj = {};
+    headers.forEach((h, j) => obj[h] = rows[i][j]);
+    if (obj.date >= from && obj.date <= to && (!branch || obj.branchCode === branch)) {
+      sales.push(obj);
+    }
+  }
+  return { endSales: sales };
 }
 
 function getDailySales(e) {
