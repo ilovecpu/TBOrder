@@ -978,7 +978,7 @@
             </div>
             <button id="pinClearBtn" class="btn-secondary" style="width: 100%; margin-bottom: 8px;">Clear</button>
             <button id="pinEnterBtn" class="btn-primary" style="width: 100%;">Enter</button>
-            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v3.6</div>
+            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v3.7</div>
         </div>
     </div>
 
@@ -986,7 +986,7 @@
     <div class="container" id="mainContainer" style="display: none;">
         <!-- SIDEBAR -->
         <div class="sidebar">
-            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v2.7</span></div>
+            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v3.7</span></div>
             <div class="nav-menu">
                 <div class="nav-item active" data-section="dashboard">
                     <div class="nav-icon">📊</div>
@@ -1033,7 +1033,7 @@
                     <span>Settings</span>
                 </div>
             </div>
-            <div class="sidebar-footer">v3.6 | The Bap Group</div>
+            <div class="sidebar-footer">v3.7 | The Bap Group</div>
         </div>
 
         <!-- MAIN CONTENT -->
@@ -1739,7 +1739,7 @@
         const ALLERGENS_LIST = ['Sesame', 'Soy', 'Egg', 'Peanuts', 'Tree Nuts', 'Milk', 'Gluten', 'Fish', 'Shellfish', 'Mustard', 'Celery', 'Lupin', 'Molluscs', 'Sulphites'];
 
         // ─── Google Apps Script API (직접 통신) ───
-        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbx_E8vBxq3ZHp5JDUKlgLHajlY_T7szbs4BvE1VM_sJyHUeJSGaifIK73wJVA8QKWLj9A/exec';
+        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbwFgdpRpbOnq6WN1cDfkWotKPy3oM1hVYiSdnr9ZYvxP21Wc6HXFVffWJtiDQJbP0IVpA/exec';
 
         // 원격 모드 감지 (GitHub Pages, file://, ?remote=true 등)
         function isRemote() {
@@ -3680,9 +3680,21 @@
                     code: b.code || b.id, name: b.name, nameKr: b.nameKr || '', phone: String(b.phone || ''), active: b.active !== false
                 }));
 
+                // 카테고리 중복 제거 (같은 ID → 마지막 것 유지)
+                let rawCats = JSON.parse(localStorage.getItem('tb_categories') || 'null');
+                if (rawCats && rawCats.length > 0) {
+                    const cm = new Map();
+                    rawCats.forEach(c => cm.set(c.id, c));
+                    rawCats = [...cm.values()];
+                }
+                // 아이템 중복 제거
+                const im = new Map();
+                serverItems.forEach(i => im.set(i.id, i));
+                const dedupedItems = [...im.values()];
+
                 return {
-                    categories: JSON.parse(localStorage.getItem('tb_categories') || 'null') || undefined,
-                    items: serverItems,
+                    categories: rawCats || undefined,
+                    items: dedupedItems,
                     sauces: sauces,
                     branchPricing: pricing,
                     branches: branches,

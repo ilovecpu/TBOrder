@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * ════════════════════════════════════════════════════════════
- *  🍚 The Bap (더밥) — TBOrder Local Server v2.0
- *  Last Updated: 2026-03-10
+ *  🍚 The Bap (더밥) — TBOrder Local Server v2.1
+ *  Last Updated: 2026-03-12
  * ════════════════════════════════════════════════════════════
  *
  *  역할:
@@ -70,8 +70,8 @@ const PORT = parseInt(process.env.TB_PORT) || 8080;
 const BRANCH_CODE = process.env.TB_BRANCH || 'TB';   // 지점코드: TB, PAB 등 (실행: TB_BRANCH=PAB node tb-server.js)
 const SERVER_VERSION = '2.8';
 const SERVER_START_TIME = new Date().toISOString();
-const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbx_E8vBxq3ZHp5JDUKlgLHajlY_T7szbs4BvE1VM_sJyHUeJSGaifIK73wJVA8QKWLj9A/exec';
-const GOOGLE_API = process.env.GOOGLE_API || 'https://script.google.com/macros/s/AKfycbx_E8vBxq3ZHp5JDUKlgLHajlY_T7szbs4BvE1VM_sJyHUeJSGaifIK73wJVA8QKWLj9A/exec';
+const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbwFgdpRpbOnq6WN1cDfkWotKPy3oM1hVYiSdnr9ZYvxP21Wc6HXFVffWJtiDQJbP0IVpA/exec';
+const GOOGLE_API = process.env.GOOGLE_API || 'https://script.google.com/macros/s/AKfycbwFgdpRpbOnq6WN1cDfkWotKPy3oM1hVYiSdnr9ZYvxP21Wc6HXFVffWJtiDQJbP0IVpA/exec';
 
 // ─── 메뉴 데이터 로드/캐시 ───
 const MENU_FILE = path.join(__dirname, 'data', 'menu.json');
@@ -87,9 +87,33 @@ function loadMenuData() {
   return { version: 0, categories: [], items: [], sauces: [] };
 }
 
+// boolean 정규화 유틸리티 — 문자열 "false"/"FALSE"/"true"/"TRUE" → boolean
+function toBool(val, defaultVal = true) {
+  if (val === true || val === 'true' || val === 'TRUE') return true;
+  if (val === false || val === 'false' || val === 'FALSE') return false;
+  return defaultVal;  // undefined/null/'' → 기본값
+}
+
 function saveMenuData(menuData) {
   menuData.lastUpdated = new Date().toISOString();
   menuData.version = (menuData.version || 0) + 1;
+
+  // ─── boolean 필드 정규화 (문자열 → boolean 강제 변환) ───
+  if (menuData.categories) {
+    menuData.categories.forEach(c => {
+      c.showInKiosk = toBool(c.showInKiosk, true);
+      c.showInPos = toBool(c.showInPos, true);
+      c.active = toBool(c.active, true);
+    });
+  }
+  if (menuData.items) {
+    menuData.items.forEach(i => {
+      i.showOnKiosk = toBool(i.showOnKiosk, true);
+      i.showOnPos = toBool(i.showOnPos, true);
+      i.active = toBool(i.active, true);
+    });
+  }
+
   // 카테고리 중복 제거 (같은 ID → 마지막 것 유지)
   if (menuData.categories && menuData.categories.length > 0) {
     const catSeen = new Map();
@@ -146,8 +170,11 @@ async function syncMenuFromGoogle() {
     });
     const parsed = JSON.parse(data);
     if (parsed.categories && parsed.items) {
-      // 카테고리 병합: showInKiosk/showInPos는 서버 로컬값이 항상 우선 (Admin에서 설정하므로)
-      if (parsed.categories && menuCache.categories) {
+      // ─── 카테고리 병합 ───
+      // dirty = Admin 편집이 아직 Google에 업로드 안 됨 → 서버 로컬값 우선 (Google은 아직 이전 데이터)
+      // clean = Google과 동기화 완료 → Google 값 그대로 수용 (Google이 source of truth)
+      if (parsed.categories && menuCache.categories && _localMenuDirty) {
+        console.log('  ⚠️  로컬 변경 미업로드 상태 — 서버 visibility 값 유지');
         const existMap = {};
         menuCache.categories.forEach(c => { existMap[c.id] = c; });
         parsed.categories = parsed.categories.map(gc => {
@@ -159,8 +186,8 @@ async function syncMenuFromGoogle() {
           };
         });
       }
-      // 아이템 병합: showOnKiosk/showOnPos는 서버 로컬값이 항상 우선
-      if (parsed.items && menuCache.items) {
+      // 아이템 병합 (dirty일 때만 서버 우선)
+      if (parsed.items && menuCache.items && _localMenuDirty) {
         const existItemMap = {};
         menuCache.items.forEach(i => { existItemMap[i.id] = i; });
         parsed.items = parsed.items.map(gi => {
@@ -181,6 +208,37 @@ async function syncMenuFromGoogle() {
   } catch (e) {
     console.log(`  ⚠️ Google Sheets 동기화 실패: ${e.message}`);
   }
+}
+
+// ─── Google Sheets 동기화 디바운스 (중복 방지 핵심) ───
+// 여러 Admin 편집이 빠르게 연속 발생하면, 마지막 편집 후 2.5초 뒤 1회만 동기화
+let _googleSyncTimer = null;
+let _googleSyncInProgress = false;
+// dirty flag: Admin 편집 후 Google에 아직 업로드 안 된 상태면 true
+// syncFromGoogle가 아직 업로드 안 된 로컬 변경을 Google의 이전 데이터로 덮어쓰는 것을 방지
+let _localMenuDirty = false;
+
+function debouncedSyncMenuToGoogle(menuData) {
+  _localMenuDirty = true;  // 로컬 변경 발생 표시
+  if (_googleSyncTimer) {
+    clearTimeout(_googleSyncTimer);
+  }
+  _googleSyncTimer = setTimeout(async () => {
+    _googleSyncTimer = null;
+    if (_googleSyncInProgress) {
+      console.log('  ⏳ Google Sheets 동기화 진행 중 — 스킵');
+      return;
+    }
+    _googleSyncInProgress = true;
+    try {
+      // 동기화 시점의 최신 menuCache 사용 (디바운스 대기 중 추가 편집 반영)
+      await syncMenuToGoogle(menuCache);
+      _localMenuDirty = false;  // 업로드 완료 → Google과 동기화됨
+      console.log('  ✅ Google 동기화 완료, dirty flag 해제');
+    } finally {
+      _googleSyncInProgress = false;
+    }
+  }, 2500);
 }
 
 // Google Sheets에 메뉴 업로드
@@ -1829,9 +1887,9 @@ $port.Close()
         // 모든 클라이언트에게 메뉴 업데이트 알림
         broadcastMsg({ type: 'menu_update', menuData: menuCache, timestamp: new Date().toISOString() });
 
-        // Google Sheets에도 동기화 (설정된 경우)
+        // Google Sheets에도 동기화 (설정된 경우) — 디바운스로 중복 방지
         if (GOOGLE_MENU_API && action !== 'syncFromGoogle') {
-          syncMenuToGoogle(menuCache);
+          debouncedSyncMenuToGoogle(menuCache);
         }
 
         res.writeHead(200, { 'Content-Type': 'application/json' });

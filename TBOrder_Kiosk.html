@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Order Kiosk v1.7 | 2026-03-12 -->
+<!-- The Bap Order Kiosk v1.8 | 2026-03-12 -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -2028,7 +2028,7 @@
 
     <script>
         // ========== CONFIGURATION DATA ==========
-        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbx_E8vBxq3ZHp5JDUKlgLHajlY_T7szbs4BvE1VM_sJyHUeJSGaifIK73wJVA8QKWLj9A/exec';
+        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbwFgdpRpbOnq6WN1cDfkWotKPy3oM1hVYiSdnr9ZYvxP21Wc6HXFVffWJtiDQJbP0IVpA/exec';
         let BRANCHES = []; // loaded dynamically — no hardcoded fallback
 
         // ═══ Menu data loaded from server API ═══
@@ -2058,8 +2058,10 @@
                 if (!resp.ok) throw new Error('Menu API error: ' + resp.status);
                 const data = await resp.json();
                 // Map items first (needed to filter empty categories)
+                // Helper: robust boolean check (handles string "false"/"FALSE" from Google Sheets)
+                const isShown = (val) => val === undefined || val === null || val === '' || val === true || val === 'true' || val === 'TRUE';
                 MENU_ITEMS = (data.items || [])
-                    .filter(i => i.active !== false && i.showOnKiosk !== false)
+                    .filter(i => isShown(i.active) && isShown(i.showOnKiosk))
                     .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
                     .map(i => ({
                         id: i.id, catId: i.catId, nameEn: i.nameEn, nameKr: i.nameKr,
@@ -2071,7 +2073,7 @@
                 // Map categories: filter by showInKiosk + hide empty categories (no visible items)
                 const visibleCatIds = new Set(MENU_ITEMS.map(i => i.catId));
                 CATEGORIES = (data.categories || [])
-                    .filter(c => c.active !== false && c.showInKiosk !== false && visibleCatIds.has(c.id))
+                    .filter(c => isShown(c.active) && isShown(c.showInKiosk) && visibleCatIds.has(c.id))
                     .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0))
                     .map(c => ({ id: c.id, name: c.nameEn, nameKr: c.nameKr, icon: c.icon || _defaultCatIcon(c.id), color: c.color, descEn: c.descEn || '', descKr: c.descKr || '' }));
                 // Sauces

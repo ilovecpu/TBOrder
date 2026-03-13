@@ -1,6 +1,6 @@
 /**
  * ════════════════════════════════════════════════════════════
- *  🍚 The Bap — Google Apps Script v2.1
+ *  🍚 The Bap — Google Apps Script v2.2
  *  Menu API + Orders + Image Upload + TBMS Stores + Users + DailySales
  *  + Branches, BranchVisibility, Allergens, Nutrition
  *  + Category showInKiosk/showInPos + Item showOnKiosk/showOnPos boolean parsing
@@ -93,7 +93,11 @@ function doPost(e) {
 
     switch (action) {
       // ─── 메뉴 관리 ───
-      case 'updateMenu':       updateFullMenu(data); break;
+      case 'updateMenu': {
+        const umResult = updateFullMenu(data);
+        if (umResult && !umResult.success) return jsonOut(umResult);
+        break;
+      }
       case 'updateItem':       updateMenuItem(data.item); break;
       case 'addItem':          addMenuItem(data.item); break;
       case 'deleteItem':       deleteMenuItem(data.itemId); break;
@@ -299,16 +303,28 @@ function getBranchPricing() {
 //  메뉴 쓰기
 // ═══════════════════════════════════════════
 function updateFullMenu(data) {
-  if (data.categories) updateCategories(data.categories);
-  if (data.items) updateAllItems(data.items);
-  if (data.sauces) updateAllSauces(data.sauces);
-  if (data.branchPricing) updateBranchPricing(data.branchPricing);
-  // ─── 새 데이터 타입 (Branches 시트 + JSON PropertiesService) ───
-  if (data.branches) updateBranches(data.branches);
-  if (data.branchVisibility) saveJsonProperty('branchVisibility', data.branchVisibility);
-  if (data.allergens) saveJsonProperty('allergens', data.allergens);
-  if (data.nutrition) saveJsonProperty('nutrition', data.nutrition);
-  incrementMenuVersion();
+  // ─── LockService: 동시 쓰기 방지 (중복 카테고리/아이템 근본 원인 해결) ───
+  const lock = LockService.getScriptLock();
+  try {
+    // 최대 30초 대기 후 락 획득 실패 시 에러
+    lock.waitLock(30000);
+  } catch (e) {
+    return { success: false, error: 'Server busy — another write in progress. Try again.' };
+  }
+  try {
+    if (data.categories) updateCategories(data.categories);
+    if (data.items) updateAllItems(data.items);
+    if (data.sauces) updateAllSauces(data.sauces);
+    if (data.branchPricing) updateBranchPricing(data.branchPricing);
+    // ─── 새 데이터 타입 (Branches 시트 + JSON PropertiesService) ───
+    if (data.branches) updateBranches(data.branches);
+    if (data.branchVisibility) saveJsonProperty('branchVisibility', data.branchVisibility);
+    if (data.allergens) saveJsonProperty('allergens', data.allergens);
+    if (data.nutrition) saveJsonProperty('nutrition', data.nutrition);
+    incrementMenuVersion();
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 // ─── Categories CRUD ───

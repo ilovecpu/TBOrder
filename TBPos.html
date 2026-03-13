@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap POS v2.8 | 2026-03-12 -->
+<!-- The Bap POS v2.9 | 2026-03-12 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -922,14 +922,14 @@ button { font-family: inherit; cursor: pointer; }
         </div>
     </div>
     <div style="text-align:center;padding:10px 0 0;color:#B0B0B0;font-size:11px;line-height:1.6;" id="loginFooter">
-        POS v2.8 <span id="loginServerVer"></span>&nbsp;|&nbsp; © 2026 The Bap. All rights reserved. &nbsp;|&nbsp; Program by DJ Kim
+        POS v2.9 <span id="loginServerVer"></span>&nbsp;|&nbsp; © 2026 The Bap. All rights reserved. &nbsp;|&nbsp; Program by DJ Kim
     </div>
 </div>
 
 <!-- ═══════════ SCREEN: MAIN MENU ═══════════ -->
 <div class="screen main-menu-screen" id="screenMainMenu">
     <div class="main-menu-header">
-        <div class="main-menu-header-title">The Bap POS <span style="font-size:10px;color:#9CA3AF;font-weight:400">v2.8</span></div>
+        <div class="main-menu-header-title">The Bap POS <span style="font-size:10px;color:#9CA3AF;font-weight:400">v2.9</span></div>
         <div class="main-menu-header-branch" id="mainMenuBranch">TBS</div>
         <div class="main-menu-header-spacer"></div>
         <div class="main-menu-header-time" id="mainMenuTime">12:00:00</div>
@@ -1285,7 +1285,7 @@ const POS = {
 };
 
 // TBMS Google Apps Script API (same as admin)
-const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbx_E8vBxq3ZHp5JDUKlgLHajlY_T7szbs4BvE1VM_sJyHUeJSGaifIK73wJVA8QKWLj9A/exec';
+const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbwFgdpRpbOnq6WN1cDfkWotKPy3oM1hVYiSdnr9ZYvxP21Wc6HXFVffWJtiDQJbP0IVpA/exec';
 
 // Branches loaded dynamically from TBMS/server; fallback if offline
 let BRANCHES = []; // loaded dynamically — no hardcoded fallback
@@ -1350,16 +1350,19 @@ async function loadMenuFromAPI() {
     return POS.menuData;
 }
 
+// Robust boolean check (handles string "false"/"FALSE" from Google Sheets)
+function _isShown(val) { return val === undefined || val === null || val === '' || val === true || val === 'true' || val === 'TRUE'; }
+
 // Helper: get items for a category, sorted
 function getItemsForCategory(catId) {
     if (!POS.menuData || !POS.menuData.items) return [];
     if (catId === '__all__') {
         return POS.menuData.items
-            .filter(i => i.active !== false && i.showOnPos !== false)
+            .filter(i => _isShown(i.active) && _isShown(i.showOnPos))
             .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
     }
     return POS.menuData.items
-        .filter(i => i.catId === catId && i.active !== false && i.showOnPos !== false)
+        .filter(i => i.catId === catId && _isShown(i.active) && _isShown(i.showOnPos))
         .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 }
 
@@ -1369,11 +1372,11 @@ function getActiveCategories() {
     // POS에서 보이는 아이템이 있는 카테고리만 표시
     const visibleCatIds = new Set(
         (POS.menuData.items || [])
-            .filter(i => i.active !== false && i.showOnPos !== false)
+            .filter(i => _isShown(i.active) && _isShown(i.showOnPos))
             .map(i => i.catId)
     );
     return POS.menuData.categories
-        .filter(c => c.active !== false && c.showInPos !== false && visibleCatIds.has(c.id))
+        .filter(c => _isShown(c.active) && _isShown(c.showInPos) && visibleCatIds.has(c.id))
         .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 }
 
@@ -5177,7 +5180,7 @@ function renderSettings() {
             </div>
 
             <div style="text-align:center;padding:12px;color:#9CA3AF;font-size:11px">
-                The Bap POS v2.8 | Server v${s.serverVersion} | ${s.nodeVersion}
+                The Bap POS v2.9 | Server v${s.serverVersion} | ${s.nodeVersion}
             </div>
         `;
     }
