@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap POS v3.3 | 2026-03-13 -->
+<!-- The Bap POS v4.8 | 2026-03-13 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -922,14 +922,14 @@ button { font-family: inherit; cursor: pointer; }
         </div>
     </div>
     <div style="text-align:center;padding:10px 0 0;color:#B0B0B0;font-size:11px;line-height:1.6;" id="loginFooter">
-        POS v3.3 <span id="loginServerVer"></span>&nbsp;|&nbsp; © 2026 The Bap. All rights reserved. &nbsp;|&nbsp; Program by DJ Kim
+        POS v4.8 <span id="loginServerVer"></span>&nbsp;|&nbsp; © 2026 The Bap. All rights reserved. &nbsp;|&nbsp; Program by DJ Kim
     </div>
 </div>
 
 <!-- ═══════════ SCREEN: MAIN MENU ═══════════ -->
 <div class="screen main-menu-screen" id="screenMainMenu">
     <div class="main-menu-header">
-        <div class="main-menu-header-title">The Bap POS <span style="font-size:10px;color:#9CA3AF;font-weight:400">v3.3</span></div>
+        <div class="main-menu-header-title">The Bap POS <span style="font-size:10px;color:#9CA3AF;font-weight:400">v4.0</span></div>
         <div class="main-menu-header-branch" id="mainMenuBranch">TBS</div>
         <div class="main-menu-header-spacer"></div>
         <div class="main-menu-header-time" id="mainMenuTime">12:00:00</div>
@@ -1147,9 +1147,11 @@ button { font-family: inherit; cursor: pointer; }
         <button class="orders-action-btn clear-all" onclick="clearAllOrders()">Clear All</button>
         <button class="orders-back-btn" onclick="gotoMainMenu()">Back to Menu</button>
     </div>
-    <div class="orders-view-tabs">
-        <button class="orders-view-tab active" data-view="list" onclick="switchOrdersView('list')">Today</button>
-        <button class="orders-view-tab" data-view="monthly" onclick="switchOrdersView('monthly')">Monthly</button>
+    <div style="background:#EFF6FF;border:2px solid #2563EB;border-radius:12px;padding:12px 16px;margin:8px 12px;display:flex;align-items:center;justify-content:center;gap:10px">
+        <button onclick="ordersDateNav(-1)" style="background:#2563EB;color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:18px;cursor:pointer;font-weight:700">◀</button>
+        <button onclick="ordersDatePick()" id="ordersDateLabel" style="background:#fff;color:#2563EB;border:2px solid #2563EB;border-radius:8px;padding:10px 20px;font-size:15px;cursor:pointer;font-weight:700;min-width:160px">📅 13/03/2026</button>
+        <button onclick="ordersDateNav(1)" id="ordersDateNextBtn" style="background:#2563EB;color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:18px;cursor:pointer;font-weight:700">▶</button>
+        <button onclick="_ordersDate=new Date();renderAllOrders()" id="ordersDateTodayBtn" style="background:#059669;color:#fff;border:none;border-radius:8px;padding:10px 16px;font-size:13px;cursor:pointer;font-weight:700;display:none">TODAY</button>
     </div>
     <div id="ordersViewList">
         <div class="orders-filter-bar">
@@ -1455,7 +1457,7 @@ function tbConfirm(msg, title, icon) {
         const ov = document.getElementById('tbPopup');
         document.getElementById('tbPopupIcon').textContent = icon || '⚠️';
         document.getElementById('tbPopupTitle').textContent = title || 'Confirm';
-        document.getElementById('tbPopupMsg').textContent = msg;
+        document.getElementById('tbPopupMsg').innerHTML = msg;
         document.getElementById('tbPopupBtns').innerHTML =
             '<button class="tb-btn-cancel" id="tbPopupCancel">Cancel</button><button class="tb-btn-ok" id="tbPopupOk">Confirm</button>';
         ov.classList.add('active');
@@ -1476,6 +1478,50 @@ function tbInput(msg, title, icon, placeholder, inputType) {
         setTimeout(() => document.getElementById('tbPopupInput')?.focus(), 100);
         document.getElementById('tbPopupCancel').onclick = () => { ov.classList.remove('active'); resolve(null); };
         document.getElementById('tbPopupOk').onclick = () => { const val = document.getElementById('tbPopupInput')?.value; ov.classList.remove('active'); resolve(val); };
+    });
+}
+
+// ─── Touch Numpad (for quantity, etc.) ───
+function tbNumpad(msg, title, icon, defaultVal) {
+    return new Promise(resolve => {
+        let buf = '';
+        const ov = document.getElementById('tbPopup');
+        document.getElementById('tbPopupIcon').textContent = icon || '🔢';
+        document.getElementById('tbPopupTitle').textContent = title || 'Enter Number';
+        const render = () => {
+            const display = document.getElementById('_numpadDisplay');
+            if (display) display.textContent = buf || '0';
+        };
+        const key = (k) => {
+            if (k >= '0' && k <= '9') { buf += k; render(); }
+            else if (k === 'clear') { buf = ''; render(); }
+            else if (k === 'back') { buf = buf.slice(0, -1); render(); }
+            else if (k === 'ok') { ov.classList.remove('active'); resolve(buf || '0'); }
+            else if (k === 'cancel') { ov.classList.remove('active'); resolve(null); }
+        };
+        // Make key function globally accessible for onclick
+        window._numpadKey = key;
+        document.getElementById('tbPopupMsg').innerHTML = `
+            <div style="color:#6B7280;font-size:13px;margin-bottom:10px">${msg}</div>
+            <div id="_numpadDisplay" style="background:#111;color:#F9FAFB;font-size:36px;font-weight:800;text-align:center;padding:14px 16px;border-radius:12px;border:2px solid #4B5563;min-height:50px;letter-spacing:4px;margin-bottom:12px">0</div>
+            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:260px;margin:0 auto">
+                <button class="tb-btn-ok" style="padding:16px;font-size:22px;font-weight:700" onclick="_numpadKey('1')">1</button>
+                <button class="tb-btn-ok" style="padding:16px;font-size:22px;font-weight:700" onclick="_numpadKey('2')">2</button>
+                <button class="tb-btn-ok" style="padding:16px;font-size:22px;font-weight:700" onclick="_numpadKey('3')">3</button>
+                <button class="tb-btn-ok" style="padding:16px;font-size:22px;font-weight:700" onclick="_numpadKey('4')">4</button>
+                <button class="tb-btn-ok" style="padding:16px;font-size:22px;font-weight:700" onclick="_numpadKey('5')">5</button>
+                <button class="tb-btn-ok" style="padding:16px;font-size:22px;font-weight:700" onclick="_numpadKey('6')">6</button>
+                <button class="tb-btn-ok" style="padding:16px;font-size:22px;font-weight:700" onclick="_numpadKey('7')">7</button>
+                <button class="tb-btn-ok" style="padding:16px;font-size:22px;font-weight:700" onclick="_numpadKey('8')">8</button>
+                <button class="tb-btn-ok" style="padding:16px;font-size:22px;font-weight:700" onclick="_numpadKey('9')">9</button>
+                <button style="padding:16px;font-size:14px;font-weight:700;background:#FEE2E2;color:#DC2626;border:2px solid #FECACA;border-radius:10px;cursor:pointer" onclick="_numpadKey('clear')">CLR</button>
+                <button class="tb-btn-ok" style="padding:16px;font-size:22px;font-weight:700" onclick="_numpadKey('0')">0</button>
+                <button style="padding:16px;font-size:14px;font-weight:700;background:#FEF3C7;color:#92400E;border:2px solid #FDE68A;border-radius:10px;cursor:pointer" onclick="_numpadKey('back')">⌫</button>
+            </div>`;
+        document.getElementById('tbPopupBtns').innerHTML = `
+            <button class="tb-btn-cancel" onclick="_numpadKey('cancel')">Cancel</button>
+            <button class="tb-btn-ok" style="background:#059669;min-width:100px;font-size:16px" onclick="_numpadKey('ok')">OK</button>`;
+        ov.classList.add('active');
     });
 }
 
@@ -1519,7 +1565,21 @@ function showScreen(id) {
     document.getElementById(id).classList.add('active');
     POS.currentScreen = id;
 }
-function gotoMainMenu() { showScreen('screenMainMenu'); updateKioskBadge(); }
+async function gotoMainMenu() {
+    // If cart has items, confirm before leaving (and clear cart)
+    if (POS.cart.length > 0) {
+        const ok = await tbConfirm(
+            `<span style="color:#DC2626;font-weight:800;font-size:16px">Leave without paying?<br>All items will be cleared.</span>`,
+            'Close Order', '⚠️'
+        );
+        if (!ok) return;
+        POS.cart = [];
+        POS.selectedCartIdx = -1;
+        renderOrderList();
+    }
+    showScreen('screenMainMenu');
+    updateKioskBadge();
+}
 function gotoOrderScreen() { showScreen('screenOrder'); renderOrderMenu(); updateKioskBadge(); }
 function gotoPayment() {
     if (POS.cart.length === 0) { toast('No items in order', 'error'); return; }
@@ -1665,7 +1725,7 @@ async function gotoTakings() {
     updateTakingsRangeUI();
     loadTakingsData();
 }
-function gotoOrders() { showScreen('screenOrders'); renderAllOrders(); }
+function gotoOrders() { _ordersDate = new Date(); showScreen('screenOrders'); renderAllOrders(); }
 // ─── Cash Drawer: try server API first, fallback to browser print ───
 function sendDrawerCommand() {
     return fetch('/api/print', { method: 'POST',
@@ -2030,7 +2090,9 @@ async function startPOS() {
     toast('Loading menu...', 'info');
     await loadMenuFromAPI();
     renderCategoryTabs();
-    // Restore register & completed orders from server
+    // ★ Restore from localStorage FIRST (instant, survives crash)
+    localRestore();
+    // Then restore from server (authoritative, may take time)
     await restoreRegisterFromServer();
     await restoreCompletedOrdersFromServer();
     connectWebSocket();
@@ -2078,6 +2140,10 @@ function connectWebSocket() {
         setTimeout(() => { POS.wsReady = true; }, 2000);
         // Restore completed orders on every reconnect (server restart recovery)
         restoreCompletedOrdersFromServer();
+        // Flush any pending operations that were saved before crash
+        setTimeout(() => flushPendingOps(), 3000);
+        // Sync local orders to server (recover crash data)
+        setTimeout(() => httpSyncOrders(), 5000);
     };
     POS.ws.onclose = () => {
         POS.connected = false; updateConnDots(false);
@@ -2147,6 +2213,7 @@ function handleWSMessage(msg) {
                 break;
             }
             POS.orders.push(order);
+            localSave();
             if (POS.wsReady) {
                 if (order.source && order.source !== 'pos') {
                     toast(`🔔 KIOSK ORDER ${order.orderNumber} — ${fp(order.total)}`, 'info');
@@ -2189,6 +2256,25 @@ function handleWSMessage(msg) {
             if (delDate === todayStr) {
                 POS.orders = POS.orders.filter(x => x.orderNumber !== msg.orderNumber);
                 POS.completedOrders = POS.completedOrders.filter(x => x.orderNumber !== msg.orderNumber);
+            }
+            if (POS.currentScreen === 'screenOrders') {
+                renderAllOrders();
+                if (ordersSelectedDate) selectCalendarDay(ordersSelectedDate);
+            }
+            break;
+        }
+        case 'order_refunded': {
+            const refDate = msg.date || new Date().toISOString().slice(0, 10);
+            const todayStr3 = new Date().toISOString().slice(0, 10);
+            if (refDate === todayStr3) {
+                const ro = POS.orders.find(x => x.orderNumber === msg.orderNumber) ||
+                           POS.completedOrders.find(x => x.orderNumber === msg.orderNumber);
+                if (ro) {
+                    ro.refunded = true;
+                    ro.refundedBy = msg.refundedBy || '?';
+                    ro.refundedAt = msg.refundedAt || new Date().toISOString();
+                    ro.refundMethod = msg.refundMethod || '';
+                }
             }
             if (POS.currentScreen === 'screenOrders') {
                 renderAllOrders();
@@ -2255,6 +2341,168 @@ function handleWSMessage(msg) {
     }
 }
 function wsSend(msg) { if (POS.ws && POS.ws.readyState === WebSocket.OPEN) POS.ws.send(JSON.stringify(msg)); }
+
+// ═══════════════════════════════════════════
+//  DATA SAFETY — localStorage + HTTP Fallback
+// ═══════════════════════════════════════════
+const LS_ORDERS_KEY = 'tb_pos_orders';
+const LS_COMPLETED_KEY = 'tb_pos_completed';
+const LS_REGISTER_KEY = 'tb_pos_register';
+const LS_ORDER_COUNT_KEY = 'tb_pos_order_count';
+const LS_PENDING_OPS_KEY = 'tb_pos_pending_ops';
+
+// ─── Save POS state to localStorage (called frequently) ───
+function localSave() {
+    try {
+        const today = new Date().toISOString().slice(0, 10);
+        localStorage.setItem(LS_ORDERS_KEY, JSON.stringify({ date: today, orders: POS.orders }));
+        localStorage.setItem(LS_COMPLETED_KEY, JSON.stringify({ date: today, orders: POS.completedOrders }));
+        localStorage.setItem(LS_REGISTER_KEY, JSON.stringify({ date: today, register: POS.register }));
+        localStorage.setItem(LS_ORDER_COUNT_KEY, JSON.stringify({ date: today, count: POS.dailyOrderCount }));
+    } catch (e) { console.warn('[LocalSave] error:', e.message); }
+}
+
+// ─── Restore from localStorage on startup ───
+function localRestore() {
+    try {
+        const today = new Date().toISOString().slice(0, 10);
+
+        const ordersData = JSON.parse(localStorage.getItem(LS_ORDERS_KEY) || 'null');
+        if (ordersData && ordersData.date === today && Array.isArray(ordersData.orders)) {
+            ordersData.orders.forEach(o => {
+                if (!POS.orders.some(x => x.orderNumber === o.orderNumber)) {
+                    POS.orders.push(o);
+                }
+            });
+            console.log(`[LocalRestore] ${ordersData.orders.length} orders from localStorage`);
+        }
+
+        const compData = JSON.parse(localStorage.getItem(LS_COMPLETED_KEY) || 'null');
+        if (compData && compData.date === today && Array.isArray(compData.orders)) {
+            compData.orders.forEach(o => {
+                if (!POS.completedOrders.some(x => x.orderNumber === o.orderNumber)) {
+                    POS.completedOrders.push(o);
+                }
+            });
+            console.log(`[LocalRestore] ${compData.orders.length} completed from localStorage`);
+        }
+
+        const regData = JSON.parse(localStorage.getItem(LS_REGISTER_KEY) || 'null');
+        if (regData && regData.date === today && regData.register) {
+            // Only restore if current register is empty (just started)
+            if (POS.register.cashSales === 0 && POS.register.cardSales === 0 && regData.register.cashSales > 0) {
+                POS.register = { ...POS.register, ...regData.register };
+                console.log(`[LocalRestore] Register: cash=${regData.register.cashSales}, card=${regData.register.cardSales}`);
+            }
+        }
+
+        const countData = JSON.parse(localStorage.getItem(LS_ORDER_COUNT_KEY) || 'null');
+        if (countData && countData.date === today && countData.count > POS.dailyOrderCount) {
+            POS.dailyOrderCount = countData.count;
+            console.log(`[LocalRestore] Order count: ${countData.count}`);
+        }
+    } catch (e) { console.warn('[LocalRestore] error:', e.message); }
+}
+
+// ─── Pending Operations Queue (survives crash) ───
+function enqueuePendingOp(op) {
+    try {
+        const ops = JSON.parse(localStorage.getItem(LS_PENDING_OPS_KEY) || '[]');
+        op._id = Date.now() + '-' + Math.random().toString(36).slice(2, 6);
+        op._ts = new Date().toISOString();
+        ops.push(op);
+        localStorage.setItem(LS_PENDING_OPS_KEY, JSON.stringify(ops));
+    } catch (e) {}
+}
+
+function removePendingOp(opId) {
+    try {
+        let ops = JSON.parse(localStorage.getItem(LS_PENDING_OPS_KEY) || '[]');
+        ops = ops.filter(o => o._id !== opId);
+        localStorage.setItem(LS_PENDING_OPS_KEY, JSON.stringify(ops));
+    } catch (e) {}
+}
+
+async function flushPendingOps() {
+    try {
+        const ops = JSON.parse(localStorage.getItem(LS_PENDING_OPS_KEY) || '[]');
+        if (ops.length === 0) return;
+        console.log(`[PendingOps] Flushing ${ops.length} pending operations...`);
+        for (const op of ops) {
+            try {
+                if (op.type === 'refund_order') {
+                    await httpRefund(op, true);
+                } else if (op.type === 'order_status') {
+                    await httpOrderStatus(op, true);
+                } else if (op.type === 'sync_orders') {
+                    await httpSyncOrders(true);
+                } else if (op.type === 'sync_register') {
+                    await syncRegisterToServer(true);
+                }
+                removePendingOp(op._id);
+            } catch (e) {
+                console.warn(`[PendingOps] Failed to flush op ${op._id}:`, e.message);
+            }
+        }
+    } catch (e) {}
+}
+
+// ─── HTTP fallback for critical operations ───
+async function httpRefund(data, skipQueue) {
+    if (!skipQueue) enqueuePendingOp({ type: 'refund_order', ...data });
+    try {
+        const resp = await fetch('/api/refund', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (resp.ok) {
+            if (!skipQueue) removePendingOp(data._id);
+            console.log('[HTTP] Refund confirmed by server');
+            return true;
+        }
+    } catch (e) { console.warn('[HTTP] Refund request failed:', e.message); }
+    return false;
+}
+
+async function httpOrderStatus(data, skipQueue) {
+    if (!skipQueue) enqueuePendingOp({ type: 'order_status', ...data });
+    try {
+        const resp = await fetch('/api/order-status', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        if (resp.ok) {
+            if (!skipQueue) removePendingOp(data._id);
+            console.log('[HTTP] Order status confirmed by server');
+            return true;
+        }
+    } catch (e) { console.warn('[HTTP] Order status request failed:', e.message); }
+    return false;
+}
+
+async function httpSyncOrders(skipQueue) {
+    try {
+        const allOrders = [...POS.orders, ...POS.completedOrders.filter(o => !POS.orders.some(x => x.orderNumber === o.orderNumber))];
+        const resp = await fetch('/api/sync-orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ orders: allOrders })
+        });
+        if (resp.ok) {
+            const result = await resp.json();
+            if (result.merged > 0) console.log(`[HTTP] Synced ${result.merged} orders to server`);
+        }
+    } catch (e) { console.warn('[HTTP] Sync orders failed:', e.message); }
+}
+
+// ─── Auto-save timer (every 10 seconds) ───
+setInterval(() => {
+    if (POS.orders.length > 0 || POS.completedOrders.length > 0 || POS.register.cashSales > 0 || POS.register.cardSales > 0) {
+        localSave();
+    }
+}, 10000);
 
 // ═══════════════════════════════════════════
 //  ORDER SCREEN — MENU
@@ -2396,7 +2644,7 @@ async function qtyEdit() {
     if (!item) { toast('Select an item first', 'error'); return; }
     // Count how many of this item already in cart
     const currentCount = POS.cart.filter(c => c.id === item.id && !c.free && !c.note).length;
-    const val = await tbInput(`Set quantity for ${item.nameEn} (currently ${currentCount})`, 'Quantity', '🔢', currentCount.toString());
+    const val = await tbNumpad(`Set quantity for ${item.nameEn} (currently ${currentCount})`, 'Quantity', '🔢');
     if (val === null) return;
     const n = parseInt(val);
     if (isNaN(n) || n <= 0) {
@@ -2697,40 +2945,64 @@ function _discApplyFinal(pct, isStaff, staffName) {
     renderOrderList();
     toast(`${label} applied (by ${staffName})`, 'success');
 }
-// ═══════════ MANUAL ITEM — 2-step touch popup ═══════════
+// ═══════════ MANUAL ITEM — single-screen touch popup ═══════════
 function manualItemDialog() {
-    _manualStep1_enterName();
-}
-
-function _manualStep1_enterName() {
     let nameVal = '';
-    const presets = ['Extra Item', 'Service Charge', 'Special', 'Delivery', 'Packaging', 'Tip', 'Alteration', 'Custom'];
+    let priceStr = '';
+    const presets = ['Container', 'Extra Item'];
 
     const ov = document.createElement('div');
     ov.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:10001';
 
     const render = () => {
+        const displayVal = priceStr ? '£' + (parseFloat(priceStr) / 100).toFixed(2) : '£0.00';
+        const canAdd = nameVal.trim() && parseInt(priceStr) > 0;
+
         ov.innerHTML = `
-        <div style="background:#fff;border-radius:16px;width:94%;max-width:520px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.2)">
-            <div style="text-align:center;margin-bottom:14px">
-                <div style="font-size:16px;font-weight:700;color:#1F2937">Manual Item — Step 1/2</div>
-                <div style="font-size:12px;color:#6B7280;margin-top:2px">Enter item description</div>
+        <div style="background:#fff;border-radius:16px;width:96%;max-width:720px;padding:20px;box-shadow:0 20px 60px rgba(0,0,0,.2);max-height:96vh;overflow-y:auto">
+            <div style="text-align:center;margin-bottom:12px">
+                <div style="font-size:17px;font-weight:700;color:#1F2937">Manual Item</div>
             </div>
-            <div id="_miDisplay" style="width:100%;min-height:48px;padding:12px 16px;border:2px solid ${nameVal ? '#006AFF' : '#D1D5DB'};border-radius:10px;background:#F9FAFB;font-size:18px;font-weight:600;color:#1F2937;margin-bottom:12px;word-break:break-all">${nameVal || '<span style="color:#9CA3AF">Tap preset or type below</span>'}</div>
-            <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px">
-                ${presets.map(p => `<button class="_mi-preset" style="padding:8px 14px;border:1px solid #D1D5DB;border-radius:8px;background:${nameVal===p?'#006AFF':'#fff'};color:${nameVal===p?'#fff':'#374151'};font-size:13px;font-weight:600;cursor:pointer">${p}</button>`).join('')}
+            <div style="display:flex;gap:16px;flex-wrap:wrap">
+                <!-- LEFT: Description + QWERTY -->
+                <div style="flex:1;min-width:280px">
+                    <div style="font-size:11px;font-weight:700;color:#6B7280;margin-bottom:4px;text-transform:uppercase">Description</div>
+                    <div id="_miDisplay" style="width:100%;min-height:40px;padding:10px 14px;border:2px solid ${nameVal ? '#006AFF' : '#D1D5DB'};border-radius:10px;background:#F9FAFB;font-size:16px;font-weight:600;color:#1F2937;margin-bottom:8px;word-break:break-all">${nameVal || '<span style="color:#9CA3AF">Tap preset or type</span>'}</div>
+                    <div style="display:flex;gap:6px;margin-bottom:8px">
+                        ${presets.map(p => `<button class="_mi-preset" style="flex:1;padding:8px 6px;border:2px solid ${nameVal===p?'#006AFF':'#D1D5DB'};border-radius:8px;background:${nameVal===p?'#006AFF':'#fff'};color:${nameVal===p?'#fff':'#374151'};font-size:13px;font-weight:600;cursor:pointer">${p}</button>`).join('')}
+                    </div>
+                    <div id="_miKbd" style="display:flex;flex-direction:column;gap:3px"></div>
+                </div>
+                <!-- RIGHT: Price + Numpad + Shortcuts -->
+                <div style="flex:0 0 220px;min-width:200px">
+                    <div style="font-size:11px;font-weight:700;color:#6B7280;margin-bottom:4px;text-transform:uppercase">Price</div>
+                    <div style="text-align:center;font-size:32px;font-weight:800;color:#1F2937;padding:8px;background:#F9FAFB;border-radius:10px;border:2px solid ${priceStr ? '#006AFF' : '#D1D5DB'};margin-bottom:8px">${displayVal}</div>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:8px">
+                        ${[1,2,3,4,5,6,7,8,9].map(n => `<button class="_mp-key" data-key="${n}" style="padding:12px 0;border:1px solid #E5E7EB;border-radius:8px;background:#fff;font-size:20px;font-weight:700;cursor:pointer;color:#1F2937">${n}</button>`).join('')}
+                        <button class="_mp-key" data-key="CLR" style="padding:12px 0;border:1px solid #FCA5A5;border-radius:8px;background:#FEE2E2;font-size:12px;font-weight:700;cursor:pointer;color:#DC2626">CLR</button>
+                        <button class="_mp-key" data-key="0" style="padding:12px 0;border:1px solid #E5E7EB;border-radius:8px;background:#fff;font-size:20px;font-weight:700;cursor:pointer;color:#1F2937">0</button>
+                        <button class="_mp-key" data-key="00" style="padding:12px 0;border:1px solid #E5E7EB;border-radius:8px;background:#fff;font-size:16px;font-weight:700;cursor:pointer;color:#1F2937">00</button>
+                    </div>
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-bottom:8px">
+                        <button class="_mp-sc" data-pence="20" style="padding:8px 0;border:1px solid #A7F3D0;border-radius:8px;background:#ECFDF5;font-size:12px;font-weight:700;cursor:pointer;color:#059669">20p</button>
+                        <button class="_mp-sc" data-pence="30" style="padding:8px 0;border:1px solid #A7F3D0;border-radius:8px;background:#ECFDF5;font-size:12px;font-weight:700;cursor:pointer;color:#059669">30p</button>
+                        <button class="_mp-sc" data-pence="50" style="padding:8px 0;border:1px solid #A7F3D0;border-radius:8px;background:#ECFDF5;font-size:12px;font-weight:700;cursor:pointer;color:#059669">50p</button>
+                        <button class="_mp-sc" data-pence="100" style="padding:8px 0;border:1px solid #93C5FD;border-radius:8px;background:#EFF6FF;font-size:12px;font-weight:700;cursor:pointer;color:#2563EB">£1</button>
+                        <button class="_mp-sc" data-pence="150" style="padding:8px 0;border:1px solid #93C5FD;border-radius:8px;background:#EFF6FF;font-size:12px;font-weight:700;cursor:pointer;color:#2563EB">£1.50</button>
+                        <button class="_mp-sc" data-pence="200" style="padding:8px 0;border:1px solid #93C5FD;border-radius:8px;background:#EFF6FF;font-size:12px;font-weight:700;cursor:pointer;color:#2563EB">£2</button>
+                    </div>
+                </div>
             </div>
-            <div id="_miKbd" style="display:flex;flex-direction:column;gap:4px;margin-bottom:14px"></div>
-            <div style="display:flex;gap:10px">
+            <!-- Bottom buttons -->
+            <div style="display:flex;gap:10px;margin-top:14px">
                 <button id="_miBtnCancel" style="flex:1;padding:14px;border:1px solid #D1D5DB;border-radius:10px;background:#fff;font-size:15px;font-weight:600;cursor:pointer;color:#6B7280">Cancel</button>
-                <button id="_miBtnNext" style="flex:1;padding:14px;border:none;border-radius:10px;background:${nameVal ? '#006AFF' : '#D1D5DB'};color:#fff;font-size:15px;font-weight:700;cursor:pointer">NEXT →</button>
+                <button id="_miBtnAdd" style="flex:2;padding:14px;border:none;border-radius:10px;background:${canAdd ? '#059669' : '#D1D5DB'};color:#fff;font-size:16px;font-weight:700;cursor:pointer">ADD TO ORDER</button>
             </div>
         </div>`;
 
-        // Build QWERTY keyboard
+        // Build QWERTY keyboard (no number row)
         const kbdEl = ov.querySelector('#_miKbd');
         const rows = [
-            ['1','2','3','4','5','6','7','8','9','0'],
             ['Q','W','E','R','T','Y','U','I','O','P'],
             ['A','S','D','F','G','H','J','K','L'],
             ['Z','X','C','V','B','N','M','⌫'],
@@ -2738,11 +3010,11 @@ function _manualStep1_enterName() {
         ];
         rows.forEach(row => {
             const rowDiv = document.createElement('div');
-            rowDiv.style.cssText = 'display:flex;gap:3px;justify-content:center';
+            rowDiv.style.cssText = 'display:flex;gap:2px;justify-content:center';
             row.forEach(key => {
                 const btn = document.createElement('button');
                 const isWide = key === 'SPACE' || key === 'CLR';
-                btn.style.cssText = `flex:${isWide ? '2' : '1'};padding:10px 2px;border:1px solid #D1D5DB;border-radius:6px;background:${key==='⌫'?'#FEE2E2':key==='CLR'?'#FEE2E2':'#F9FAFB'};color:${key==='⌫'||key==='CLR'?'#DC2626':'#1F2937'};font-size:${isWide?'12px':'14px'};font-weight:600;cursor:pointer;min-width:0`;
+                btn.style.cssText = `flex:${isWide ? '2' : '1'};padding:9px 1px;border:1px solid #D1D5DB;border-radius:6px;background:${key==='⌫'?'#FEE2E2':key==='CLR'?'#FEE2E2':'#F9FAFB'};color:${key==='⌫'||key==='CLR'?'#DC2626':'#1F2937'};font-size:${isWide?'11px':'13px'};font-weight:600;cursor:pointer;min-width:0`;
                 btn.textContent = key === 'SPACE' ? '␣ SPACE' : key;
                 btn.onclick = () => {
                     if (key === '⌫') nameVal = nameVal.slice(0, -1);
@@ -2761,71 +3033,39 @@ function _manualStep1_enterName() {
             btn.onclick = () => { nameVal = btn.textContent; render(); };
         });
 
-        // Cancel / Next
-        ov.querySelector('#_miBtnCancel').onclick = () => ov.remove();
-        ov.querySelector('#_miBtnNext').onclick = () => {
-            if (!nameVal.trim()) return;
-            ov.remove();
-            _manualStep2_enterPrice(nameVal.trim());
-        };
-    };
-
-    render();
-    document.body.appendChild(ov);
-}
-
-function _manualStep2_enterPrice(itemName) {
-    let priceStr = '';
-
-    const ov = document.createElement('div');
-    ov.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:10001';
-
-    const render = () => {
-        const displayVal = priceStr ? '£' + (parseFloat(priceStr) / 100).toFixed(2) : '£0.00';
-        ov.innerHTML = `
-        <div style="background:#fff;border-radius:16px;width:90%;max-width:380px;padding:28px;box-shadow:0 20px 60px rgba(0,0,0,.2)">
-            <div style="text-align:center;margin-bottom:16px">
-                <div style="font-size:16px;font-weight:700;color:#1F2937">Manual Item — Step 2/2</div>
-                <div style="font-size:13px;color:#6B7280;margin-top:4px">Enter price</div>
-                <div style="margin-top:8px;padding:8px 16px;background:#EFF6FF;border-radius:8px;display:inline-block">
-                    <span style="font-size:13px;color:#2563EB;font-weight:600">${itemName}</span>
-                </div>
-            </div>
-            <div style="text-align:center;font-size:40px;font-weight:800;color:#1F2937;margin-bottom:20px;padding:12px;background:#F9FAFB;border-radius:12px;border:2px solid ${priceStr ? '#006AFF' : '#D1D5DB'}">${displayVal}</div>
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px">
-                ${[1,2,3,4,5,6,7,8,9].map(n => `<button class="_mp-key" data-key="${n}" style="padding:16px;border:1px solid #E5E7EB;border-radius:10px;background:#fff;font-size:22px;font-weight:700;cursor:pointer;color:#1F2937">${n}</button>`).join('')}
-                <button class="_mp-key" data-key="CLR" style="padding:16px;border:1px solid #FCA5A5;border-radius:10px;background:#FEE2E2;font-size:14px;font-weight:700;cursor:pointer;color:#DC2626">CLR</button>
-                <button class="_mp-key" data-key="0" style="padding:16px;border:1px solid #E5E7EB;border-radius:10px;background:#fff;font-size:22px;font-weight:700;cursor:pointer;color:#1F2937">0</button>
-                <button class="_mp-key" data-key="00" style="padding:16px;border:1px solid #E5E7EB;border-radius:10px;background:#fff;font-size:18px;font-weight:700;cursor:pointer;color:#1F2937">00</button>
-            </div>
-            <div style="display:flex;gap:10px">
-                <button id="_mpBack" style="flex:1;padding:14px;border:1px solid #D1D5DB;border-radius:10px;background:#fff;font-size:15px;font-weight:600;cursor:pointer;color:#6B7280">← Back</button>
-                <button id="_mpAdd" style="flex:1;padding:14px;border:none;border-radius:10px;background:${priceStr ? '#059669' : '#D1D5DB'};color:#fff;font-size:15px;font-weight:700;cursor:pointer">ADD TO ORDER</button>
-            </div>
-        </div>`;
-
+        // Numpad keys
         ov.querySelectorAll('._mp-key').forEach(btn => {
             btn.onclick = () => {
                 const k = btn.dataset.key;
                 if (k === 'CLR') priceStr = '';
                 else if (k === '00') priceStr += '00';
                 else priceStr += k;
-                if (priceStr.length > 7) priceStr = priceStr.slice(0, 7); // max £9999.99
+                if (priceStr.length > 7) priceStr = priceStr.slice(0, 7);
                 render();
             };
         });
 
-        ov.querySelector('#_mpBack').onclick = () => { ov.remove(); _manualStep1_enterName(); };
-        ov.querySelector('#_mpAdd').onclick = () => {
+        // Price shortcut buttons
+        ov.querySelectorAll('._mp-sc').forEach(btn => {
+            btn.onclick = () => {
+                priceStr = btn.dataset.pence;
+                render();
+            };
+        });
+
+        // Cancel
+        ov.querySelector('#_miBtnCancel').onclick = () => ov.remove();
+
+        // Add to order
+        ov.querySelector('#_miBtnAdd').onclick = () => {
             const pence = parseInt(priceStr) || 0;
-            if (pence <= 0) return;
+            if (!nameVal.trim() || pence <= 0) return;
             const price = pence / 100;
-            // Add manual item to cart
             const manualItem = {
                 id: 'MANUAL-' + Date.now(),
                 catId: 'manual',
-                nameEn: itemName,
-                nameKr: itemName,
+                nameEn: nameVal.trim(),
+                nameKr: nameVal.trim(),
                 unitPrice: price,
                 quantity: 1,
                 totalPrice: price,
@@ -2837,7 +3077,7 @@ function _manualStep2_enterPrice(itemName) {
             POS.selectedCartIdx = POS.cart.length - 1;
             renderOrderList();
             ov.remove();
-            toast(`${itemName} £${price.toFixed(2)} added`, 'success');
+            toast(`${nameVal.trim()} £${price.toFixed(2)} added`, 'success');
         };
     };
 
@@ -3063,6 +3303,9 @@ function completePayment(printCount) {
     if (payMethod === 'cash') POS.register.cashSales += total;
     else if (payMethod === 'card') POS.register.cardSales += total;
     POS.register.transactions.push({ time: now.toLocaleTimeString('en-GB'), method: payMethod, amount: total, orderNum });
+
+    // ★ Immediate localStorage save (crash protection)
+    localSave();
 
     // Sync register to server after payment
     syncRegisterToServer();
@@ -3548,11 +3791,17 @@ async function viewEndSalesDetail(esId) {
                 <div style="font-size:12px;color:#6B7280">Period: ${fromStr} → ${toStr}</div>
                 <div style="font-size:11px;color:#9CA3AF">ID: ${rec.id}${rec.staff ? ` · Staff: ${rec.staff.name || rec.staff.id}` : ''}</div>
             </div>
-            <div class="takings-stat-grid">
-                <div class="takings-stat-card"><div class="takings-stat-val">${s.totalOrders}</div><div class="takings-stat-label">Orders</div></div>
-                <div class="takings-stat-card"><div class="takings-stat-val">${fp(s.cashTotal)}</div><div class="takings-stat-label">Cash (${s.cashCustomers})</div></div>
-                <div class="takings-stat-card"><div class="takings-stat-val">${fp(s.cardTotal)}</div><div class="takings-stat-label">Card (${s.cardCustomers})</div></div>
-                <div class="takings-stat-card"><div class="takings-stat-val">${fp(s.grandTotal)}</div><div class="takings-stat-label">Grand Total</div></div>
+            <div style="display:flex;gap:10px;align-items:stretch;flex-wrap:wrap">
+                <div class="takings-stat-grid" style="flex:1;min-width:0;margin:0">
+                    <div class="takings-stat-card"><div class="takings-stat-val">${s.totalOrders}</div><div class="takings-stat-label">Orders</div></div>
+                    <div class="takings-stat-card"><div class="takings-stat-val">${fp(s.cashTotal)}</div><div class="takings-stat-label">Cash (${s.cashCustomers})</div></div>
+                    <div class="takings-stat-card"><div class="takings-stat-val">${fp(s.cardTotal)}</div><div class="takings-stat-label">Card (${s.cardCustomers})</div></div>
+                    <div class="takings-stat-card"><div class="takings-stat-val">${fp(s.grandTotal)}</div><div class="takings-stat-label">Grand Total</div></div>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:6px;flex:0 0 auto;justify-content:center">
+                    <button class="register-btn open" onclick="printEndSalesDetail('${rec.id}')" style="padding:10px 18px;font-size:13px;white-space:nowrap">🖨️ PRINT</button>
+                    <button onclick="switchTakingsView('end_sales')" style="padding:10px 18px;border:1px solid #D1D5DB;border-radius:8px;background:#fff;font-weight:600;cursor:pointer;font-size:12px;white-space:nowrap;color:#6B7280">← Back</button>
+                </div>
             </div>
             <div style="background:#ECFDF5;border:2px solid #059669;border-radius:10px;padding:10px;margin:10px 0;display:flex;justify-content:space-between;align-items:center">
                 <span style="font-weight:700;color:#059669;font-size:13px">Cash in Drawer (£100 + Cash)</span>
@@ -3587,10 +3836,7 @@ async function viewEndSalesDetail(esId) {
             </tbody></table>`;
         }
 
-        html += `<div style="display:flex;gap:12px;margin-top:16px">
-            <button class="register-btn open" onclick="printEndSalesDetail('${rec.id}')" style="flex:1">🖨️ PRINT</button>
-            <button onclick="switchTakingsView('end_sales')" style="flex:1;padding:12px;border:1px solid #D1D5DB;border-radius:8px;background:#fff;font-weight:600;cursor:pointer">← Back to END Sales</button>
-        </div>`;
+        // Print & Back buttons are now next to Grand Total stat cards above
         el.innerHTML = html;
     } catch (e) {
         toast('Failed to load detail', 'error');
@@ -3605,6 +3851,32 @@ let ordersFilter = 'all';
 let ordersViewMonth = new Date(); // current month for calendar
 let ordersCalendarCache = {}; // { 'YYYY-MM-DD': { count, total } }
 let ordersSelectedDate = null; // currently selected date in calendar view
+let _ordersDate = new Date(); // current date for ALL ORDERS date nav
+
+function ordersDateNav(dir) {
+    const d = new Date(_ordersDate);
+    d.setDate(d.getDate() + dir);
+    if (d > new Date()) return; // no future
+    _ordersDate = d;
+    renderAllOrders();
+}
+async function ordersDatePick() {
+    const d = await touchDateTimePicker('Select Date', _ordersDate);
+    if (!d) return;
+    d.setHours(0,0,0,0);
+    if (d > new Date()) { toast('Cannot view future dates', 'error'); return; }
+    _ordersDate = d;
+    renderAllOrders();
+}
+function _updateOrdersDateLabel() {
+    const label = document.getElementById('ordersDateLabel');
+    if (label) label.textContent = '📅 ' + _ordersDate.toLocaleDateString('en-GB');
+    const isToday = _ordersDate.toISOString().slice(0,10) === new Date().toISOString().slice(0,10);
+    const nextBtn = document.getElementById('ordersDateNextBtn');
+    if (nextBtn) { nextBtn.style.opacity = isToday ? '0.3' : '1'; nextBtn.style.pointerEvents = isToday ? 'none' : 'auto'; }
+    const todayBtn = document.getElementById('ordersDateTodayBtn');
+    if (todayBtn) todayBtn.style.display = isToday ? 'none' : '';
+}
 
 function filterOrders(f) {
     ordersFilter = f;
@@ -3612,8 +3884,29 @@ function filterOrders(f) {
     renderAllOrders();
 }
 
-function renderAllOrders() {
-    let orders = [...POS.orders, ...POS.completedOrders.filter(o => !POS.orders.find(p => p.orderNumber === o.orderNumber))];
+async function renderAllOrders() {
+    _updateOrdersDateLabel();
+    const selDateStr = _ordersDate.toISOString().slice(0, 10);
+    const todayStr = new Date().toISOString().slice(0, 10);
+    const isToday = selDateStr === todayStr;
+
+    let orders;
+    if (isToday) {
+        orders = [...POS.orders, ...POS.completedOrders.filter(o => !POS.orders.find(p => p.orderNumber === o.orderNumber))];
+    } else {
+        // Fetch from server for past dates
+        const el = document.getElementById('ordersListBody');
+        el.innerHTML = '<div style="text-align:center;padding:40px;color:#9CA3AF">Loading...</div>';
+        try {
+            const resp = await fetch(`/api/orders?date=${selDateStr}`);
+            if (resp.ok) {
+                const data = await resp.json();
+                orders = data.orders || data || [];
+                if (!Array.isArray(orders)) orders = [];
+                orders = orders.filter(o => !o.branchCode || o.branchCode === POS.branch);
+            } else { orders = []; }
+        } catch (e) { console.warn('[AllOrders] fetch error:', e.message); orders = []; }
+    }
     orders.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
     if (ordersFilter === 'pending') orders = orders.filter(o => o.status === 'pending');
@@ -3629,14 +3922,32 @@ function renderAllOrders() {
     el.innerHTML = orders.map(o => {
         const itemsStr = o.items.map(i => `${i.quantity}x ${i.nameEn}`).join(', ');
         const time = new Date(o.timestamp).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
-        return `<div class="order-card ${o.status || 'pending'}">
+        const disc = o.discount || {};
+        const hasDisc = disc.type && disc.value > 0;
+        let discAmt = 0;
+        if (hasDisc) {
+            if (disc.type === 'percentage') discAmt = (o.subtotal || 0) * (disc.value / 100);
+            else if (disc.type === 'fixed') discAmt = disc.value;
+        }
+        const discLabel = hasDisc
+            ? (disc.type === 'percentage' ? `${disc.value}%` : fp(disc.value))
+            + (disc.name ? ` ${disc.name}` : '')
+            + (disc.approvedBy ? ` (${disc.approvedBy})` : '')
+            : '';
+        const isRefunded = !!o.refunded;
+        let borderStyle = isRefunded ? 'border-left:4px solid #DC2626;background:#FEF2F2;' : (hasDisc ? 'border-left:4px solid #F59E0B;' : '');
+        const strikeStyle = isRefunded ? 'text-decoration:line-through;opacity:0.6;' : '';
+        return `<div class="order-card ${o.status || 'pending'}" style="${borderStyle}">
             <div class="order-card-top">
-                <div class="order-card-num">${o.orderNumber}</div>
+                <div class="order-card-num" style="${strikeStyle}">${o.orderNumber}</div>
+                ${isRefunded ? `<span style="background:#DC2626;color:#fff;font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;margin-left:8px">REFUNDED</span>` : ''}
             </div>
             <div class="order-card-mid">
-                <div class="order-card-items">${itemsStr}${o.customerName ? ` · <span class="order-card-name">${o.customerName}</span>` : ''}</div>
+                <div class="order-card-items" style="${strikeStyle}">${itemsStr}${o.customerName ? ` · <span class="order-card-name">${o.customerName}</span>` : ''}</div>
             </div>
-            <div class="order-card-total">${fp(o.total)}</div>
+            <div class="order-card-total" style="${strikeStyle}">${hasDisc ? `<span style="text-decoration:line-through;color:#9CA3AF;font-size:12px;margin-right:4px">${fp(o.subtotal || 0)}</span>` : ''}${fp(o.total)}</div>
+            ${hasDisc && !isRefunded ? `<div style="font-size:11px;color:#D97706;font-weight:600;margin-top:-2px">🏷️ -${fp(discAmt)} (${discLabel})</div>` : ''}
+            ${isRefunded ? `<div style="font-size:11px;color:#DC2626;font-weight:600;margin-top:-2px">🔄 Refunded ${o.refundMethod === 'cash' ? '💵CASH' : '💳CARD'} by ${o.refundedBy || '?'} at ${o.refundedAt ? new Date(o.refundedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '?'}</div>` : ''}
             <div class="order-card-badges">
                 <span class="order-card-badge ${o.orderType}">${o.orderType === 'eat_in' ? 'Eat In' : 'Takeaway'}</span>
                 <span class="order-card-badge ${o.status || 'pending'}">${(o.status || 'pending').toUpperCase()}</span>
@@ -3644,10 +3955,16 @@ function renderAllOrders() {
             </div>
             <div class="order-card-time">${time}</div>
             <div class="order-card-actions">
-                ${o.paymentStatus !== 'paid' ? `<button class="order-card-action-btn pay-cash" onclick="payOrderCash('${o.orderNumber}')">Cash</button>
-                <button class="order-card-action-btn pay-card" onclick="payOrderCard('${o.orderNumber}')">Card</button>` : ''}
-                <button class="order-card-action-btn delete" onclick="deleteOrder('${o.orderNumber}')">Delete</button>
-                <button class="order-card-action-btn" style="border-color:#6B7280;color:#6B7280" onclick="reprintOrder('${o.orderNumber}')">Print</button>
+                ${isToday ? `
+                    ${!isRefunded && o.paymentStatus !== 'paid' ? `<button class="order-card-action-btn pay-cash" onclick="payOrderCash('${o.orderNumber}')">Cash</button>
+                    <button class="order-card-action-btn pay-card" onclick="payOrderCard('${o.orderNumber}')">Card</button>` : ''}
+                    <button class="order-card-action-btn delete" onclick="deleteOrder('${o.orderNumber}')">Delete</button>
+                    ${!isRefunded && o.paymentStatus === 'paid' ? `<button class="order-card-action-btn" style="border-color:#DC2626;color:#DC2626;font-weight:700" onclick="refundOrder('${o.orderNumber}','${selDateStr}')">Refund</button>` : ''}
+                    <button class="order-card-action-btn" style="border-color:#6B7280;color:#6B7280" onclick="reprintOrder('${o.orderNumber}')">Print</button>
+                ` : `
+                    ${!isRefunded && o.paymentStatus === 'paid' ? `<button class="order-card-action-btn" style="border-color:#DC2626;color:#DC2626;font-weight:700" onclick="refundOrder('${o.orderNumber}','${selDateStr}')">Refund</button>` : ''}
+                    <button class="order-card-action-btn" style="border-color:#6B7280;color:#6B7280" onclick="reprintOrder('${o.orderNumber}')">Print</button>
+                `}
             </div>
         </div>`;
     }).join('');
@@ -4024,6 +4341,211 @@ async function deleteOrder(orderNum, dateStr) {
     }
 }
 
+// ─── Refund order: staff select → PIN → mark as refunded (NOT deleted) ───
+function refundOrder(orderNum, dateStr) {
+    // Find order
+    const o = POS.orders.find(x => x.orderNumber === orderNum) ||
+              POS.completedOrders.find(x => x.orderNumber === orderNum);
+    if (!o) { toast('Order not found', 'error'); return; }
+    if (o.refunded) { toast('Already refunded', 'info'); return; }
+
+    // Step 1: Staff selection grid (reuse discount pattern)
+    const staffList = BRANCH_STAFF.length > 0 ? BRANCH_STAFF : [];
+    const popup = document.createElement('div');
+    popup.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+    popup.onclick = (e) => { if (e.target === popup) popup.remove(); };
+
+    let staffGrid = '';
+    if (staffList.length === 0) {
+        staffGrid = '<div style="color:#9CA3AF;text-align:center;padding:16px">No staff loaded</div>';
+    } else {
+        staffGrid = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;max-height:280px;overflow-y:auto;padding:4px">';
+        staffList.forEach(s => {
+            const dn = s.nickName || s.name || '?';
+            const initial = dn.charAt(0).toUpperCase();
+            staffGrid += `<div class="_ref-staff-btn" data-name="${dn}" style="padding:10px 6px;background:#FEF2F2;border:2px solid #DC2626;border-radius:12px;text-align:center;cursor:pointer">
+                <div style="width:44px;height:44px;background:#DC2626;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-weight:700;font-size:18px">${initial}</div>
+                <div style="font-size:12px;font-weight:600;line-height:1.2;word-break:keep-all">${dn}</div>
+            </div>`;
+        });
+        staffGrid += '</div>';
+    }
+
+    popup.innerHTML = `
+        <div style="background:#fff;border-radius:16px;width:380px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column">
+            <div style="padding:16px 20px;text-align:center;border-bottom:1px solid #E5E7EB">
+                <div style="font-size:28px;margin-bottom:4px">🔄</div>
+                <div style="font-size:16px;font-weight:700">Refund — Who is authorising?</div>
+                <div style="display:inline-block;background:#FEF2F2;border-radius:8px;padding:4px 14px;margin-top:6px">
+                    <span style="font-size:14px;font-weight:800;color:#DC2626">${orderNum} — ${fp(o.total)}</span>
+                </div>
+            </div>
+            <div style="padding:16px;overflow-y:auto;flex:1">${staffGrid}</div>
+            <div style="border-top:1px solid #E5E7EB;padding:10px 20px;text-align:center">
+                <button id="_refCancelBtn" style="padding:8px 24px;background:none;border:1px solid #D1D5DB;border-radius:8px;font-size:13px;color:#6B7280;cursor:pointer">Cancel</button>
+            </div>
+        </div>`;
+
+    document.body.appendChild(popup);
+    popup.querySelector('#_refCancelBtn').onclick = () => popup.remove();
+
+    popup.querySelectorAll('._ref-staff-btn').forEach(btn => {
+        btn.onclick = () => {
+            const staffName = btn.dataset.name;
+            popup.remove();
+            _refundStep2_pin(orderNum, dateStr, staffName);
+        };
+    });
+}
+
+// Step 2 — PIN pad for refund
+function _refundStep2_pin(orderNum, dateStr, staffName) {
+    const popup = document.createElement('div');
+    popup.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+    popup.onclick = (e) => { if (e.target === popup) popup.remove(); };
+
+    popup.innerHTML = `
+        <div style="background:#fff;border-radius:16px;width:340px;overflow:hidden;display:flex;flex-direction:column">
+            <div style="padding:16px 20px;text-align:center;border-bottom:1px solid #E5E7EB">
+                <div style="font-size:28px;margin-bottom:4px">🔒</div>
+                <div style="font-size:16px;font-weight:800">Staff PIN Required</div>
+                <div style="display:inline-block;background:#FEF2F2;border-radius:8px;padding:4px 14px;margin-top:6px">
+                    <span style="font-size:14px;font-weight:700;color:#DC2626">Refund by ${staffName}</span>
+                </div>
+            </div>
+            <div style="padding:16px">
+                <div style="display:flex;gap:8px;justify-content:center;margin-bottom:10px">
+                    <div class="_rp-dot" style="width:18px;height:18px;border-radius:50%;border:2px solid #D1D5DB;background:#fff"></div>
+                    <div class="_rp-dot" style="width:18px;height:18px;border-radius:50%;border:2px solid #D1D5DB;background:#fff"></div>
+                    <div class="_rp-dot" style="width:18px;height:18px;border-radius:50%;border:2px solid #D1D5DB;background:#fff"></div>
+                    <div class="_rp-dot" style="width:18px;height:18px;border-radius:50%;border:2px solid #D1D5DB;background:#fff"></div>
+                </div>
+                <div id="_refPinErr" style="color:#DC2626;font-size:13px;min-height:20px;margin-bottom:8px;text-align:center"></div>
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:220px;margin:0 auto">
+                    ${[1,2,3,4,5,6,7,8,9].map(n => `<button class="_rp-key" data-v="${n}" style="padding:14px;border-radius:10px;border:none;background:#3B82F6;color:#fff;font-size:20px;font-weight:700;cursor:pointer">${n}</button>`).join('')}
+                    <button class="_rp-key" data-v="clr" style="padding:14px;border-radius:10px;border:1px solid #D1D5DB;background:#fff;color:#DC2626;font-size:14px;font-weight:700;cursor:pointer">CLR</button>
+                    <button class="_rp-key" data-v="0" style="padding:14px;border-radius:10px;border:none;background:#3B82F6;color:#fff;font-size:20px;font-weight:700;cursor:pointer">0</button>
+                    <button class="_rp-key" data-v="ok" style="padding:14px;border-radius:10px;border:none;background:#059669;color:#fff;font-size:14px;font-weight:700;cursor:pointer">OK</button>
+                </div>
+            </div>
+            <div style="border-top:1px solid #E5E7EB;padding:10px 20px;text-align:center">
+                <button id="_refPinCancel" style="padding:8px 24px;background:none;border:1px solid #D1D5DB;border-radius:8px;font-size:13px;color:#6B7280;cursor:pointer">Cancel</button>
+            </div>
+        </div>`;
+
+    document.body.appendChild(popup);
+    let pinBuf = '';
+    const dots = popup.querySelectorAll('._rp-dot');
+    const errEl = popup.querySelector('#_refPinErr');
+
+    function updateDots() {
+        dots.forEach((d, i) => {
+            d.style.background = i < pinBuf.length ? '#DC2626' : '#fff';
+            d.style.borderColor = i < pinBuf.length ? '#DC2626' : '#D1D5DB';
+        });
+    }
+
+    popup.querySelectorAll('._rp-key').forEach(btn => {
+        btn.onclick = () => {
+            const v = btn.dataset.v;
+            errEl.textContent = '';
+            if (v === 'clr') { pinBuf = ''; updateDots(); }
+            else if (v === 'ok') {
+                if (pinBuf.length === 0) { errEl.textContent = 'Enter PIN'; return; }
+                const staffObj = BRANCH_STAFF.find(s => (s.nickName || s.name) === staffName);
+                if (staffObj && staffObj.pin && pinBuf !== staffObj.pin) {
+                    errEl.textContent = 'Wrong PIN — try again';
+                    pinBuf = ''; updateDots();
+                    return;
+                }
+                popup.remove();
+                _refundStep3_method(orderNum, dateStr, staffName);
+            } else {
+                if (pinBuf.length < 4) { pinBuf += v; updateDots(); }
+            }
+        };
+    });
+
+    popup.querySelector('#_refPinCancel').onclick = () => popup.remove();
+}
+
+// Step 3 — Refund method: Cash or Card
+function _refundStep3_method(orderNum, dateStr, staffName) {
+    const o = POS.orders.find(x => x.orderNumber === orderNum) ||
+              POS.completedOrders.find(x => x.orderNumber === orderNum);
+    const total = o ? fp(o.total) : '?';
+    const popup = document.createElement('div');
+    popup.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center';
+    popup.onclick = (e) => { if (e.target === popup) popup.remove(); };
+
+    popup.innerHTML = `
+        <div style="background:#fff;border-radius:16px;width:360px;overflow:hidden">
+            <div style="padding:16px 20px;text-align:center;border-bottom:1px solid #E5E7EB">
+                <div style="font-size:28px;margin-bottom:4px">🔄</div>
+                <div style="font-size:16px;font-weight:800">Refund Method</div>
+                <div style="color:#6B7280;font-size:13px;margin-top:4px">${orderNum} — ${total}</div>
+                <div style="color:#9CA3AF;font-size:12px">by ${staffName}</div>
+            </div>
+            <div style="padding:20px;display:flex;gap:12px">
+                <button id="_refCashBtn" style="flex:1;padding:24px 0;background:#ECFDF5;border:3px solid #059669;border-radius:14px;cursor:pointer;text-align:center">
+                    <div style="font-size:32px;margin-bottom:6px">💵</div>
+                    <div style="font-size:16px;font-weight:800;color:#059669">CASH</div>
+                    <div style="font-size:11px;color:#6B7280;margin-top:2px">현금 환불</div>
+                </button>
+                <button id="_refCardBtn" style="flex:1;padding:24px 0;background:#EFF6FF;border:3px solid #2563EB;border-radius:14px;cursor:pointer;text-align:center">
+                    <div style="font-size:32px;margin-bottom:6px">💳</div>
+                    <div style="font-size:16px;font-weight:800;color:#2563EB">CARD</div>
+                    <div style="font-size:11px;color:#6B7280;margin-top:2px">카드 환불</div>
+                </button>
+            </div>
+            <div style="border-top:1px solid #E5E7EB;padding:10px 20px;text-align:center">
+                <button id="_refMethodCancel" style="padding:8px 24px;background:none;border:1px solid #D1D5DB;border-radius:8px;font-size:13px;color:#6B7280;cursor:pointer">Cancel</button>
+            </div>
+        </div>`;
+
+    document.body.appendChild(popup);
+    popup.querySelector('#_refMethodCancel').onclick = () => popup.remove();
+    popup.querySelector('#_refCashBtn').onclick = () => { popup.remove(); _refundApplyFinal(orderNum, dateStr, staffName, 'cash'); };
+    popup.querySelector('#_refCardBtn').onclick = () => { popup.remove(); _refundApplyFinal(orderNum, dateStr, staffName, 'card'); };
+}
+
+// Final — apply refund
+async function _refundApplyFinal(orderNum, dateStr, staffName, refundMethod) {
+    const today = new Date().toISOString().slice(0, 10);
+    const targetDate = dateStr || today;
+    const now = new Date().toISOString();
+
+    // Mark locally
+    if (targetDate === today) {
+        const o = POS.orders.find(x => x.orderNumber === orderNum) ||
+                  POS.completedOrders.find(x => x.orderNumber === orderNum);
+        if (o) {
+            o.refunded = true;
+            o.refundedBy = staffName;
+            o.refundedAt = now;
+            o.refundMethod = refundMethod;
+        }
+    }
+
+    // Save to localStorage immediately
+    localSave();
+
+    // Send via WebSocket AND HTTP fallback (belt & suspenders)
+    const refData = { orderNumber: orderNum, date: targetDate, refundedBy: staffName, refundedAt: now, refundMethod };
+    wsSend({ type: 'refund_order', ...refData });
+    httpRefund(refData);  // HTTP fallback — guaranteed to persist
+    const methodLabel = refundMethod === 'cash' ? '💵 CASH' : '💳 CARD';
+    toast(`🔄 ${orderNum} refunded (${methodLabel}) by ${staffName}`, 'success');
+
+    // Refresh view
+    if (ordersSelectedDate) {
+        await selectCalendarDay(ordersSelectedDate);
+        await renderMonthlyCalendar();
+    } else {
+        renderAllOrders();
+    }
+}
+
 // ─── Clear all orders for the current view date ───
 async function clearAllOrders() {
     const pin = await tbPromptPin('Admin PIN Required', '🗑');
@@ -4253,7 +4775,9 @@ function payOrderCash(orderNum) {
     o.paymentMethod = 'cash'; o.paymentStatus = 'paid'; o.amountPaid = o.total;
     POS.register.cashSales += o.total;
     POS.register.transactions.push({ time: new Date().toLocaleTimeString('en-GB'), method: 'cash', amount: o.total, orderNum });
+    localSave(); // immediate persist
     wsSend({ type: 'order_status', orderNumber: orderNum, status: o.status, paymentStatus: 'paid', paymentMethod: 'cash' });
+    httpOrderStatus({ orderNumber: orderNum, status: o.status, paymentStatus: 'paid', paymentMethod: 'cash', amountPaid: o.total }); // HTTP fallback
     syncRegisterToServer();
     toast(`${orderNum} paid by Cash`, 'success');
     renderAllOrders();
@@ -4265,7 +4789,9 @@ function payOrderCard(orderNum) {
     o.paymentMethod = 'card'; o.paymentStatus = 'paid'; o.amountPaid = o.total;
     POS.register.cardSales += o.total;
     POS.register.transactions.push({ time: new Date().toLocaleTimeString('en-GB'), method: 'card', amount: o.total, orderNum });
+    localSave(); // immediate persist
     wsSend({ type: 'order_status', orderNumber: orderNum, status: o.status, paymentStatus: 'paid', paymentMethod: 'card' });
+    httpOrderStatus({ orderNumber: orderNum, status: o.status, paymentStatus: 'paid', paymentMethod: 'card', amountPaid: o.total }); // HTTP fallback
     syncRegisterToServer();
     toast(`${orderNum} paid by Card`, 'success');
     renderAllOrders();
@@ -4274,28 +4800,37 @@ function payOrderCard(orderNum) {
 // ═══════════════════════════════════════════
 //  CASH REGISTER — Server Sync
 // ═══════════════════════════════════════════
-async function syncRegisterToServer() {
+async function syncRegisterToServer(skipQueue) {
+    const r = POS.register;
+    const payload = {
+        branchCode: POS.branch,
+        branchName: POS.branchName,
+        isOpen: r.isOpen,
+        openingFloat: r.openingFloat,
+        cashSales: r.cashSales,
+        cardSales: r.cardSales,
+        transactions: r.transactions,
+        openedAt: r.openedAt || null,
+        closedAt: r.closedAt || null,
+        lastEndSalesAt: r.lastEndSalesAt || null,
+    };
+    // Queue for crash recovery (unless already retrying from queue)
+    let opId;
+    if (!skipQueue) {
+        opId = enqueuePendingOp({ type: 'sync_register', data: payload });
+    }
     try {
-        const r = POS.register;
-        await fetch('/api/register', {
+        const resp = await fetch('/api/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                branchCode: POS.branch,
-                branchName: POS.branchName,
-                isOpen: r.isOpen,
-                openingFloat: r.openingFloat,
-                cashSales: r.cashSales,
-                cardSales: r.cardSales,
-                transactions: r.transactions,
-                openedAt: r.openedAt || null,
-                closedAt: r.closedAt || null,
-                lastEndSalesAt: r.lastEndSalesAt || null,
-            })
+            body: JSON.stringify(payload)
         });
+        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+        if (opId) removePendingOp(opId);
         console.log('[Register] synced to server');
     } catch (e) {
-        console.warn('[Register] sync failed:', e.message);
+        console.warn('[Register] sync failed (queued for retry):', e.message);
+        // opId stays in pending queue — will be retried on reconnect via flushPendingOps
     }
 }
 
@@ -4360,6 +4895,7 @@ async function openRegister() {
     POS.register.transactions = [];
     POS.register.openedAt = new Date().toISOString();
     POS.register.closedAt = null;
+    localSave();
     await syncRegisterToServer();
     renderTakings();
     toast('Register opened', 'success');
@@ -4637,13 +5173,17 @@ async function endSales() {
         return;
     }
 
-    // 3. Calculate totals
-    const cashOrders = periodOrders.filter(o => o.paymentMethod === 'cash');
-    const cardOrders = periodOrders.filter(o => o.paymentMethod === 'card');
+    // 3. Calculate totals (exclude refunded orders)
+    const esRefunded = periodOrders.filter(o => !!o.refunded);
+    const esActive = periodOrders.filter(o => !o.refunded);
+    const cashOrders = esActive.filter(o => o.paymentMethod === 'cash');
+    const cardOrders = esActive.filter(o => o.paymentMethod === 'card');
     const cashTotal = cashOrders.reduce((s, o) => s + (o.total || 0), 0);
     const cardTotal = cardOrders.reduce((s, o) => s + (o.total || 0), 0);
     const grandTotal = cashTotal + cardTotal;
-    const vatData = calcVatBreakdown(periodOrders);
+    const esRefundTotal = esRefunded.reduce((s, o) => s + (o.total || 0), 0);
+    const esCashRefund = esRefunded.filter(r=>r.refundMethod==='cash').reduce((s,r)=>s+(r.total||0),0);
+    const vatData = calcVatBreakdown(esActive);
     const now = new Date();
     const fromStr = since ? new Date(since).toLocaleString('en-GB') : 'Start';
     const toStr = now.toLocaleString('en-GB');
@@ -4658,7 +5198,7 @@ async function endSales() {
             <div style="color:#6B7280;font-size:12px;margin-top:4px">Period: ${fromStr} → ${toStr}</div>
         </div>
         <div class="takings-stat-grid">
-            <div class="takings-stat-card"><div class="takings-stat-val">${periodOrders.length}</div><div class="takings-stat-label">Total Orders</div></div>
+            <div class="takings-stat-card"><div class="takings-stat-val">${esActive.length}${esRefunded.length > 0 ? ` <span style="font-size:12px;color:#DC2626">(-${esRefunded.length} ref)</span>` : ''}</div><div class="takings-stat-label">Total Orders</div></div>
             <div class="takings-stat-card"><div class="takings-stat-val">${cashOrders.length}</div><div class="takings-stat-label">Cash Customers</div></div>
             <div class="takings-stat-card"><div class="takings-stat-val">${cardOrders.length}</div><div class="takings-stat-label">Card Customers</div></div>
             <div class="takings-stat-card"><div class="takings-stat-val">${fp(grandTotal)}</div><div class="takings-stat-label">Grand Total</div></div>
@@ -4668,12 +5208,18 @@ async function endSales() {
             <tbody>
                 <tr><td>CASH</td><td>${cashOrders.length}</td><td class="val-green">${fp(cashTotal)}</td></tr>
                 <tr><td>CARD</td><td>${cardOrders.length}</td><td class="val-green">${fp(cardTotal)}</td></tr>
+                ${esRefunded.length > 0 ? `<tr style="background:#FEF2F2"><td style="color:#DC2626;font-weight:600">🔄 REFUNDS</td><td style="color:#DC2626">${esRefunded.length}</td><td style="color:#DC2626;font-weight:600">-${fp(esRefundTotal)}</td></tr>` : ''}
             </tbody>
         </table>
         <div class="takings-total-bar"><span class="label">GRAND TOTAL</span><span class="value">${fp(grandTotal)}</span></div>
+        ${esRefunded.length > 0 ? `
+        <div style="background:#FEF2F2;border:2px solid #DC2626;border-radius:10px;padding:10px 14px;margin:8px 0">
+            <div style="font-size:12px;color:#6B7280;margin-bottom:4px">Refund detail:</div>
+            ${esRefunded.map(r => `<div style="font-size:11px;color:#DC2626;padding:1px 0">• ${r.orderNumber} ${fp(r.total)} ${r.refundMethod==='cash'?'💵CASH':'💳CARD'} — by ${r.refundedBy||'?'}</div>`).join('')}
+        </div>` : ''}
         <div style="background:#ECFDF5;border:2px solid #059669;border-radius:10px;padding:14px;margin:12px 0;display:flex;justify-content:space-between;align-items:center">
-            <span style="font-weight:700;color:#059669;font-size:15px">💵 Cash in Drawer (£100 + Cash Sales)</span>
-            <span style="font-weight:800;color:#059669;font-size:20px">${fp(100 + cashTotal)}</span>
+            <span style="font-weight:700;color:#059669;font-size:15px">💵 Cash in Drawer (£100 + Cash${esCashRefund > 0 ? ' - Refunds' : ''})</span>
+            <span style="font-weight:800;color:#059669;font-size:20px">${fp(100 + cashTotal - esCashRefund)}</span>
         </div>
         <h4 style="margin:16px 0 8px 0;color:#374151">VAT Breakdown</h4>
         <table class="takings-table">
@@ -4692,7 +5238,8 @@ async function endSales() {
 
     // Stash data for print and confirm
     POS._endSalesData = {
-        periodOrders, cashOrders, cardOrders, cashTotal, cardTotal, grandTotal,
+        periodOrders: esActive, cashOrders, cardOrders, cashTotal, cardTotal, grandTotal,
+        refundedOrders: esRefunded, refundTotal: esRefundTotal,
         vatData, fromStr, toStr, since, now: now.toISOString()
     };
 }
@@ -4915,15 +5462,35 @@ async function quickDailyReport(targetDate) {
         } catch (e) { console.warn('[DailyReport] fetch error:', e.message); }
     }
 
-    const cashOrders = orders.filter(o => o.paymentMethod === 'cash');
-    const cardOrders = orders.filter(o => o.paymentMethod === 'card');
+    const refundedOrders = orders.filter(o => !!o.refunded);
+    const activeOrders = orders.filter(o => !o.refunded);
+    const cashOrders = activeOrders.filter(o => o.paymentMethod === 'cash');
+    const cardOrders = activeOrders.filter(o => o.paymentMethod === 'card');
     const cashTotal = cashOrders.reduce((s, o) => s + (o.total || 0), 0);
     const cardTotal = cardOrders.reduce((s, o) => s + (o.total || 0), 0);
+    const refundTotal = refundedOrders.reduce((s, o) => s + (o.total || 0), 0);
     const grandTotal = cashTotal + cardTotal;
-    const paidOrders = orders.filter(o => o.paymentMethod === 'cash' || o.paymentMethod === 'card' || o.paymentStatus === 'paid');
-    const unpaidOrders = orders.filter(o => !o.paymentMethod || o.paymentMethod === 'not_paid');
+    const paidOrders = activeOrders.filter(o => o.paymentMethod === 'cash' || o.paymentMethod === 'card' || o.paymentStatus === 'paid');
+    const unpaidOrders = activeOrders.filter(o => !o.paymentMethod || o.paymentMethod === 'not_paid');
     const vatData = calcVatBreakdown(paidOrders);
     const rateKeys = Object.keys(vatData.byRate).sort((a,b) => Number(b) - Number(a));
+
+    // ── Discount summary ──
+    const discountedOrders = paidOrders.filter(o => {
+        const d = o.discount || {};
+        return d.type && d.value > 0;
+    });
+    let totalDiscountAmt = 0;
+    const discountDetails = discountedOrders.map(o => {
+        const d = o.discount;
+        let amt = 0;
+        if (d.type === 'percentage') amt = (o.subtotal || 0) * (d.value / 100);
+        else if (d.type === 'fixed') amt = d.value;
+        totalDiscountAmt += amt;
+        const label = d.type === 'percentage' ? `${d.value}%` : fp(d.value);
+        const t = new Date(o.timestamp).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
+        return { orderNum: o.orderNumber, amt, label, name: d.name || '', approvedBy: d.approvedBy || '', time: t, total: o.total };
+    });
 
     el.innerHTML = `
         <div style="background:#EFF6FF;border:2px solid #2563EB;border-radius:12px;padding:20px;margin-bottom:16px">
@@ -4941,11 +5508,17 @@ async function quickDailyReport(targetDate) {
                 </div>
             </div>
         </div>
-        <div class="takings-stat-grid">
-            <div class="takings-stat-card"><div class="takings-stat-val">${paidOrders.length}${unpaidOrders.length > 0 ? ` <span style="font-size:14px;color:#F97316">(+${unpaidOrders.length} unpaid)</span>` : ''}</div><div class="takings-stat-label">Paid Orders</div></div>
-            <div class="takings-stat-card"><div class="takings-stat-val">${cashOrders.length}</div><div class="takings-stat-label">Cash Customers</div></div>
-            <div class="takings-stat-card"><div class="takings-stat-val">${cardOrders.length}</div><div class="takings-stat-label">Card Customers</div></div>
-            <div class="takings-stat-card"><div class="takings-stat-val">${fp(grandTotal)}</div><div class="takings-stat-label">Grand Total</div></div>
+        <div style="display:flex;gap:10px;align-items:stretch;flex-wrap:wrap">
+            <div class="takings-stat-grid" style="flex:1;min-width:0;margin:0">
+                <div class="takings-stat-card"><div class="takings-stat-val">${paidOrders.length}${unpaidOrders.length > 0 ? ` <span style="font-size:14px;color:#F97316">(+${unpaidOrders.length} unpaid)</span>` : ''}</div><div class="takings-stat-label">Paid Orders</div></div>
+                <div class="takings-stat-card"><div class="takings-stat-val">${cashOrders.length}</div><div class="takings-stat-label">Cash Customers</div></div>
+                <div class="takings-stat-card"><div class="takings-stat-val">${cardOrders.length}</div><div class="takings-stat-label">Card Customers</div></div>
+                <div class="takings-stat-card"><div class="takings-stat-val">${fp(grandTotal)}</div><div class="takings-stat-label">Grand Total</div></div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:6px;flex:0 0 auto;justify-content:center">
+                <button class="register-btn open" onclick="printDailyReport()" style="padding:10px 18px;font-size:13px;white-space:nowrap">🖨️ PRINT</button>
+                <button onclick="_dailyReportDate=null;renderTakings()" style="padding:10px 18px;border:1px solid #D1D5DB;border-radius:8px;background:#fff;font-weight:600;cursor:pointer;font-size:12px;white-space:nowrap;color:#6B7280">← Back</button>
+            </div>
         </div>
         <table class="takings-table">
             <thead><tr><th>Payment</th><th>Count</th><th>Amount</th></tr></thead>
@@ -4955,9 +5528,33 @@ async function quickDailyReport(targetDate) {
             </tbody>
         </table>
         <div class="takings-total-bar"><span class="label">GRAND TOTAL</span><span class="value">${fp(grandTotal)}</span></div>
+        ${discountedOrders.length > 0 ? `
+        <div style="background:#FFFBEB;border:2px solid #F59E0B;border-radius:10px;padding:14px;margin:12px 0">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <span style="font-weight:700;color:#D97706;font-size:15px">🏷️ Discounts (${discountedOrders.length})</span>
+                <span style="font-weight:800;color:#D97706;font-size:18px">-${fp(totalDiscountAmt)}</span>
+            </div>
+            <div style="margin-top:4px;font-size:11px;color:#6B7280">
+                ${discountDetails.map(d => `<div style="padding:2px 0">• ${d.orderNum} <b style="color:#D97706">${d.label}</b>${d.name ? ' '+d.name : ''} (-${fp(d.amt)}) Total: ${fp(d.total)}${d.approvedBy ? ` — by ${d.approvedBy}` : ''} at ${d.time}</div>`).join('')}
+            </div>
+        </div>` : ''}
+        ${refundedOrders.length > 0 ? `
+        <div style="background:#FEF2F2;border:2px solid #DC2626;border-radius:10px;padding:14px;margin:12px 0">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+                <span style="font-weight:700;color:#DC2626;font-size:15px">🔄 Refunds (${refundedOrders.length})</span>
+                <span style="font-weight:800;color:#DC2626;font-size:18px">-${fp(refundTotal)}</span>
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid #FECACA">
+                <span style="font-weight:800;color:#059669;font-size:15px">NET TOTAL (after refunds)</span>
+                <span style="font-weight:800;color:#059669;font-size:20px">${fp(grandTotal - refundTotal)}</span>
+            </div>
+            <div style="margin-top:8px;font-size:11px;color:#6B7280">
+                ${refundedOrders.map(r => `<div style="padding:2px 0">• ${r.orderNumber} ${fp(r.total)} ${r.refundMethod==='cash'?'💵CASH':'💳CARD'} — by ${r.refundedBy || '?'} at ${r.refundedAt ? new Date(r.refundedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '?'}</div>`).join('')}
+            </div>
+        </div>` : ''}
         ${isToday ? `<div style="background:#ECFDF5;border:2px solid #059669;border-radius:10px;padding:14px;margin:12px 0;display:flex;justify-content:space-between;align-items:center">
-            <span style="font-weight:700;color:#059669;font-size:15px">💵 Cash in Drawer (£100 + Cash Sales)</span>
-            <span style="font-weight:800;color:#059669;font-size:20px">${fp(100 + cashTotal)}</span>
+            <span style="font-weight:700;color:#059669;font-size:15px">💵 Cash in Drawer (£100 + Cash Sales${refundedOrders.some(r=>r.refundMethod==='cash') ? ' - Cash Refunds' : ''})</span>
+            <span style="font-weight:800;color:#059669;font-size:20px">${fp(100 + cashTotal - refundedOrders.filter(r=>r.refundMethod==='cash').reduce((s,r)=>s+(r.total||0),0))}</span>
         </div>` : ''}
         <h4 style="margin:16px 0 8px 0;color:#374151">VAT Breakdown</h4>
         <table class="takings-table">
@@ -4967,14 +5564,59 @@ async function quickDailyReport(targetDate) {
             </tbody>
         </table>
         <div class="takings-total-bar"><span class="label">TOTAL VAT</span><span class="value">${fp(vatData.totalVat)}</span></div>
-        <div style="display:flex;gap:12px;margin-top:20px">
-            <button class="register-btn open" onclick="printDailyReport()" style="flex:1">PRINT REPORT</button>
-            <button class="register-btn eod" onclick="_dailyReportDate=null;renderTakings()" style="flex:1;background:#6B7280;color:#fff">BACK</button>
-        </div>
+        ${(() => {
+            // Item Sales breakdown
+            const itemMap = {};
+            paidOrders.forEach(o => (o.items || []).forEach(i => {
+                const k = i.nameEn || i.name || 'Unknown';
+                if (!itemMap[k]) itemMap[k] = { qty: 0, total: 0 };
+                itemMap[k].qty += i.quantity || 1;
+                itemMap[k].total += i.totalPrice || (i.price * (i.quantity || 1)) || 0;
+            }));
+            const sortedItems = Object.entries(itemMap).sort((a,b) => b[1].total - a[1].total);
+            if (sortedItems.length === 0) return '';
+            return `<h4 style="margin:16px 0 8px 0;color:#374151">Item Sales</h4>
+            <table class="takings-table"><thead><tr><th>Item</th><th>Qty</th><th>Revenue</th></tr></thead><tbody>
+            ${sortedItems.map(([name, d]) => `<tr><td>${name}</td><td>${d.qty}</td><td class="val-green">${fp(d.total)}</td></tr>`).join('')}
+            </tbody></table>`;
+        })()}
+        ${(() => {
+            // Transaction Detail (all orders sorted by time)
+            const sorted = [...orders].sort((a,b) => new Date(a.timestamp) - new Date(b.timestamp));
+            if (sorted.length === 0) return '';
+            return `<h4 style="margin:16px 0 8px 0;color:#374151">Transaction Detail (${sorted.length})</h4>
+            <table class="takings-table"><thead><tr><th>Order</th><th>Time</th><th>Type</th><th>Payment</th><th>Discount</th><th>Items</th><th>Total</th></tr></thead><tbody>
+            ${sorted.map(o => {
+                const t = new Date(o.timestamp).toLocaleTimeString('en-GB', {hour:'2-digit',minute:'2-digit'});
+                const items = (o.items || []).map(i => (i.quantity||1) + 'x ' + (i.nameEn||i.name||'?')).join(', ');
+                const pm = (o.paymentMethod||'').toUpperCase();
+                const pmColor = pm === 'CASH' ? '#059669' : pm === 'CARD' ? '#2563EB' : '#F97316';
+                const otype = o.orderType === 'eat_in' ? 'Eat In' : 'Takeaway';
+                const isRef = !!o.refunded;
+                const rowStyle = isRef ? 'background:#FEF2F2;text-decoration:line-through;opacity:0.7' : '';
+                const disc = o.discount || {};
+                const hasDisc = disc.type && disc.value > 0;
+                let discCell = '-';
+                if (hasDisc) {
+                    const dLabel = disc.type === 'percentage' ? disc.value + '%' : fp(disc.value);
+                    discCell = '<span style="background:#F59E0B;color:#fff;padding:1px 5px;border-radius:3px;font-size:10px;font-weight:700">' + dLabel + '</span>' + (disc.name ? ' ' + disc.name : '');
+                }
+                return `<tr style="${rowStyle}">
+                    <td style="font-weight:600">${o.orderNumber || '-'}${isRef ? ' <span style="text-decoration:none;background:#DC2626;color:#fff;font-size:9px;padding:1px 4px;border-radius:3px;font-weight:700">REFUND</span>' : ''}</td>
+                    <td>${t}</td>
+                    <td>${otype}</td>
+                    <td style="color:${isRef ? '#DC2626' : pmColor};font-weight:600">${isRef ? 'REFUND' : (pm || 'UNPAID')}</td>
+                    <td style="font-size:11px">${discCell}</td>
+                    <td style="font-size:11px;color:#6B7280;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${items}</td>
+                    <td style="font-weight:700;${isRef ? 'color:#DC2626' : ''}" class="${isRef ? '' : 'val-green'}">${isRef ? '-' : ''}${fp(o.total || 0)}</td>
+                </tr>`;
+            }).join('')}
+            </tbody></table>`;
+        })()}
     `;
 
     // Stash for printing
-    POS._dailyReportData = { orders, cashOrders, cardOrders, cashTotal, cardTotal, grandTotal, vatData, today: dateLabel };
+    POS._dailyReportData = { orders, cashOrders, cardOrders, cashTotal, cardTotal, grandTotal, refundedOrders, refundTotal, vatData, today: dateLabel, discountedOrders, discountDetails, totalDiscountAmt };
 }
 
 // ─── Daily Report date navigation ───
@@ -5019,6 +5661,9 @@ async function printDailyReport() {
                     cardTotal: d.cardTotal,
                     grandTotal: d.grandTotal,
                     cashInDrawer: 100 + d.cashTotal,
+                    discountCount: (d.discountedOrders||[]).length,
+                    totalDiscountAmt: d.totalDiscountAmt || 0,
+                    discountDetails: (d.discountDetails||[]).map(x => `${x.orderNum} ${x.label}${x.name?' '+x.name:''} -${fp(x.amt)}`),
                     vatBreakdown: rateKeys.map(r => ({ rate: r, net: d.vatData.byRate[r].net, vat: d.vatData.byRate[r].vat })),
                     totalVat: d.vatData.totalVat,
                 }
@@ -5145,10 +5790,31 @@ async function loadDailyReport() {
             return;
         }
 
-        // Calculate totals
+        // Separate refunded orders
+        const refundedOrders = orders.filter(o => !!o.refunded);
+        const activeOrders = orders.filter(o => !o.refunded);
+        const refundTotal = refundedOrders.reduce((s, o) => s + (o.total || 0), 0);
+
+        // Discount summary
+        const discountedOrders = activeOrders.filter(o => {
+            const d = o.discount || {};
+            return d.type && d.value > 0;
+        });
+        let totalDiscountAmt = 0;
+        const discountDetails = discountedOrders.map(o => {
+            const d = o.discount;
+            let amt = 0;
+            if (d.type === 'percentage') amt = (o.subtotal || 0) * (d.value / 100);
+            else if (d.type === 'fixed') amt = d.value;
+            totalDiscountAmt += amt;
+            const label = d.type === 'percentage' ? `${d.value}%` : fp(d.value);
+            return { orderNum: o.orderNumber, amt, label, name: d.name || '', approvedBy: d.approvedBy || '' };
+        });
+
+        // Calculate totals (active orders only)
         let cardTotal = 0, cashTotal = 0, otherTotal = 0;
         let cardCount = 0, cashCount = 0, otherCount = 0;
-        orders.forEach(o => {
+        activeOrders.forEach(o => {
             const amount = o.total || 0;
             const pm = (o.paymentMethod || '').toLowerCase();
             if (pm.includes('card') || pm.includes('stripe')) {
@@ -5168,10 +5834,10 @@ async function loadDailyReport() {
         const reportedTotalOrders = cardCount + reportedCashCount + reportedOtherCount;
         const grandTotal = cardTotal + reportedCash + reportedOther;
 
-        // VAT calculation — card 100%, cash/other는 cashPct 적용
+        // VAT calculation — card 100%, cash/other는 cashPct 적용 (active only)
         const vatBreakdown = {};
         let totalVatAmount = 0;
-        orders.forEach(o => {
+        activeOrders.forEach(o => {
             const pm = (o.paymentMethod || '').toLowerCase();
             const isCard = pm.includes('card') || pm.includes('stripe');
             const pctMultiplier = isCard ? 1 : (cashPct / 100);
@@ -5198,24 +5864,42 @@ async function loadDailyReport() {
             ? `${fmtDate(dateFrom)} ${timeFrom} - ${timeTo}`
             : `${fmtDate(dateFrom)} ${timeFrom} ~ ${fmtDate(dateTo)} ${timeTo}`;
 
-        // VAT rows HTML
-        let vatHtml = '';
         const vatRates = Object.keys(vatBreakdown).sort((a, b) => Number(b) - Number(a));
-        if (vatRates.length > 0) {
-            vatHtml = `<div style="background:#fff;border:2px solid #E5E7EB;border-radius:12px;overflow:hidden;margin-top:12px">
-                <div style="padding:10px 16px;background:#FEF3C7;font-weight:700;font-size:13px;color:#92400E;border-bottom:1px solid #FDE68A">VAT Breakdown</div>`;
-            vatRates.forEach(rate => {
-                const v = vatBreakdown[rate];
-                vatHtml += `<div style="display:flex;justify-content:space-between;padding:10px 16px;border-bottom:1px solid #F3F4F6;font-size:13px">
-                    <span style="color:#6B7280">VAT ${rate}%</span>
-                    <span>Net ${fp(v.net)} + VAT <strong style="color:#B45309">${fp(v.vat)}</strong></span>
-                </div>`;
-            });
-            vatHtml += `<div style="display:flex;justify-content:space-between;padding:12px 16px;background:#FFFBEB">
-                    <span style="font-weight:700;font-size:14px;color:#92400E">Total VAT</span>
-                    <span style="font-weight:800;font-size:16px;color:#B45309">${fp(totalVatAmount)}</span>
-                </div></div>`;
-        }
+
+        // VAT — total only (simple)
+        const vatHtml = totalVatAmount > 0 ? `<div style="display:flex;justify-content:space-between;padding:14px 16px;background:#FFFBEB;border:2px solid #FDE68A;border-radius:12px;margin-top:12px">
+            <span style="font-weight:700;font-size:14px;color:#92400E">Total VAT</span>
+            <span style="font-weight:800;font-size:18px;color:#B45309">${fp(totalVatAmount)}</span>
+        </div>` : '';
+
+        // Refund HTML
+        const refundHtml = refundedOrders.length > 0 ? `<div style="background:#FEF2F2;border:2px solid #DC2626;border-radius:12px;padding:14px;margin-top:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <span style="font-weight:700;color:#DC2626;font-size:14px">🔄 Refunds (${refundedOrders.length})</span>
+                <span style="font-weight:800;color:#DC2626;font-size:18px">-${fp(refundTotal)}</span>
+            </div>
+            <div style="font-size:11px;color:#6B7280">
+                ${refundedOrders.map(r => {
+                    const t = r.refundedAt ? new Date(r.refundedAt).toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit'}) : '?';
+                    return `<div style="padding:2px 0">• ${r.orderNumber} ${fp(r.total)} ${r.refundMethod==='cash'?'💵CASH':'💳CARD'} — by ${r.refundedBy||'?'} at ${t}</div>`;
+                }).join('')}
+            </div>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;margin-top:8px;border-top:1px solid #FECACA">
+                <span style="font-weight:800;color:#059669;font-size:14px">NET TOTAL (after refunds)</span>
+                <span style="font-weight:800;color:#059669;font-size:20px">${fp(grandTotal - refundTotal)}</span>
+            </div>
+        </div>` : '';
+
+        // Discount HTML
+        const discountHtml = discountedOrders.length > 0 ? `<div style="background:#FFFBEB;border:2px solid #F59E0B;border-radius:12px;padding:14px;margin-top:12px">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+                <span style="font-weight:700;color:#D97706;font-size:14px">🏷️ Discounts (${discountedOrders.length})</span>
+                <span style="font-weight:800;color:#D97706;font-size:18px">-${fp(totalDiscountAmt)}</span>
+            </div>
+            <div style="font-size:11px;color:#6B7280">
+                ${discountDetails.map(d => `<div style="padding:2px 0">• ${d.orderNum} <b style="color:#D97706">${d.label}</b>${d.name?' '+d.name:''} (-${fp(d.amt)})${d.approvedBy?' — by '+d.approvedBy:''}</div>`).join('')}
+            </div>
+        </div>` : '';
 
         content.innerHTML = `
             <div style="text-align:center;margin-bottom:16px">
@@ -5240,19 +5924,23 @@ async function loadDailyReport() {
                     <span style="font-weight:800;font-size:22px;color:#DC2626">${fp(grandTotal)}</span>
                 </div>
             </div>
+            ${discountHtml}
+            ${refundHtml}
             ${vatHtml}
         `;
         printBtn.style.display = '';
 
         // Store for printing
         POS._reportData = {
-            periodStr, orders, dateFrom, dateTo, timeFrom, timeTo,
+            periodStr, orders, activeOrders, dateFrom, dateTo, timeFrom, timeTo,
             cardTotal, cardCount, cashTotal, cashCount,
             reportedCash, reportedCashCount, cashPct,
             reportedOther, reportedOtherCount,
             reportedTotalOrders, grandTotal,
             otherTotal, otherCount,
-            vatBreakdown, vatRates, totalVatAmount
+            vatBreakdown, vatRates, totalVatAmount,
+            refundedOrders, refundTotal,
+            discountedOrders, discountDetails, totalDiscountAmt
         };
     } catch (e) {
         content.innerHTML = `<div style="text-align:center;padding:40px;color:#DC2626">Failed to load: ${e.message}</div>`;
@@ -5365,8 +6053,15 @@ function renderSettings() {
     const el = document.getElementById('settingsBody');
     const s = _serverInfo;
 
-    // ── POS Options section (always visible, even without server info) ──
+    // ── TAKINGS (full) shortcut — tiny hidden button at TOP ──
     let html = `
+        <div style="display:flex;justify-content:flex-end;margin-bottom:4px">
+            <button onclick="gotoTakings()" style="width:38px;height:38px;padding:0;background:#E5E7EB;color:#D1D5DB;border:1px solid #E5E7EB;border-radius:6px;font-size:9px;cursor:pointer;line-height:1;overflow:hidden" title="📊">📊</button>
+        </div>
+    `;
+
+    // ── POS Options section (always visible, even without server info) ──
+    html += `
         <div class="settings-section-title">POS OPTIONS</div>
         <div class="settings-card">
             <h3>🍳 Kitchen Display</h3>
@@ -5567,7 +6262,7 @@ function renderSettings() {
             </div>
 
             <div style="text-align:center;padding:12px;color:#9CA3AF;font-size:11px">
-                The Bap POS v3.3 | Server v${s.serverVersion} | ${s.nodeVersion}
+                The Bap POS v4.8 | Server v${s.serverVersion} | ${s.nodeVersion}
             </div>
         `;
     }
@@ -5586,14 +6281,7 @@ function renderSettings() {
         </div>
     `;
 
-    // ── TAKINGS (full) shortcut — always at bottom ──
-    html += `
-        <div class="settings-card" style="margin-top:20px;border:2px solid #7C3AED">
-            <h3>📊 Full Takings Report</h3>
-            <div class="settings-option-desc" style="margin-bottom:12px">상세 매출 분석 (Overview, Sales By Type, VAT Report, END Sales 등)</div>
-            <button onclick="gotoTakings()" style="width:100%;padding:12px;background:#7C3AED;color:#fff;border:none;border-radius:10px;font-size:15px;font-weight:700;cursor:pointer">📊 Open Full TAKINGS</button>
-        </div>
-    `;
+    // (Full Takings shortcut moved to top of settings)
 
     el.innerHTML = html;
 }
@@ -5992,6 +6680,11 @@ async function showDrawerLog() {
 // ═══════════════════════════════════════════
 initLogin();
 updateClock();
+
+// ★ Last-chance save on page close/refresh/crash
+window.addEventListener('beforeunload', () => { localSave(); });
+// ★ Save on visibility change (mobile tab switch, screen lock etc.)
+document.addEventListener('visibilitychange', () => { if (document.hidden) localSave(); });
 
 </script>
 

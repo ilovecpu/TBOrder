@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * ════════════════════════════════════════════════════════════
- *  🍚 The Bap (더밥) — TBOrder Local Server v2.1
+ *  🍚 The Bap (더밥) — TBOrder Local Server v3.0
  *  Last Updated: 2026-03-12
  * ════════════════════════════════════════════════════════════
  *
@@ -68,7 +68,7 @@ const printer = require('./tb-printer');
 
 const PORT = parseInt(process.env.TB_PORT) || 8080;
 const BRANCH_CODE = process.env.TB_BRANCH || 'TB';   // 지점코드: TB, PAB 등 (실행: TB_BRANCH=PAB node tb-server.js)
-const SERVER_VERSION = '2.8';
+const SERVER_VERSION = '3.0';
 const SERVER_START_TIME = new Date().toISOString();
 const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbzoEItk-hU2BPDyj_Dy1Vwxzu-R7PQoZYVzwzVsdPuTJWYCykVIWdWTwG8nieWCwaUD7w/exec';
 const GOOGLE_API = process.env.GOOGLE_API || 'https://script.google.com/macros/s/AKfycbzoEItk-hU2BPDyj_Dy1Vwxzu-R7PQoZYVzwzVsdPuTJWYCykVIWdWTwG8nieWCwaUD7w/exec';
@@ -135,7 +135,7 @@ function saveMenuData(menuData) {
     }
   }
   try {
-    fs.writeFileSync(MENU_FILE, JSON.stringify(menuData, null, 2), 'utf8');
+    safeWriteFileSync(MENU_FILE, JSON.stringify(menuData, null, 2));
     console.log(`  📝 메뉴 저장 완료 (v${menuData.version}, ${menuData.items?.length || 0}개 아이템)`);
   } catch (e) {
     console.error('  ⚠️ 메뉴 저장 실패:', e.message);
@@ -369,7 +369,7 @@ if (!fs.existsSync(END_SALES_DIR)) fs.mkdirSync(END_SALES_DIR, { recursive: true
     if (!Array.isArray(log) || log.length === 0) return;
     const data = {};
     log.forEach(e => { if (e.branchCode && e.periodTo) data[e.branchCode] = e.periodTo; });
-    fs.writeFileSync(lePath, JSON.stringify(data, null, 2), 'utf8');
+    safeWriteFileSync(lePath, JSON.stringify(data, null, 2));
     console.log('[Server] last_end_sales.json recovered from log:', data);
   } catch (e) { console.warn('[Server] last_end_sales recovery failed:', e.message); }
 })();
@@ -419,6 +419,16 @@ function loadOrders(dateStr) {
 }
 
 // 특정 날짜의 주문을 월별 파일에 저장
+function safeWriteFileSync(filePath, content) {
+  // Atomic write: write to temp file → fsync → rename
+  const tmpFile = filePath + '.tmp';
+  const fd = fs.openSync(tmpFile, 'w');
+  fs.writeSync(fd, content);
+  fs.fsyncSync(fd);
+  fs.closeSync(fd);
+  fs.renameSync(tmpFile, filePath);
+}
+
 function saveOrdersForDate(dateStr, orders) {
   const monthStr = getMonthStr(dateStr);
   const monthFile = getMonthlyOrderFilePath(monthStr);
@@ -429,7 +439,7 @@ function saveOrdersForDate(dateStr, orders) {
     }
   } catch (e) {}
   data[dateStr] = orders;
-  fs.writeFileSync(monthFile, JSON.stringify(data, null, 2), 'utf8');
+  safeWriteFileSync(monthFile, JSON.stringify(data, null, 2));
 }
 
 // ─── 날짜 추적 (자정 자동 전환용) ───
@@ -533,7 +543,7 @@ function saveRegisterForDate(dateStr, data) {
     }
   } catch (e) {}
   allData[dateStr] = data;
-  fs.writeFileSync(monthFile, JSON.stringify(allData, null, 2), 'utf8');
+  safeWriteFileSync(monthFile, JSON.stringify(allData, null, 2));
 }
 
 function saveRegister(data) {
@@ -598,6 +608,8 @@ function getClientSummary() {
   });
   return summary;
 }
+
+function broadcastAll(message) { broadcastMsg(message, null); }
 
 function broadcastMsg(message, excludeId = null) {
   const data = typeof message === 'string' ? message : JSON.stringify(message);
@@ -891,6 +903,34 @@ function handleMessage(clientId, rawData) {
       break;
     }
 
+    case 'refund_order': {
+      const refNum = msg.orderNumber;
+      const refDate = msg.date || getTodayStr();
+      console.log(`  🔄 [환불] 주문 ${refNum} (${refDate}) by ${msg.refundedBy || '?'}`);
+      if (refDate === getTodayStr()) {
+        const order = dailyOrders.find(o => o.orderNumber === refNum);
+        if (order) {
+          order.refunded = true;
+          order.refundedBy = msg.refundedBy || '';
+          order.refundedAt = msg.refundedAt || new Date().toISOString();
+          order.refundMethod = msg.refundMethod || '';
+          saveOrders();
+        }
+      } else {
+        const pastOrders = loadOrders(refDate);
+        const order = pastOrders.find(o => o.orderNumber === refNum);
+        if (order) {
+          order.refunded = true;
+          order.refundedBy = msg.refundedBy || '';
+          order.refundedAt = msg.refundedAt || new Date().toISOString();
+          order.refundMethod = msg.refundMethod || '';
+          try { saveOrdersForDate(refDate, pastOrders); } catch (e) { console.error(`  ⚠️ 환불 저장 실패 (${refDate}):`, e.message); }
+        }
+      }
+      broadcastMsg({ type: 'order_refunded', orderNumber: refNum, date: refDate, refundedBy: msg.refundedBy, refundedAt: msg.refundedAt, refundMethod: msg.refundMethod }, clientId);
+      break;
+    }
+
     case 'clear_orders': {
       const clearDate = msg.date || getTodayStr();
       if (clearDate === getTodayStr()) {
@@ -937,7 +977,7 @@ function handleMessage(clientId, rawData) {
         staff: msg.staff || null
       };
       try {
-        fs.writeFileSync(path.join(END_SALES_DIR, `${esId}.json`), JSON.stringify(fullRecord, null, 2), 'utf8');
+        safeWriteFileSync(path.join(END_SALES_DIR, `${esId}.json`), JSON.stringify(fullRecord, null, 2));
         console.log(`  💾 END Sales full record saved: ${esId}.json`);
       } catch (e) { console.error('  ⚠️ END Sales record write failed:', e.message); }
 
@@ -955,7 +995,7 @@ function handleMessage(clientId, rawData) {
         cashCustomers: msg.cashCustomers, cardCustomers: msg.cardCustomers,
         vatTotal: msg.vatTotal, vatBreakdown: msg.vatBreakdown
       });
-      try { fs.writeFileSync(logPath, JSON.stringify(log, null, 2), 'utf8'); } catch (e) { console.error('  ⚠️ end_sales_log write failed:', e.message); }
+      try { safeWriteFileSync(logPath, JSON.stringify(log, null, 2)); } catch (e) { console.error('  ⚠️ end_sales_log write failed:', e.message); }
 
       // Save lastEndSalesAt persistently (per branch, survives reboot/day change)
       const leFilePath = path.join(DATA_DIR, 'last_end_sales.json');
@@ -963,7 +1003,7 @@ function handleMessage(clientId, rawData) {
         let leData = {};
         if (fs.existsSync(leFilePath)) leData = JSON.parse(fs.readFileSync(leFilePath, 'utf8'));
         leData[msg.branchCode] = msg.periodTo;
-        fs.writeFileSync(leFilePath, JSON.stringify(leData, null, 2), 'utf8');
+        safeWriteFileSync(leFilePath, JSON.stringify(leData, null, 2));
         console.log(`  💾 lastEndSalesAt saved for ${msg.branchCode}: ${msg.periodTo}`);
       } catch (e) { console.error('  ⚠️ last_end_sales.json write failed:', e.message); }
 
@@ -1089,7 +1129,7 @@ const server = http.createServer(async (req, res) => {
     req.on('end', () => {
       try {
         const cfg = JSON.parse(body);
-        fs.writeFileSync(POLE_DISPLAY_CONFIG_FILE, JSON.stringify(cfg, null, 2));
+        safeWriteFileSync(POLE_DISPLAY_CONFIG_FILE, JSON.stringify(cfg, null, 2));
         console.log(`  📟 Pole display config saved: ${cfg.port || 'auto'} @ ${cfg.baudRate}`);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true }));
@@ -1177,7 +1217,7 @@ $port.Close()
     req.on('end', () => {
       try {
         const settings = JSON.parse(body);
-        fs.writeFileSync(POS_SETTINGS_FILE, JSON.stringify(settings, null, 2));
+        safeWriteFileSync(POS_SETTINGS_FILE, JSON.stringify(settings, null, 2));
         console.log('[POS Settings] Saved:', JSON.stringify(settings));
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true }));
@@ -1204,7 +1244,7 @@ $port.Close()
         logs.push(entry);
         // Keep last 500 entries
         if (logs.length > 500) logs = logs.slice(-500);
-        fs.writeFileSync(DRAWER_LOG_FILE, JSON.stringify(logs, null, 2));
+        safeWriteFileSync(DRAWER_LOG_FILE, JSON.stringify(logs, null, 2));
         console.log(`[Drawer] Log: ${entry.staff || 'unknown'} @ ${entry.branch || ''} — ${entry.reason || ''}`);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true }));
@@ -1246,7 +1286,7 @@ $port.Close()
     req.on('end', () => {
       try {
         const cfg = JSON.parse(body);
-        fs.writeFileSync(PRINTER_CONFIG_FILE, JSON.stringify(cfg, null, 2));
+        safeWriteFileSync(PRINTER_CONFIG_FILE, JSON.stringify(cfg, null, 2));
         console.log('[Printer] Config saved:', JSON.stringify(cfg));
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true }));
@@ -1632,7 +1672,7 @@ $port.Close()
         let data = {};
         try { if (fs.existsSync(filePath)) data = JSON.parse(fs.readFileSync(filePath, 'utf8')); } catch (e) {}
         data[branch] = lastEndSalesAt;
-        fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+        safeWriteFileSync(filePath, JSON.stringify(data, null, 2));
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true }));
       } catch (e) {
@@ -1670,6 +1710,119 @@ $port.Close()
         saveRegister(data);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // ─── Critical Operation: Refund via HTTP (crash-safe fallback) ───
+  if (url === '/api/refund' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const msg = JSON.parse(body);
+        const refNum = msg.orderNumber;
+        const refDate = msg.date || getTodayStr();
+        console.log(`  🔄 [HTTP환불] ${refNum} (${refDate}) by ${msg.refundedBy || '?'} ${msg.refundMethod || ''}`);
+        let found = false;
+        if (refDate === getTodayStr()) {
+          const order = dailyOrders.find(o => o.orderNumber === refNum);
+          if (order) {
+            order.refunded = true;
+            order.refundedBy = msg.refundedBy || '';
+            order.refundedAt = msg.refundedAt || new Date().toISOString();
+            order.refundMethod = msg.refundMethod || '';
+            saveOrders();
+            found = true;
+          }
+        } else {
+          const pastOrders = loadOrders(refDate);
+          const order = pastOrders.find(o => o.orderNumber === refNum);
+          if (order) {
+            order.refunded = true;
+            order.refundedBy = msg.refundedBy || '';
+            order.refundedAt = msg.refundedAt || new Date().toISOString();
+            order.refundMethod = msg.refundMethod || '';
+            saveOrdersForDate(refDate, pastOrders);
+            found = true;
+          }
+        }
+        broadcastAll({ type: 'order_refunded', orderNumber: refNum, date: refDate, refundedBy: msg.refundedBy, refundedAt: msg.refundedAt, refundMethod: msg.refundMethod });
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, found }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // ─── Critical Operation: Update order status via HTTP (payment etc.) ───
+  if (url === '/api/order-status' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const msg = JSON.parse(body);
+        const found = dailyOrders.find(o => o.orderNumber === msg.orderNumber);
+        if (found) {
+          if (msg.status) found.status = msg.status;
+          if (msg.paymentStatus) found.paymentStatus = msg.paymentStatus;
+          if (msg.paymentMethod) found.paymentMethod = msg.paymentMethod;
+          if (msg.amountPaid !== undefined) found.amountPaid = msg.amountPaid;
+          if (msg.change !== undefined) found.change = msg.change;
+          saveOrders();
+          broadcastAll({ type: 'order_status', ...msg });
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, found: !!found }));
+      } catch (e) {
+        res.writeHead(400, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // ─── Sync POS state from client (recovery endpoint) ───
+  if (url === '/api/sync-orders' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const msg = JSON.parse(body);
+        const clientOrders = msg.orders || [];
+        let merged = 0;
+        clientOrders.forEach(co => {
+          if (!co.orderNumber) return;
+          const existing = dailyOrders.find(o => o.orderNumber === co.orderNumber);
+          if (!existing) {
+            dailyOrders.push(co);
+            merged++;
+          } else {
+            // Merge refund/payment status if client has newer data
+            if (co.refunded && !existing.refunded) {
+              existing.refunded = co.refunded;
+              existing.refundedBy = co.refundedBy;
+              existing.refundedAt = co.refundedAt;
+              existing.refundMethod = co.refundMethod;
+              merged++;
+            }
+            if (co.paymentStatus === 'paid' && existing.paymentStatus !== 'paid') {
+              existing.paymentStatus = co.paymentStatus;
+              existing.paymentMethod = co.paymentMethod;
+              merged++;
+            }
+          }
+        });
+        if (merged > 0) saveOrders();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, merged, totalOnServer: dailyOrders.length }));
       } catch (e) {
         res.writeHead(400, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: e.message }));
