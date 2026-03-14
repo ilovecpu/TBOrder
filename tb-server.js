@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * ════════════════════════════════════════════════════════════
- *  🍚 The Bap (더밥) — TBOrder Local Server v3.0
- *  Last Updated: 2026-03-12
+ *  🍚 The Bap (더밥) — TBOrder Local Server v3.9
+ *  Last Updated: 2026-03-14
  * ════════════════════════════════════════════════════════════
  *
  *  역할:
@@ -67,8 +67,13 @@ if (STRIPE_SECRET_KEY) {
 const printer = require('./tb-printer');
 
 const PORT = parseInt(process.env.TB_PORT) || 8080;
-const BRANCH_CODE = process.env.TB_BRANCH || 'TB';   // 지점코드: TB, PAB 등 (실행: TB_BRANCH=PAB node tb-server.js)
-const SERVER_VERSION = '3.0';
+let BRANCH_CODE = process.env.TB_BRANCH || 'TB';   // 지점코드: POS 등록 시 자동 업데이트됨
+let BRANCH_NAME = '';                                // POS 등록 시 자동 업데이트됨
+let _branchReady = false;                            // ★ POS 로그인 완료 후 true — false면 TBMS 푸시 안함
+let _cashReportPct = 100;                            // ★ POS에서 설정한 Cash Report % (SUB 계산용)
+let _dailyPushTime = '23:50';                        // ★ POS에서 설정한 Daily Push 시간 (HH:MM)
+let _vatPct = 20;                                    // ★ POS에서 설정한 VAT 비율 (0-100%)
+const SERVER_VERSION = '3.9';
 const SERVER_START_TIME = new Date().toISOString();
 const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbzoEItk-hU2BPDyj_Dy1Vwxzu-R7PQoZYVzwzVsdPuTJWYCykVIWdWTwG8nieWCwaUD7w/exec';
 const GOOGLE_API = process.env.GOOGLE_API || 'https://script.google.com/macros/s/AKfycbzoEItk-hU2BPDyj_Dy1Vwxzu-R7PQoZYVzwzVsdPuTJWYCykVIWdWTwG8nieWCwaUD7w/exec';
@@ -333,6 +338,279 @@ if (GOOGLE_MENU_API) {
   setInterval(syncBranchesFromTBMS, 10 * 60 * 1000); // 10분마다 브랜치 동기화
 }
 
+// ════════════════════════════════════════════════════════════
+//  ★ TBMS Sales Data Push — 자동 푸시 (Daily/Live/EndSales)
+//  Branch server → TBMS Apps Script → Google Sheets → TBMS.html
+// ════════════════════════════════════════════════════════════
+const TBMS_API = process.env.TBMS_API || 'https://script.google.com/macros/s/AKfycbx7u5YHL3bbZ7sg_l5Lb7jYLJbDvvGTJsvHmDUFGfSccmOMNOKvumJmFRL7RQOHHDjk/exec';
+const TBMS_API_KEY = 'tBaP2026xKr!mGt9Qz';
+
+// ─── Generic POST to TBMS Apps Script (with redirect follow) ───
+function pushToTBMS(data) {
+  return new Promise((resolve, reject) => {
+    const postBody = JSON.stringify({ ...data, apikey: TBMS_API_KEY });
+    const https = require('https');
+    const gUrl = new URL(TBMS_API);
+    const opts = {
+      hostname: gUrl.hostname, path: gUrl.pathname + gUrl.search,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postBody) }
+    };
+    const gReq = https.request(opts, (gRes) => {
+      if (gRes.statusCode >= 300 && gRes.statusCode < 400 && gRes.headers.location) {
+        // Google Apps Script redirects POST → GET
+        https.get(gRes.headers.location, (r2) => {
+          let d = ''; r2.on('data', c => d += c);
+          r2.on('end', () => { try { resolve(JSON.parse(d)); } catch (e) { resolve({ raw: d }); } });
+        }).on('error', reject);
+        gRes.resume(); return;
+      }
+      let d = ''; gRes.on('data', c => d += c);
+      gRes.on('end', () => { try { resolve(JSON.parse(d)); } catch (e) { resolve({ raw: d }); } });
+    });
+    gReq.on('error', reject);
+    gReq.write(postBody); gReq.end();
+  });
+}
+
+// ─── Build Dual Summary from orders (Main + Sub) on server side ───
+function buildServerDualSummary(orders) {
+  const paid = orders.filter(o => o.paymentStatus === 'paid' && !o.refunded);
+  const cashOrders = paid.filter(o => o.paymentMethod === 'cash');
+  const cardOrders = paid.filter(o => o.paymentMethod === 'card');
+
+  // ★ MAIN: 100% actual sales + Main VAT
+  const mainCash = cashOrders.reduce((s, o) => s + (o.total || 0), 0);
+  const mainCard = cardOrders.reduce((s, o) => s + (o.total || 0), 0);
+  const mainGrand = mainCash + mainCard;
+  // Main VAT: use per-order mainVat if available, else estimate from items
+  let mainVatTotal = 0;
+  const mainVatByRate = {};
+  paid.forEach(o => {
+    if (o.mainVat !== undefined) {
+      mainVatTotal += o.mainVat;
+      // Group by primary rate (20% default)
+      const rate = '20'; // simplified — actual rate grouping from items
+      if (!mainVatByRate[rate]) mainVatByRate[rate] = { net: 0, vat: 0, gross: 0 };
+      mainVatByRate[rate].vat += o.mainVat;
+      mainVatByRate[rate].gross += o.total || 0;
+      mainVatByRate[rate].net += (o.total || 0) - o.mainVat;
+    } else {
+      // Fallback: calc from items
+      (o.items || []).forEach(it => {
+        const rate = String(it.vatRate || 20);
+        const gross = it.free ? 0 : (it.totalPrice || 0);
+        const vat = rate > 0 ? gross - gross / (1 + Number(rate) / 100) : 0;
+        if (!mainVatByRate[rate]) mainVatByRate[rate] = { net: 0, vat: 0, gross: 0 };
+        mainVatByRate[rate].gross += gross;
+        mainVatByRate[rate].vat += vat;
+        mainVatByRate[rate].net += gross - vat;
+        mainVatTotal += vat;
+      });
+    }
+  });
+
+  // ★ SUB: Card 100% + Cash reduced by cashPct% + VATable% 기반 VAT
+  const cashPct = _cashReportPct !== 100 ? _cashReportPct : (paid[0]?.subCashPct || 100);
+  const vatablePct = _vatPct != null ? _vatPct : 20;
+  const mainVatRate = 20; // UK standard VAT rate
+  const subCash = Math.round(mainCash * (cashPct / 100) * 100) / 100;
+  const subCard = mainCard;
+  const subGrand = Math.round((subCash + subCard) * 100) / 100;
+  // VATable / Non-VATable split
+  const vatableGross = Math.round(subGrand * (vatablePct / 100) * 100) / 100;
+  const nonVatableGross = Math.round((subGrand - vatableGross) * 100) / 100;
+  const subVatTotal = Math.round((vatableGross - vatableGross / (1 + mainVatRate / 100)) * 100) / 100;
+  const subTotalNet = Math.round((subGrand - subVatTotal) * 100) / 100;
+
+  return {
+    totalOrders: paid.length,
+    cashCount: cashOrders.length,
+    cardCount: cardOrders.length,
+    main: {
+      cashTotal: Math.round(mainCash * 100) / 100,
+      cardTotal: Math.round(mainCard * 100) / 100,
+      grandTotal: Math.round(mainGrand * 100) / 100,
+      vatTotal: Math.round(mainVatTotal * 100) / 100,
+      vatBreakdown: mainVatByRate
+    },
+    sub: {
+      cashPct,
+      vatablePct,
+      vatRate: mainVatRate,
+      cashTotal: subCash,
+      cardTotal: Math.round(subCard * 100) / 100,
+      grandTotal: subGrand,
+      vatableGross,
+      nonVatableGross,
+      vatTotal: subVatTotal,
+      totalNet: subTotalNet
+    }
+  };
+}
+
+// ─── Build Item Breakdown for push ───
+function buildItemBreakdown(orders) {
+  const map = {};
+  orders.filter(o => o.paymentStatus === 'paid' && !o.refunded).forEach(o => {
+    (o.items || []).forEach(it => {
+      const key = it.nameEn || it.name || 'Unknown';
+      if (!map[key]) map[key] = { name: key, qty: 0, total: 0, vatRate: it.vatRate || 20 };
+      map[key].qty += it.quantity || 1;
+      map[key].total += it.free ? 0 : (it.totalPrice || 0);
+    });
+  });
+  return Object.values(map);
+}
+
+// ─── Daily Push Log (전송 기록 — 서버 재시작 후에도 유지) ───
+// DATA_DIR는 서버 시작 후 초기화되므로 lazy 접근
+function _dailyPushLogPath() { return path.join(DATA_DIR, 'daily_push_log.json'); }
+function getDailyPushLog() {
+  try { const p = _dailyPushLogPath(); return fs.existsSync(p) ? JSON.parse(fs.readFileSync(p, 'utf8')) : {}; } catch (e) { return {}; }
+}
+function markDailyPushed(dateStr) {
+  try {
+    const log = getDailyPushLog();
+    log[dateStr] = new Date().toISOString();
+    // 최근 30일만 보관
+    const keys = Object.keys(log).sort().slice(-30);
+    const trimmed = {}; keys.forEach(k => trimmed[k] = log[k]);
+    safeWriteFileSync(_dailyPushLogPath(), JSON.stringify(trimmed, null, 2));
+  } catch (e) { console.warn('[DailyPushLog] save failed:', e.message); }
+}
+function wasDailyPushed(dateStr) {
+  return !!getDailyPushLog()[dateStr];
+}
+
+// ─── A) Daily Push (설정 시간 자동 푸시 + 보완 푸시) ───
+async function pushDailySalesToTBMS(targetDate) {
+  if (!TBMS_API) return;
+  if (!_branchReady) { console.log('  📊 [TBMS] Daily push 스킵 — POS 미로그인 (_branchReady=false)'); return; }
+  try {
+    const dateStr = targetDate || getTodayStr();
+    // 이미 전송된 날짜면 스킵
+    if (wasDailyPushed(dateStr)) { console.log(`  📊 [TBMS] Daily push 스킵 — ${dateStr} 이미 전송됨`); return; }
+    const orders = (!targetDate && dailyOrders.length > 0) ? dailyOrders : loadOrders(dateStr);
+    if (orders.length === 0) { console.log(`  📊 [TBMS] No orders for ${dateStr}, skip daily push`); return; }
+    const dual = buildServerDualSummary(orders);
+    const branchName = BRANCH_NAME || orders[0]?.branchName || BRANCH_CODE;
+    const result = await pushToTBMS({
+      action: 'pushDailySales',
+      date: dateStr,
+      branch: BRANCH_CODE,
+      branchName,
+      totalOrders: dual.totalOrders,
+      main: dual.main,
+      sub: dual.sub,
+      cashCount: dual.cashCount,
+      cardCount: dual.cardCount,
+      itemBreakdown: buildItemBreakdown(orders)
+    });
+    markDailyPushed(dateStr);
+    console.log(`  📊 [TBMS] Daily push (${dateStr}): ${result.status || 'done'} — £${dual.main.grandTotal}`);
+  } catch (e) {
+    console.warn(`  ⚠️ [TBMS] Daily push failed: ${e.message}`);
+  }
+}
+
+// ─── 보완 푸시: 어제 데이터가 전송 안 됐으면 자동 전송 ───
+async function catchUpDailyPush() {
+  if (!TBMS_API || !_branchReady) return;
+  // 어제 날짜 체크
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const yDateStr = yesterday.toISOString().slice(0, 10);
+  if (!wasDailyPushed(yDateStr)) {
+    console.log(`  📊 [TBMS] 보완 푸시 — 어제(${yDateStr}) 데이터 미전송, 지금 전송합니다`);
+    await pushDailySalesToTBMS(yDateStr);
+  }
+}
+
+// ─── B) Hourly Live Push (매시간 라이브 푸시) ───
+async function pushLiveSalesToTBMS() {
+  if (!TBMS_API) return;
+  if (!_branchReady) { console.log('  📊 [TBMS] Live push 스킵 — POS 미로그인 (_branchReady=false)'); return; }
+  try {
+    const today = getTodayStr();
+    const orders = dailyOrders; // current day in memory
+    if (orders.length === 0) return; // no orders yet today
+    const dual = buildServerDualSummary(orders);
+    const branchName = BRANCH_NAME || orders[0]?.branchName || BRANCH_CODE;
+    const result = await pushToTBMS({
+      action: 'pushLiveSales',
+      date: today,
+      branch: BRANCH_CODE,
+      branchName,
+      main_grandTotal: dual.main.grandTotal,
+      main_vatTotal: dual.main.vatTotal,
+      main_cashTotal: dual.main.cashTotal,
+      main_cardTotal: dual.main.cardTotal,
+      sub_grandTotal: dual.sub.grandTotal,
+      sub_vatTotal: dual.sub.vatTotal,
+      sub_vatablePct: dual.sub.vatablePct,
+      sub_vatableGross: dual.sub.vatableGross,
+      sub_nonVatableGross: dual.sub.nonVatableGross,
+      sub_totalNet: dual.sub.totalNet,
+      sub_cashTotal: dual.sub.cashTotal,
+      sub_cardTotal: dual.sub.cardTotal,
+      totalOrders: dual.totalOrders,
+      cashCount: dual.cashCount,
+      cardCount: dual.cardCount
+    });
+    console.log(`  📊 [TBMS] Live push: ${dual.totalOrders} orders, £${dual.main.grandTotal}`);
+  } catch (e) {
+    console.warn(`  ⚠️ [TBMS] Live push failed: ${e.message}`);
+  }
+}
+
+// ─── C) END Sales Push (엔드세일즈 이벤트 푸시) ───
+async function pushEndSalesToTBMS(msg, esId) {
+  if (!TBMS_API) return;
+  try {
+    const result = await pushToTBMS({
+      action: 'pushEndSales',
+      id: esId,
+      branch: msg.branchCode,
+      branchName: msg.branchName,
+      periodFrom: msg.periodFrom,
+      periodTo: msg.periodTo,
+      totalOrders: msg.totalOrders,
+      cashCount: msg.cashCustomers || 0,
+      cardCount: msg.cardCustomers || 0,
+      main: {
+        cashTotal: msg.cashTotal, cardTotal: msg.cardTotal,
+        grandTotal: msg.grandTotal, vatTotal: msg.vatTotal
+      },
+      sub: msg.sub || { cashPct: 100, grandTotal: msg.grandTotal, vatTotal: msg.vatTotal },
+      itemBreakdown: msg.itemBreakdown || [],
+      staff: msg.staff
+    });
+    console.log(`  📊 [TBMS] END Sales push: ${esId} → ${result.status || 'done'}`);
+  } catch (e) {
+    console.warn(`  ⚠️ [TBMS] END Sales push failed: ${e.message}`);
+  }
+}
+
+// ─── Schedule automatic pushes ───
+if (TBMS_API) {
+  console.log(`  📊 TBMS Sales Push 활성화 (${BRANCH_CODE})`);
+
+  // Daily push: check every 30s, trigger at _dailyPushTime (POS설정, 기본 23:50)
+  setInterval(() => {
+    const now = new Date();
+    const hhmm = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    if (hhmm === _dailyPushTime && !wasDailyPushed(getTodayStr())) {
+      console.log(`  📊 [TBMS] Daily push triggered at ${_dailyPushTime}`);
+      pushDailySalesToTBMS();
+    }
+  }, 30000); // 30초마다 체크
+
+  // Hourly live push: every 60 minutes
+  setTimeout(() => pushLiveSalesToTBMS(), 60000); // 서버 시작 1분 후 첫 푸시
+  setInterval(() => pushLiveSalesToTBMS(), 60 * 60 * 1000); // 매시간
+}
+
 // ─── 로컬 IP 자동 감지 ───
 function getLocalIP() {
   const interfaces = os.networkInterfaces();
@@ -357,6 +635,18 @@ const DATA_DIR = path.join(__dirname, 'data');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 const END_SALES_DIR = path.join(DATA_DIR, 'end_sales');
 if (!fs.existsSync(END_SALES_DIR)) fs.mkdirSync(END_SALES_DIR, { recursive: true });
+
+// ─── POS Settings 초기 로드 (dailyPushTime, cashReportPct, vatPct) ───
+try {
+  const _posSettingsPath = path.join(DATA_DIR, 'pos-settings.json');
+  if (fs.existsSync(_posSettingsPath)) {
+    const _saved = JSON.parse(fs.readFileSync(_posSettingsPath, 'utf8'));
+    if (_saved.dailyPushTime) { _dailyPushTime = _saved.dailyPushTime; }
+    if (_saved.cashReportPct) { _cashReportPct = Number(_saved.cashReportPct) || 100; }
+    if (_saved.vatPct != null) { _vatPct = Number(_saved.vatPct); }
+    console.log(`  ⚙️  POS Settings loaded: pushTime=${_dailyPushTime}, cashPct=${_cashReportPct}%, vatPct=${_vatPct}%`);
+  }
+} catch (e) { console.warn('[POS Settings] init load failed:', e.message); }
 
 // Auto-recover last_end_sales.json from end_sales_log.json if missing
 (function recoverLastEndSales() {
@@ -653,7 +943,16 @@ function handleMessage(clientId, rawData) {
   switch (msg.type) {
     case 'register': {
       client.type = msg.clientType;
-      client.branch = BRANCH_CODE;  // 서버 지점코드 강제 적용
+      // ★ POS에서 보낸 branchCode가 있으면 서버 BRANCH_CODE 자동 업데이트
+      if (msg.branchCode && msg.clientType === 'pos') {
+        const oldCode = BRANCH_CODE;
+        BRANCH_CODE = msg.branchCode;
+        BRANCH_NAME = msg.branchName || msg.branchCode;
+        if (oldCode !== BRANCH_CODE) {
+          console.log(`  🏪 BRANCH_CODE 자동 변경: ${oldCode} → ${BRANCH_CODE} (${BRANCH_NAME})`);
+        }
+      }
+      client.branch = BRANCH_CODE;
       console.log(`  ✅ [${(msg.clientType || '?').toUpperCase()}] ${BRANCH_CODE} 등록 (ID: ${clientId})`);
       sendTo(clientId, {
         type: 'registered',
@@ -684,6 +983,44 @@ function handleMessage(clientId, rawData) {
         ordersToSend.forEach(order => {
           sendTo(clientId, { type: 'new_order', order });
         });
+      }
+      break;
+    }
+
+    // ★ POS 로그인 후 지점 전체 정보 수신 — BRANCH_CODE/NAME 확정 업데이트
+    case 'set_branch': {
+      if (msg.branchCode) {
+        const oldCode = BRANCH_CODE;
+        BRANCH_CODE = msg.branchCode;
+        BRANCH_NAME = msg.branchName || msg.branchCode;
+        _branchReady = true;  // ★ POS 로그인 확정 → TBMS 푸시 활성화
+        // ★ POS에서 보낸 Cash Report % 저장
+        if (msg.cashReportPct != null) {
+          _cashReportPct = Number(msg.cashReportPct) || 100;
+          console.log(`  💰 Cash Report %: ${_cashReportPct}%`);
+        }
+        // ★ POS에서 보낸 Daily Push Time 저장
+        if (msg.dailyPushTime) {
+          _dailyPushTime = msg.dailyPushTime;
+          console.log(`  ⏰ Daily Push Time: ${_dailyPushTime}`);
+        }
+        // ★ POS에서 보낸 VAT % 저장
+        if (msg.vatPct != null) {
+          _vatPct = Number(msg.vatPct);
+          console.log(`  🧾 VAT %: ${_vatPct}%`);
+        }
+        if (oldCode !== BRANCH_CODE) {
+          console.log(`  🏪 BRANCH 확정: ${oldCode} → ${BRANCH_CODE} (${BRANCH_NAME}) — TBMS 푸시 활성화`);
+        } else {
+          console.log(`  🏪 BRANCH 확인: ${BRANCH_CODE} (${BRANCH_NAME}) — TBMS 푸시 활성화`);
+        }
+        // 전체 지점 목록 저장 (다른 기능에서 활용 가능)
+        if (msg.allBranches && Array.isArray(msg.allBranches)) {
+          global._tbAllBranches = msg.allBranches;
+          console.log(`     All branches: ${msg.allBranches.map(b => b.code).join(', ')}`);
+        }
+        // ★ POS 로그인 시 보완 푸시 — 어제 데이터 미전송이면 자동 전송
+        setTimeout(() => catchUpDailyPush(), 10000); // 10초 후 (안정화 대기)
       }
       break;
     }
@@ -972,6 +1309,8 @@ function handleMessage(clientId, rawData) {
           vatBreakdown: msg.vatBreakdown,
           cashInDrawer: 100 + (msg.cashTotal || 0)
         },
+        // ★ SUB 데이터 (Cash% 적용)
+        sub: msg.sub || null,
         itemBreakdown: msg.itemBreakdown || [],
         orders: msg.orders || [],
         staff: msg.staff || null
@@ -1031,6 +1370,9 @@ function handleMessage(clientId, rawData) {
         gReq.on('error', e => console.warn('  ⚠️ END Sales Google 전송 실패:', e.message));
         gReq.write(esData); gReq.end();
       } catch (e) { console.warn('  ⚠️ END Sales Google Sheets error:', e.message); }
+
+      // ★ Push to TBMS Google Sheets (new dual data push)
+      pushEndSalesToTBMS(msg, esId);
 
       broadcastMsg({ type: 'end_sales_completed', branchCode: msg.branchCode }, clientId);
       break;
@@ -1583,6 +1925,131 @@ $port.Close()
     return;
   }
 
+  // ─── Manual Daily Push to TBMS ───
+  if (url === '/api/tbms-daily-push' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const { date, force } = JSON.parse(body || '{}');
+        const dateStr = date || getTodayStr();
+        if (!TBMS_API) { res.writeHead(400, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'}); res.end(JSON.stringify({error:'TBMS API not configured'})); return; }
+        if (!_branchReady) { res.writeHead(400, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'}); res.end(JSON.stringify({error:'POS not logged in (branch not ready)'})); return; }
+        // force=true 면 중복 체크 무시
+        if (!force && wasDailyPushed(dateStr)) { res.writeHead(200, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'}); res.end(JSON.stringify({status:'already_pushed', date: dateStr})); return; }
+        const orders = (dateStr === getTodayStr() && dailyOrders.length > 0) ? dailyOrders : loadOrders(dateStr);
+        if (orders.length === 0) { res.writeHead(200, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'}); res.end(JSON.stringify({status:'no_orders', date: dateStr})); return; }
+        const dual = buildServerDualSummary(orders);
+        const branchName = BRANCH_NAME || orders[0]?.branchName || BRANCH_CODE;
+        const result = await pushToTBMS({
+          action: 'pushDailySales',
+          date: dateStr,
+          branch: BRANCH_CODE,
+          branchName,
+          totalOrders: dual.totalOrders,
+          main: dual.main,
+          sub: dual.sub,
+          cashCount: dual.cashCount,
+          cardCount: dual.cardCount,
+          itemBreakdown: buildItemBreakdown(orders)
+        });
+        markDailyPushed(dateStr);
+        console.log(`  📊 [TBMS] Manual push (${dateStr}): ${result.status || 'done'} — £${dual.main.grandTotal}`);
+        res.writeHead(200, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+        res.end(JSON.stringify({status:'pushed', date: dateStr, orders: orders.length, total: dual.main.grandTotal}));
+      } catch (e) {
+        console.warn(`  ⚠️ [TBMS] Manual push failed: ${e.message}`);
+        res.writeHead(500, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+        res.end(JSON.stringify({error: e.message}));
+      }
+    });
+    return;
+  }
+
+  // ─── Manual EndSales Push to TBMS (단건) ───
+  if (url === '/api/tbms-endsales-push' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const { id } = JSON.parse(body || '{}');
+        if (!id) { res.writeHead(400, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'}); res.end(JSON.stringify({error:'id required'})); return; }
+        if (!TBMS_API) { res.writeHead(400, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'}); res.end(JSON.stringify({error:'TBMS API not configured'})); return; }
+        // Load the EndSales detail file
+        const filePath = path.join(END_SALES_DIR, `${id}.json`);
+        if (!fs.existsSync(filePath)) { res.writeHead(404, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'}); res.end(JSON.stringify({error:'EndSales record not found'})); return; }
+        const rec = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        const s = rec.summary || {};
+        const sub = rec.sub || null;
+        const result = await pushToTBMS({
+          action: 'pushEndSales',
+          id: rec.id,
+          branch: rec.branchCode,
+          branchName: rec.branchName,
+          periodFrom: rec.periodFrom,
+          periodTo: rec.periodTo,
+          totalOrders: s.totalOrders || 0,
+          cashCount: s.cashCustomers || 0,
+          cardCount: s.cardCustomers || 0,
+          main: {
+            cashTotal: s.cashTotal || 0, cardTotal: s.cardTotal || 0,
+            grandTotal: s.grandTotal || 0, vatTotal: s.vatTotal || 0
+          },
+          sub: sub || { cashPct: 100, grandTotal: s.grandTotal || 0, vatTotal: s.vatTotal || 0 },
+          itemBreakdown: rec.itemBreakdown || [],
+          staff: rec.staff
+        });
+        console.log(`  📊 [TBMS] Manual EndSales push: ${id} → ${result.status || 'done'}`);
+        res.writeHead(200, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+        res.end(JSON.stringify({status:'pushed', id, result: result.status || 'done'}));
+      } catch (e) {
+        console.warn(`  ⚠️ [TBMS] Manual EndSales push failed: ${e.message}`);
+        res.writeHead(500, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+        res.end(JSON.stringify({error: e.message}));
+      }
+    });
+    return;
+  }
+
+  // ─── END Sales Delete ───
+  if (url === '/api/end-sales-delete' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const { id, timestamp } = JSON.parse(body);
+        if (!id && !timestamp) { res.writeHead(400, {'Content-Type':'application/json'}); res.end(JSON.stringify({error:'id or timestamp required'})); return; }
+        // 1. Delete detail file (if id exists)
+        if (id) {
+          const filePath = path.join(END_SALES_DIR, `${id}.json`);
+          if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+        }
+        // 2. Remove from log — match by id OR timestamp
+        const logPath = path.join(DATA_DIR, 'end_sales_log.json');
+        try {
+          if (fs.existsSync(logPath)) {
+            let log = JSON.parse(fs.readFileSync(logPath, 'utf8'));
+            const before = log.length;
+            if (id) {
+              log = log.filter(e => e.id !== id);
+            } else if (timestamp) {
+              log = log.filter(e => e.timestamp !== timestamp);
+            }
+            safeWriteFileSync(logPath, JSON.stringify(log, null, 2));
+            console.log(`  🗑️ END Sales log: ${before - log.length} record(s) removed`);
+          }
+        } catch (e) { console.warn('[EndSales] log cleanup error:', e.message); }
+        console.log(`  🗑️ END Sales record deleted: ${id || timestamp}`);
+        res.writeHead(200, {'Content-Type':'application/json','Access-Control-Allow-Origin':'*'});
+        res.end(JSON.stringify({success:true, deleted: id || timestamp}));
+      } catch (e) {
+        res.writeHead(500, {'Content-Type':'application/json'});
+        res.end(JSON.stringify({error: e.message}));
+      }
+    });
+    return;
+  }
+
   // ─── TBMS: Branch status overview (all branches, latest END Sales, today totals) ───
   // /api/tbms/branches-status?date=2026-03-07
   if (url === '/api/tbms/branches-status') {
@@ -1680,6 +2147,31 @@ $port.Close()
         res.end(JSON.stringify({ error: e.message }));
       }
     });
+    return;
+  }
+
+  // ─── TBMS 수동 라이브 푸시 (POS Settings에서 호출) ───
+  if (url === '/api/tbms-push-live' && req.method === 'POST') {
+    if (!TBMS_API) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'TBMS API not configured' }));
+      return;
+    }
+    if (!_branchReady) {
+      res.writeHead(400, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ error: 'POS 미로그인 — 지점 정보 없음. POS에서 먼저 로그인하세요.' }));
+      return;
+    }
+    (async () => {
+      try {
+        await pushLiveSalesToTBMS();
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, message: 'Live data pushed to TBMS', time: new Date().toISOString() }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    })();
     return;
   }
 
@@ -2154,6 +2646,16 @@ wss.on('connection', (ws, req) => {
     const c = clients.get(clientId);
     clients.delete(clientId);
     console.log(`  ❌ 연결 해제 #${clientId} (${c?.type || '?'}) code=${code} (남은: ${clients.size}대)`);
+    // ★ POS 연결 해제 시 — 남은 POS가 없으면 TBMS 푸시 비활성화
+    if (c?.type === 'pos') {
+      const remainingPOS = [...clients.values()].filter(cl => cl.type === 'pos');
+      if (remainingPOS.length === 0) {
+        _branchReady = false;
+        BRANCH_NAME = '';
+        _cashReportPct = 100;
+        console.log('  🔴 POS 전부 연결 해제 → _branchReady=false, TBMS 푸시 비활성화');
+      }
+    }
     broadcastMsg({ type: 'client_disconnected', connectedClients: getClientSummary() });
   });
 

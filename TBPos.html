@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap POS v4.8 | 2026-03-13 -->
+<!-- The Bap POS v7.5.1 | 2026-03-14 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -922,14 +922,16 @@ button { font-family: inherit; cursor: pointer; }
         </div>
     </div>
     <div style="text-align:center;padding:10px 0 0;color:#B0B0B0;font-size:11px;line-height:1.6;" id="loginFooter">
-        POS v4.8 <span id="loginServerVer"></span>&nbsp;|&nbsp; © 2026 The Bap. All rights reserved. &nbsp;|&nbsp; Program by DJ Kim
+        POS v6.2 <span id="loginServerVer"></span>&nbsp;|&nbsp; © 2026 The Bap. All rights reserved.
+        <br>
+        <button onclick="closePOS()" style="margin-top:4px;padding:4px 14px;border:1px solid #E5E7EB;border-radius:5px;background:#F9FAFB;color:#B0B0B0;font-size:10px;cursor:pointer">✕ Close POS</button>
     </div>
 </div>
 
 <!-- ═══════════ SCREEN: MAIN MENU ═══════════ -->
 <div class="screen main-menu-screen" id="screenMainMenu">
     <div class="main-menu-header">
-        <div class="main-menu-header-title">The Bap POS <span style="font-size:10px;color:#9CA3AF;font-weight:400">v4.0</span></div>
+        <div class="main-menu-header-title">The Bap POS <span style="font-size:10px;color:#9CA3AF;font-weight:400">v6.0</span></div>
         <div class="main-menu-header-branch" id="mainMenuBranch">TBS</div>
         <div class="main-menu-header-spacer"></div>
         <div class="main-menu-header-time" id="mainMenuTime">12:00:00</div>
@@ -957,6 +959,12 @@ button { font-family: inherit; cursor: pointer; }
                 <div class="btn-icon">⚙️</div>SETTINGS
             </div>
         </div>
+    </div>
+    <!-- ★ Logout 버튼 — 화면 최하단 -->
+    <div style="display:flex;justify-content:center;padding:12px 20px;flex-shrink:0">
+        <button onclick="switchUser()" style="padding:6px 16px;border:1px solid #D1D5DB;border-radius:6px;background:#F9FAFB;color:#9CA3AF;font-size:11px;font-weight:500;cursor:pointer">
+            🔄 Logout
+        </button>
     </div>
 </div>
 
@@ -1075,36 +1083,34 @@ button { font-family: inherit; cursor: pointer; }
     <div class="takings-header">
         <div class="takings-header-title">TAKINGS</div>
         <div class="takings-header-spacer"></div>
-        <div style="display:flex;align-items:center;gap:6px;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;padding:4px 10px;margin-right:8px">
+        <div style="display:flex;align-items:center;gap:6px;background:#FEF3C7;border:1px solid #FDE68A;border-radius:8px;padding:4px 10px;margin-right:4px">
             <span style="font-size:11px;font-weight:700;color:#92400E">Cash %</span>
-            <input type="range" id="takingsCashPct" min="0" max="100" value="100" step="5" style="width:80px;height:18px"
+            <input type="range" id="takingsCashPct" min="0" max="100" value="100" step="5" style="width:70px;height:18px"
                 oninput="document.getElementById('takingsCashPctVal').textContent=this.value+'%'">
-            <span id="takingsCashPctVal" style="min-width:32px;font-weight:700;font-size:12px;color:#DC2626">100%</span>
+            <span id="takingsCashPctVal" style="min-width:28px;font-weight:700;font-size:12px;color:#DC2626">100%</span>
             <button onclick="saveCashReportPctFromTakings()" style="padding:2px 8px;background:#006AFF;color:#fff;border:none;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">SET</button>
         </div>
+        <div style="display:flex;align-items:center;gap:6px;background:#DBEAFE;border:1px solid #93C5FD;border-radius:8px;padding:4px 10px;margin-right:8px">
+            <span style="font-size:11px;font-weight:700;color:#1E40AF">VATable %</span>
+            <input type="range" id="takingsVatPct" min="0" max="100" value="20" step="1" style="width:70px;height:18px"
+                oninput="document.getElementById('takingsVatPctVal').textContent=this.value+'%'">
+            <span id="takingsVatPctVal" style="min-width:28px;font-weight:700;font-size:12px;color:#1D4ED8">20%</span>
+            <button onclick="saveVatPctFromTakings()" style="padding:2px 8px;background:#059669;color:#fff;border:none;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer">SET</button>
+        </div>
         <button class="takings-back-btn" onclick="gotoMainMenu()">Back to Menu</button>
+        <button class="takings-back-btn" onclick="gotoSettings(true)" style="background:#6B7280;margin-left:6px">⚙️ Settings</button>
     </div>
     <div class="takings-body">
-        <div class="takings-range-bar" id="takingsRangeBar">
-            <button class="takings-quick-btn active" onclick="setTakingsQuick('today')">Today</button>
-            <button class="takings-quick-btn" onclick="setTakingsQuick('yesterday')">Yesterday</button>
-            <button class="takings-quick-btn" onclick="setTakingsQuick('week')">This Week</button>
-            <button class="takings-quick-btn" onclick="setTakingsQuick('month')">This Month</button>
-            <div style="width:1px;height:24px;background:#D1D5DB;margin:0 2px"></div>
-            <button class="takings-range-pick" id="takingsFromBtn" onclick="pickTakingsFrom()">FROM</button>
-            <span style="color:#9CA3AF;font-size:11px">~</span>
-            <button class="takings-range-pick" id="takingsToBtn" onclick="pickTakingsTo()">TO</button>
-            <button class="takings-range-go" onclick="applyTakingsRange()">GO</button>
-            <div style="flex:1"></div>
-            <span id="takingsRangeLabel" style="font-size:11px;color:#6B7280;font-weight:600"></span>
+        <!-- ★ Hidden range bar — still needed for loadTakingsData internals -->
+        <div class="takings-range-bar" id="takingsRangeBar" style="display:none">
+            <button class="takings-range-pick" id="takingsFromBtn">FROM</button>
+            <button class="takings-range-pick" id="takingsToBtn">TO</button>
+            <span id="takingsRangeLabel"></span>
         </div>
         <div class="takings-sub-tabs">
             <button class="takings-sub-tab active" data-view="overview" onclick="switchTakingsView('overview')">Overview</button>
-            <button class="takings-sub-tab" data-view="by_type" onclick="switchTakingsView('by_type')">Sales By Type</button>
-            <button class="takings-sub-tab" data-view="by_payment" onclick="switchTakingsView('by_payment')">By Payment</button>
-            <button class="takings-sub-tab" data-view="by_item" onclick="switchTakingsView('by_item')">Sales Analysis</button>
-            <button class="takings-sub-tab" data-view="vat" onclick="switchTakingsView('vat')">VAT Report</button>
             <button class="takings-sub-tab" style="background:#2563EB;color:#fff;border-color:#2563EB" onclick="quickDailyReport()">Daily Report</button>
+            <button class="takings-sub-tab" data-view="by_item" onclick="switchTakingsView('by_item')">Sales Analysis</button>
             <button class="takings-sub-tab" style="background:#DC2626;color:#fff;border-color:#DC2626;font-weight:700" onclick="switchTakingsView('end_sales')">END Sales</button>
         </div>
         <div class="takings-content" id="takingsContent"></div>
@@ -1133,8 +1139,9 @@ button { font-family: inherit; cursor: pointer; }
             <button onclick="loadDailyReport()" style="width:100%;margin-top:12px;padding:10px;background:#2563EB;color:#fff;border:none;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer">🔍 LOAD REPORT</button>
         </div>
         <div id="reportContent" style="text-align:center;padding:40px;color:#9CA3AF;font-size:15px">Select date range to view report</div>
-        <div id="reportPrintBtn" style="display:none;margin-top:16px">
-            <button onclick="printDailyReportSimple()" style="width:100%;padding:14px;background:#006AFF;color:#fff;border:none;border-radius:12px;font-size:16px;font-weight:700;cursor:pointer">🖨️ PRINT REPORT</button>
+        <div id="reportPrintBtn" style="display:none;margin-top:16px;gap:10px">
+            <button onclick="printDailyReportSimple('main')" style="flex:1;padding:14px;background:#2563EB;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">🖨️ PRINT MAIN</button>
+            <button onclick="printDailyReportSimple('sub')" style="flex:1;padding:14px;background:#F59E0B;color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer">🖨️ PRINT SUB</button>
         </div>
     </div>
 </div>
@@ -1283,6 +1290,8 @@ const POS = {
     settings: {
         sendPosToKitchen: false, // send POS orders to kitchen display
         cashReportPct: 100, // Daily Report에 표시할 현금 비율 (0-100)
+        vatPct: 20,         // VAT 비율 (0-100%)
+        dailyPushTime: '23:50', // TBMS Daily Push 시간 (HH:MM)
     },
 };
 
@@ -1429,6 +1438,77 @@ function calcVatBreakdown(orders) {
         totalNet: Math.round(totalNet * 100) / 100,
         totalVat: Math.round(totalVat * 100) / 100,
         totalGross: Math.round(totalGross * 100) / 100
+    };
+}
+
+// ─── Sub Calculation (Cash reduced by cashPct% + VATable% 기반 VAT) ───
+// VATable%: 전체 SUB 매출 중 VAT 대상 비율 (설정값)
+// VAT = (grandTotal × vatablePct%) × (mainVatRate / (100 + mainVatRate))
+function calcSubBreakdown(orders, cashPct) {
+    if (cashPct == null) cashPct = POS.settings.cashReportPct || 100;
+    const vatablePct = POS.settings.vatPct != null ? POS.settings.vatPct : 20;
+    const mainVatRate = 20; // UK standard VAT rate
+    let cashTotal = 0, cardTotal = 0, otherTotal = 0;
+    let cashCount = 0, cardCount = 0, otherCount = 0;
+    orders.forEach(o => {
+        const pm = (o.paymentMethod || '').toLowerCase();
+        const isCard = pm.includes('card') || pm.includes('stripe');
+        const isCash = pm.includes('cash');
+        if (isCard) { cardTotal += o.total || 0; cardCount++; }
+        else if (isCash) { cashTotal += (o.total || 0) * (cashPct / 100); cashCount++; }
+        else { otherTotal += (o.total || 0) * (cashPct / 100); otherCount++; }
+    });
+    const grandTotal = Math.round((cashTotal + cardTotal + otherTotal) * 100) / 100;
+    // VATable / Non-VATable split
+    const vatableGross = Math.round(grandTotal * (vatablePct / 100) * 100) / 100;
+    const nonVatableGross = Math.round((grandTotal - vatableGross) * 100) / 100;
+    // VAT = VATable portion is VAT-inclusive → extract VAT
+    const vatAmount = Math.round((vatableGross - vatableGross / (1 + mainVatRate / 100)) * 100) / 100;
+    const vatableNet = Math.round((vatableGross - vatAmount) * 100) / 100;
+    return {
+        vatablePct,
+        vatRate: mainVatRate,
+        vatableGross,       // VATable portion (inclusive)
+        vatableNet,         // VATable net (exclusive)
+        nonVatableGross,    // Non-VATable portion
+        totalVat: vatAmount,
+        totalNet: Math.round((vatableNet + nonVatableGross) * 100) / 100,
+        cashTotal: Math.round(cashTotal * 100) / 100,
+        cardTotal: Math.round(cardTotal * 100) / 100,
+        otherTotal: Math.round(otherTotal * 100) / 100,
+        cashCount, cardCount, otherCount,
+        grandTotal,
+        cashPct
+    };
+}
+
+// ─── Dual Data Summary builder (Main + Sub) ───
+function buildDualSummary(orders) {
+    const cashPct = POS.settings.cashReportPct || 100;
+    const mainVat = calcVatBreakdown(orders);
+    const subData = calcSubBreakdown(orders, cashPct);
+    // Main totals
+    let mainCash = 0, mainCard = 0, mainOther = 0;
+    let mainCashCnt = 0, mainCardCnt = 0, mainOtherCnt = 0;
+    orders.forEach(o => {
+        const pm = (o.paymentMethod || '').toLowerCase();
+        const amt = o.total || 0;
+        if (pm.includes('card') || pm.includes('stripe')) { mainCard += amt; mainCardCnt++; }
+        else if (pm.includes('cash')) { mainCash += amt; mainCashCnt++; }
+        else { mainOther += amt; mainOtherCnt++; }
+    });
+    return {
+        main: {
+            cashTotal: Math.round(mainCash * 100) / 100,
+            cardTotal: Math.round(mainCard * 100) / 100,
+            otherTotal: Math.round(mainOther * 100) / 100,
+            grandTotal: Math.round((mainCash + mainCard + mainOther) * 100) / 100,
+            cashCount: mainCashCnt, cardCount: mainCardCnt, otherCount: mainOtherCnt,
+            totalOrders: mainCashCnt + mainCardCnt + mainOtherCnt,
+            vat: mainVat
+        },
+        sub: subData, // { cashPct, vatablePct, vatRate, vatableGross, nonVatableGross, totalVat, grandTotal, ... }
+        cashPct
     };
 }
 
@@ -1717,6 +1797,10 @@ async function gotoTakings() {
     const pct = POS.settings.cashReportPct || 100;
     document.getElementById('takingsCashPct').value = pct;
     document.getElementById('takingsCashPctVal').textContent = pct + '%';
+    // Init VAT % slider
+    const vpct = POS.settings.vatPct != null ? POS.settings.vatPct : 20;
+    document.getElementById('takingsVatPct').value = vpct;
+    document.getElementById('takingsVatPctVal').textContent = vpct + '%';
     // Default to Today
     const now = new Date();
     takingsRangeFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
@@ -1926,7 +2010,7 @@ function executeDrawerOpen(staffName, reasonCode, reasonDetail) {
 }
 
 async function switchUser() {
-    const ok = await tbConfirm('Switch to a different user?', 'Switch User', '👤');
+    const ok = await tbConfirm('Return to Branch Login?', 'Logout', '🔄');
     if (!ok) return;
     if (POS.ws) POS.ws.close();
     POS.pin = ''; POS.cart = []; POS.selectedCartIdx = -1; POS.orders = [];
@@ -1935,8 +2019,21 @@ async function switchUser() {
     updatePinDots();
 }
 async function closePOS() {
-    const ok = await tbConfirm('Close the POS system?', 'Close', '🚪');
-    if (ok) window.close();
+    const ok = await tbConfirm('POS를 종료하시겠습니까?\nClose the POS system?', 'Close POS', '✕');
+    if (!ok) return;
+    // ★ WebSocket 정리 → 서버에서 _branchReady=false 트리거
+    if (POS.ws) { try { POS.ws.close(); } catch(e){} }
+    // ★ 크롬 닫기 — 여러 방법 시도
+    window.close();                          // 일반 닫기
+    setTimeout(() => {
+        // window.close()가 안 되는 경우 (보안 정책) — 빈 페이지로 이동
+        window.open('about:blank', '_self');
+        window.close();
+    }, 300);
+    setTimeout(() => {
+        // 그래도 안 닫히면 사용자에게 안내
+        document.body.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100vh;background:#1F2937;color:#fff;font-size:24px;text-align:center;font-family:sans-serif"><div>POS가 종료되었습니다.<br><span style="font-size:14px;color:#9CA3AF">이 탭을 닫아주세요</span></div></div>';
+    }, 800);
 }
 
 // ═══════════════════════════════════════════
@@ -2098,6 +2195,8 @@ async function startPOS() {
     connectWebSocket();
     updateKioskBadge();
     showScreen('screenMainMenu');
+    // ★ 로그인 완료 후 서버에 지점 전체 정보 전송 (약간 딜레이 — WS 연결 대기)
+    setTimeout(() => sendBranchInfoToServer(), 2000);
 }
 
 async function restoreCompletedOrdersFromServer() {
@@ -2135,7 +2234,7 @@ function connectWebSocket() {
     POS.ws = new WebSocket(`ws://${host}:${port}`);
     POS.ws.onopen = () => {
         POS.connected = true; updateConnDots(true);
-        POS.ws.send(JSON.stringify({ type: 'register', clientType: 'pos' }));
+        POS.ws.send(JSON.stringify({ type: 'register', clientType: 'pos', branchCode: POS.branch || '', branchName: POS.branchName || '' }));
         // Suppress toasts for first 2 seconds (initial order sync)
         setTimeout(() => { POS.wsReady = true; }, 2000);
         // Restore completed orders on every reconnect (server restart recovery)
@@ -2156,6 +2255,24 @@ function connectWebSocket() {
         handleWSMessage(msg);
     };
 }
+// ★ 서버에 선택된 지점 전체 정보 전송
+function sendBranchInfoToServer() {
+    if (!POS.ws || POS.ws.readyState !== 1 || !POS.branch) return;
+    const branch = BRANCHES.find(b => b.code === POS.branch);
+    POS.ws.send(JSON.stringify({
+        type: 'set_branch',
+        branchCode: POS.branch,
+        branchName: branch?.name || POS.branchName || POS.branch,
+        branchNameKr: branch?.nameKr || '',
+        branchPhone: branch?.phone || '',
+        cashReportPct: POS.settings.cashReportPct || 100,
+        vatPct: POS.settings.vatPct != null ? POS.settings.vatPct : 20,
+        dailyPushTime: POS.settings.dailyPushTime || '23:50',
+        allBranches: BRANCHES.map(b => ({ code: b.code, name: b.name, nameKr: b.nameKr || '' }))
+    }));
+    console.log(`[POS] Branch info sent to server: ${POS.branch} (${branch?.name || POS.branchName}) cashPct=${POS.settings.cashReportPct}% vatPct=${POS.settings.vatPct}% pushTime=${POS.settings.dailyPushTime}`);
+}
+
 function updateConnDots(connected) {
     ['mainMenuConn','orderConn'].forEach(id => {
         const el = document.getElementById(id);
@@ -2564,7 +2681,7 @@ function addToOrder(itemId) {
     if (!item) return;
     const price = getItemPrice(item);
     // Always add as a new line (1x per line)
-    POS.cart.push({ id: item.id, nameEn: item.nameEn, nameKr: item.nameKr, unitPrice: price, quantity: 1, totalPrice: price, vatRate: item.vatRate || 20, note: '', free: false });
+    POS.cart.push({ id: item.id, nameEn: item.nameEn, nameKr: item.nameKr, unitPrice: price, quantity: 1, totalPrice: price, vatRate: item.mainVat || item.vatRate || 20, note: '', free: false });
     POS.selectedCartIdx = POS.cart.length - 1;
     renderOrderList();
     poleDisplayItem(item.nameEn, price);
@@ -3197,7 +3314,7 @@ function cancelPayment() { showScreen('screenOrder'); POS._kioskOrderRef = null;
 
 // Aggregate cart items (1x per line in display → combine same items for order data)
 function aggregateCartItems(cart) {
-    // ★ No aggregation — list every item individually
+    // ★ No aggregation — list every item individually (with dual VAT rates)
     return cart.map(c => ({
         nameEn: c.nameEn, nameKr: c.nameKr,
         quantity: c.quantity, unitPrice: c.unitPrice,
@@ -3274,15 +3391,32 @@ function completePayment(printCount) {
     POS.dailyOrderCount++;
     const orderNum = POS.branch + '-' + String(POS.dailyOrderCount).padStart(3, '0');
 
+    const _items = aggregateCartItems(POS.cart);
+    // ★ Calculate Sub total (cash reduced by cashPct%)
+    const cashPct = POS.settings.cashReportPct || 100;
+    const isCashPay = payMethod === 'cash';
+    const subPctMul = isCashPay ? (cashPct / 100) : 1;
+    const subTotal = Math.round(total * subPctMul * 100) / 100;
+    // Main VAT (actual item-level VAT)
+    let _mainVatAmt = 0;
+    _items.forEach(it => {
+        const mRate = it.vatRate || 20;
+        const gross = it.free ? 0 : (it.totalPrice || 0);
+        _mainVatAmt += gross - (mRate > 0 ? gross / (1 + mRate / 100) : gross);
+    });
+
     const orderData = {
         orderNumber: orderNum,
         branchCode: POS.branch,
         branchName: POS.branchName,
         orderType: POS.orderType,
-        items: aggregateCartItems(POS.cart),
+        items: _items,
         subtotal: POS.cart.reduce((s, i) => s + (i.free ? 0 : i.totalPrice), 0),
         discount: POS.discount,
         total: total,
+        mainVat: Math.round(_mainVatAmt * 100) / 100,
+        subTotal: subTotal,
+        subCashPct: cashPct,
         paymentMethod: payMethod,
         paymentStatus: payMethod === 'not_paid' ? 'unpaid' : 'paid',
         amountPaid: paid,
@@ -3426,38 +3560,9 @@ async function printReceipt(order, count, openDrawer) {
         console.warn('[Print] Direct print fetch error:', e.message);
     }
 
-    // ★ Fallback: browser window.print()
-    console.warn('[Print] Falling back to browser print');
-    toast('Server print failed — using browser print', 'warn');
-    document.getElementById('receiptBranch').textContent = branchName;
-    document.getElementById('receiptDate').textContent = new Date(order.timestamp).toLocaleString('en-GB');
-    document.getElementById('receiptOrderNum').textContent = order.orderNumber;
-    document.getElementById('receiptType').textContent = order.orderType === 'eat_in' ? 'Eat In' : 'Take Away';
-    document.getElementById('receiptStaff').textContent = order.staff;
-    document.getElementById('receiptItems').innerHTML = order.items.map(item =>
-        `<div class="r-row"><span>${item.quantity > 1 ? item.quantity + 'x ' : ''}${item.nameEn}</span><span>${item.free ? 'FREE' : fp(item.totalPrice)}</span></div>`
-    ).join('');
-    document.getElementById('receiptSubtotal').textContent = fp(order.subtotal);
-    const discAmt = order.subtotal - order.total;
-    if (discAmt > 0) {
-        document.getElementById('receiptDiscountRow').style.display = '';
-        const discInfo = order.discount || {};
-        const rDiscLabel = discInfo.approvedBy
-            ? `${discInfo.name || 'Discount'} (${discInfo.approvedBy}):`
-            : (discInfo.name ? discInfo.name + ':' : 'Discount:');
-        document.getElementById('receiptDiscountLabel').textContent = rDiscLabel;
-        document.getElementById('receiptDiscount').textContent = '-' + fp(discAmt);
-    } else document.getElementById('receiptDiscountRow').style.display = 'none';
-    const orderVat = calcVatBreakdown([order]);
-    document.getElementById('receiptVat').textContent = fp(orderVat.totalVat);
-    document.getElementById('receiptTotal').textContent = fp(order.total);
-    document.getElementById('receiptPaid').textContent = fp(order.amountPaid);
-    document.getElementById('receiptChange').textContent = fp(order.change);
-    document.getElementById('receiptPrint').style.display = 'block';
-    for (let i = 0; i < count; i++) {
-        setTimeout(() => window.print(), i * 500);
-    }
-    setTimeout(() => { document.getElementById('receiptPrint').style.display = 'none'; }, count * 600);
+    // ★ No browser preview for sales receipts — just show error toast
+    console.warn('[Print] Direct print failed for receipt', order.orderNumber);
+    toast('Receipt print failed — check printer connection', 'error');
 }
 
 // ★ Direct print for cash drawer (no browser fallback)
@@ -3592,6 +3697,219 @@ async function loadTakingsData() {
     renderTakings();
 }
 
+// ═══════════════════════════════════════════
+//  SALES ANALYSIS — date range + comprehensive analysis
+// ═══════════════════════════════════════════
+let _saFrom = null, _saTo = null;
+
+function _updateSaLabels() {
+    const fmt = d => d ? d.toLocaleString('en-GB', { day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit' }) : '---';
+    const fl = document.getElementById('saFromLabel');
+    const tl = document.getElementById('saToLabel');
+    if (fl) fl.textContent = _saFrom ? fmt(_saFrom) : 'Tap to select';
+    if (tl) tl.textContent = _saTo ? fmt(_saTo) : 'Tap to select';
+}
+async function pickSaFrom() {
+    const d = await touchDateTimePicker('FROM Date/Time', _saFrom || new Date());
+    if (!d) return;
+    _saFrom = d;
+    _updateSaLabels();
+}
+async function pickSaTo() {
+    const d = await touchDateTimePicker('TO Date/Time', _saTo || new Date());
+    if (!d) return;
+    _saTo = d;
+    _updateSaLabels();
+}
+function setSaPeriod(period) {
+    const now = new Date();
+    if (period === 'today') {
+        _saFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+        _saTo = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    } else if (period === 'yesterday') {
+        const y = new Date(now); y.setDate(y.getDate() - 1);
+        _saFrom = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 0, 0, 0);
+        _saTo = new Date(y.getFullYear(), y.getMonth(), y.getDate(), 23, 59, 59);
+    } else if (period === 'week') {
+        const day = now.getDay();
+        const mon = new Date(now); mon.setDate(mon.getDate() - ((day + 6) % 7));
+        _saFrom = new Date(mon.getFullYear(), mon.getMonth(), mon.getDate(), 0, 0, 0);
+        _saTo = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    } else if (period === 'month') {
+        _saFrom = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+        _saTo = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+    }
+    _updateSaLabels();
+    runSalesAnalysis();
+}
+
+async function runSalesAnalysis() {
+    if (!_saFrom || !_saTo) { toast('Set FROM and TO first', 'error'); return; }
+    const body = document.getElementById('saResultBody');
+    if (!body) return;
+    body.innerHTML = '<div style="text-align:center;padding:30px;color:#9CA3AF">Loading...</div>';
+
+    const today = new Date().toISOString().slice(0, 10);
+    const fromDate = _saFrom.toISOString().slice(0, 10);
+    const toDate = _saTo.toISOString().slice(0, 10);
+
+    let allOrders = [];
+    if (today >= fromDate && today <= toDate) {
+        allOrders = [...POS.orders, ...POS.completedOrders.filter(o => !POS.orders.find(p => p.orderNumber === o.orderNumber))];
+    }
+    if (fromDate < today) {
+        try {
+            const resp = await fetch(`/api/orders-since?since=${_saFrom.toISOString()}&branch=${POS.branch}`);
+            if (resp.ok) {
+                const data = await resp.json();
+                const raw = Array.isArray(data) ? data : (data.orders || []);
+                const liveNums = new Set(allOrders.map(o => o.orderNumber));
+                raw.forEach(o => { if (!liveNums.has(o.orderNumber)) allOrders.push(o); });
+            }
+        } catch (e) { console.warn('[SA] fetch error:', e.message); }
+    }
+    // Filter to range & branch
+    const filtered = allOrders.filter(o => {
+        const t = new Date(o.timestamp);
+        return t >= _saFrom && t <= _saTo && (!o.branchCode || o.branchCode === POS.branch);
+    });
+    const active = filtered.filter(o => !o.refunded);
+    const paid = active.filter(o => o.paymentMethod === 'cash' || o.paymentMethod === 'card' || o.paymentStatus === 'paid');
+    const cashOrds = paid.filter(o => o.paymentMethod === 'cash');
+    const cardOrds = paid.filter(o => o.paymentMethod === 'card');
+    const cashTot = cashOrds.reduce((s,o) => s + o.total, 0);
+    const cardTot = cardOrds.reduce((s,o) => s + o.total, 0);
+    const grandTot = cashTot + cardTot;
+    const takeaway = paid.filter(o => o.orderType === 'takeaway');
+    const eatIn = paid.filter(o => o.orderType === 'eat_in');
+
+    // MAIN VAT
+    const mainVat = calcVatBreakdown(paid);
+    const mainRK = Object.keys(mainVat.byRate).sort((a,b) => Number(b) - Number(a));
+    // SUB
+    const cashPct = POS.settings.cashReportPct || 100;
+    const subData = calcSubBreakdown(paid, cashPct);
+
+    // Item breakdown
+    const itemMap = {};
+    paid.forEach(o => o.items.forEach(i => {
+        const k = i.nameEn || i.name;
+        if (!itemMap[k]) itemMap[k] = { qty: 0, total: 0 };
+        itemMap[k].qty += i.quantity;
+        itemMap[k].total += i.totalPrice || (i.price * i.quantity);
+    }));
+    const sortedItems = Object.entries(itemMap).sort((a,b) => b[1].total - a[1].total);
+    const totalQty = sortedItems.reduce((s, [,d]) => s + d.qty, 0);
+
+    // Hourly breakdown
+    const hourMap = {};
+    paid.forEach(o => {
+        const h = new Date(o.timestamp).getHours();
+        if (!hourMap[h]) hourMap[h] = { count: 0, total: 0 };
+        hourMap[h].count++;
+        hourMap[h].total += o.total;
+    });
+    const hourKeys = Object.keys(hourMap).sort((a,b) => Number(a) - Number(b));
+
+    const periodLabel = _saFrom.toLocaleDateString('en-GB') + ' ~ ' + _saTo.toLocaleDateString('en-GB');
+
+    if (paid.length === 0) {
+        body.innerHTML = '<div style="text-align:center;color:#6B7280;padding:30px;font-size:14px">No sales data for this period</div>';
+        return;
+    }
+
+    body.innerHTML = `
+        <div style="font-size:12px;color:#6B7280;margin-bottom:10px;text-align:center;font-weight:600">${periodLabel} · ${paid.length} orders</div>
+
+        <!-- ══ MAIN + SUB 나란히 ══ -->
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:14px">
+            <div style="flex:1;min-width:260px;background:#EFF6FF;border:2px solid #2563EB;border-radius:12px;padding:14px">
+                <h4 style="color:#2563EB;margin:0 0 8px 0;font-size:14px">📊 MAIN</h4>
+                <table class="takings-table">
+                    <thead><tr><th>Payment</th><th>Count</th><th>Amount</th></tr></thead>
+                    <tbody>
+                        <tr><td>💳 Card</td><td>${cardOrds.length}</td><td class="val-green">${fp(cardTot)}</td></tr>
+                        <tr><td>💵 Cash</td><td>${cashOrds.length}</td><td class="val-green">${fp(cashTot)}</td></tr>
+                    </tbody>
+                </table>
+                <div class="takings-total-bar"><span class="label">MAIN TOTAL</span><span class="value">${fp(grandTot)}</span></div>
+                ${mainRK.length > 0 ? `
+                <table class="takings-table" style="margin-top:6px"><thead><tr><th>Rate</th><th>Net</th><th>VAT</th><th>Gross</th></tr></thead><tbody>
+                    ${mainRK.map(r => `<tr><td>${r}%</td><td>${fp(mainVat.byRate[r].net)}</td><td class="val-highlight">${fp(mainVat.byRate[r].vat)}</td><td class="val-green">${fp(mainVat.byRate[r].gross)}</td></tr>`).join('')}
+                </tbody></table>
+                <div style="display:flex;justify-content:space-between;padding:6px 12px;background:#DBEAFE;border-radius:8px;margin-top:4px">
+                    <span style="font-weight:700;color:#1E40AF;font-size:12px">Main VAT</span>
+                    <span style="font-weight:800;color:#1E40AF;font-size:14px">${fp(mainVat.totalVat)}</span>
+                </div>` : ''}
+                <button onclick="printTakingsMain()" style="width:100%;margin-top:10px;padding:8px;background:#2563EB;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">🖨️ PRINT MAIN</button>
+            </div>
+            <div style="flex:1;min-width:260px;background:#FFFBEB;border:2px solid #F59E0B;border-radius:12px;padding:14px">
+                <h4 style="color:#D97706;margin:0 0 8px 0;font-size:14px">📋 SUB</h4>
+                <table class="takings-table">
+                    <thead><tr><th>Payment</th><th>Count</th><th>Amount</th></tr></thead>
+                    <tbody>
+                        <tr><td>💳 Card</td><td>${cardOrds.length}</td><td class="val-green">${fp(subData.cardTotal)}</td></tr>
+                        <tr><td>💵 Cash</td><td>${cashOrds.length}</td><td class="val-green">${fp(subData.cashTotal)}</td></tr>
+                    </tbody>
+                </table>
+                <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FDE68A;border-radius:8px;margin-top:4px">
+                    <span style="font-weight:700;color:#92400E;font-size:13px">SUB TOTAL</span>
+                    <span style="font-weight:800;color:#D97706;font-size:16px">${fp(subData.grandTotal)}</span>
+                </div>
+                <div style="margin-top:8px;padding:8px 12px;background:#FDE68A;border-radius:8px;font-size:13px;color:#92400E">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                        <span>VATable:</span>
+                        <span style="font-weight:600">${fp(subData.vatableGross)}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                        <span>Non-VATable:</span>
+                        <span style="font-weight:600">${fp(subData.nonVatableGross)}</span>
+                    </div>
+                    <div style="border-top:2px solid #D97706;padding-top:6px;display:flex;justify-content:space-between;margin-top:6px">
+                        <span style="font-weight:800;font-size:14px;color:#92400E">VAT (${subData.vatRate}%)</span>
+                        <span style="font-weight:800;font-size:16px;color:#D97706">${fp(subData.totalVat)}</span>
+                    </div>
+                </div>
+                <button onclick="printTakingsSub()" style="width:100%;margin-top:10px;padding:8px;background:#F59E0B;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">🖨️ PRINT SUB</button>
+            </div>
+        </div>
+
+        <!-- Sales by Type -->
+        <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:12px;margin-bottom:12px">
+            <h4 style="margin:0 0 8px;color:#374151;font-size:13px">Sales by Type</h4>
+            <table class="takings-table">
+                <thead><tr><th>Type</th><th>Orders</th><th>Amount</th><th>Avg</th></tr></thead>
+                <tbody>
+                    <tr><td>Takeaway</td><td>${takeaway.length}</td><td class="val-green">${fp(takeaway.reduce((s,o)=>s+o.total,0))}</td><td>${takeaway.length ? fp(takeaway.reduce((s,o)=>s+o.total,0)/takeaway.length) : '—'}</td></tr>
+                    <tr><td>Eat In</td><td>${eatIn.length}</td><td class="val-green">${fp(eatIn.reduce((s,o)=>s+o.total,0))}</td><td>${eatIn.length ? fp(eatIn.reduce((s,o)=>s+o.total,0)/eatIn.length) : '—'}</td></tr>
+                </tbody>
+            </table>
+            <div style="font-size:12px;color:#6B7280;margin-top:6px">Average order: <strong>${fp(grandTot / paid.length)}</strong></div>
+        </div>
+
+        <!-- Hourly Breakdown -->
+        ${hourKeys.length > 0 ? `
+        <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:12px;margin-bottom:12px">
+            <h4 style="margin:0 0 8px;color:#374151;font-size:13px">Hourly Breakdown</h4>
+            <table class="takings-table">
+                <thead><tr><th>Hour</th><th>Orders</th><th>Revenue</th><th>Avg</th></tr></thead>
+                <tbody>
+                    ${hourKeys.map(h => `<tr><td>${String(h).padStart(2,'0')}:00</td><td>${hourMap[h].count}</td><td class="val-green">${fp(hourMap[h].total)}</td><td>${fp(hourMap[h].total / hourMap[h].count)}</td></tr>`).join('')}
+                </tbody>
+            </table>
+        </div>` : ''}
+
+        <!-- Item Sales -->
+        <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:12px">
+            <h4 style="margin:0 0 8px;color:#374151;font-size:13px">Item Sales (${totalQty} items)</h4>
+            <table class="takings-table">
+                <thead><tr><th>Item</th><th>Qty</th><th>Revenue</th><th>%</th></tr></thead>
+                <tbody>${sortedItems.map(([name, d]) => `<tr><td>${name}</td><td>${d.qty}</td><td class="val-green">${fp(d.total)}</td><td style="color:#6B7280;font-size:11px">${grandTot > 0 ? (d.total / grandTot * 100).toFixed(1) + '%' : '—'}</td></tr>`).join('')}</tbody>
+            </table>
+        </div>
+    `;
+}
+
 function switchTakingsView(v) {
     takingsView = v;
     document.querySelectorAll('.takings-sub-tab').forEach(t => t.classList.toggle('active', t.dataset.view === v));
@@ -3614,14 +3932,30 @@ function renderTakings() {
     const eatInOrders = orders.filter(o => o.orderType === 'eat_in');
 
     if (takingsView === 'overview') {
+        const _ovCashPct = POS.settings.cashReportPct || 100;
+        const _ovSub = calcSubBreakdown(paidOrders, _ovCashPct);
         el.innerHTML = `
-            <div class="takings-stat-grid">
-                <div class="takings-stat-card"><div class="takings-stat-val">${paidOrders.length}${unpaidOrders.length > 0 ? ` <span style="font-size:14px;color:#F97316">(+${unpaidOrders.length} unpaid)</span>` : ''}</div><div class="takings-stat-label">Paid Orders</div></div>
-                <div class="takings-stat-card"><div class="takings-stat-val">${fp(totalSales)}</div><div class="takings-stat-label">Total Sales</div></div>
-                <div class="takings-stat-card"><div class="takings-stat-val">${fp(cashTotal)}</div><div class="takings-stat-label">Cash</div></div>
-                <div class="takings-stat-card"><div class="takings-stat-val">${fp(cardTotal)}</div><div class="takings-stat-label">Card</div></div>
-                <div class="takings-stat-card"><div class="takings-stat-val">${fp(calcVatBreakdown(paidOrders).totalVat)}</div><div class="takings-stat-label">VAT Total</div></div>
-                <div class="takings-stat-card"><div class="takings-stat-val">${paidOrders.length > 0 ? fp(totalSales / paidOrders.length) : '£0.00'}</div><div class="takings-stat-label">Avg Order</div></div>
+            <!-- MAIN -->
+            <div style="background:#EFF6FF;border:2px solid #2563EB;border-radius:12px;padding:12px;margin-bottom:10px">
+                <div style="font-weight:700;color:#2563EB;font-size:13px;margin-bottom:8px">📊 MAIN (Actual)</div>
+                <div class="takings-stat-grid">
+                    <div class="takings-stat-card"><div class="takings-stat-val">${paidOrders.length}${unpaidOrders.length > 0 ? ` <span style="font-size:14px;color:#F97316">(+${unpaidOrders.length})</span>` : ''}</div><div class="takings-stat-label">Orders</div></div>
+                    <div class="takings-stat-card"><div class="takings-stat-val">${fp(totalSales)}</div><div class="takings-stat-label">Total</div></div>
+                    <div class="takings-stat-card"><div class="takings-stat-val">${fp(cashTotal)}</div><div class="takings-stat-label">Cash</div></div>
+                    <div class="takings-stat-card"><div class="takings-stat-val">${fp(cardTotal)}</div><div class="takings-stat-label">Card</div></div>
+                    <div class="takings-stat-card"><div class="takings-stat-val">${fp(calcVatBreakdown(paidOrders).totalVat)}</div><div class="takings-stat-label">Main VAT</div></div>
+                    <div class="takings-stat-card"><div class="takings-stat-val">${paidOrders.length > 0 ? fp(totalSales / paidOrders.length) : '£0.00'}</div><div class="takings-stat-label">Avg Order</div></div>
+                </div>
+            </div>
+            <!-- SUB -->
+            <div style="background:#FDF2F8;border:2px solid #DB2777;border-radius:12px;padding:12px;margin-bottom:10px">
+                <div style="font-weight:700;color:#DB2777;font-size:13px;margin-bottom:8px">📋 SUB</div>
+                <div class="takings-stat-grid">
+                    <div class="takings-stat-card"><div class="takings-stat-val">${fp(_ovSub.grandTotal)}</div><div class="takings-stat-label">Total</div></div>
+                    <div class="takings-stat-card"><div class="takings-stat-val">${fp(_ovSub.cashTotal)}</div><div class="takings-stat-label">Cash</div></div>
+                    <div class="takings-stat-card"><div class="takings-stat-val">${fp(_ovSub.cardTotal)}</div><div class="takings-stat-label">Card</div></div>
+                    <div class="takings-stat-card"><div class="takings-stat-val">${fp(_ovSub.totalVat)}</div><div class="takings-stat-label">Sub VAT</div></div>
+                </div>
             </div>
             <table class="takings-table">
                 <thead><tr><th>Description</th><th>Quantity</th><th>Amount</th></tr></thead>
@@ -3630,7 +3964,7 @@ function renderTakings() {
                     <tr><td>Eat In</td><td>${eatInOrders.length}</td><td class="val-green">${fp(eatInOrders.reduce((s,o)=>s+o.total,0))}</td></tr>
                 </tbody>
             </table>
-            <div class="takings-total-bar"><span class="label">TOTAL SALES</span><span class="value">${fp(totalSales)}</span></div>
+            <div class="takings-total-bar"><span class="label">MAIN TOTAL</span><span class="value">${fp(totalSales)}</span></div>
         `;
     } else if (takingsView === 'by_type') {
         el.innerHTML = `
@@ -3656,39 +3990,36 @@ function renderTakings() {
             <div class="takings-total-bar"><span class="label">TOTAL CASH IN TILL</span><span class="value">${fp(cashTotal + POS.register.openingFloat)}</span></div>
         `;
     } else if (takingsView === 'by_item') {
-        // Aggregate by item
-        const itemMap = {};
-        orders.forEach(o => o.items.forEach(i => {
-            if (!itemMap[i.nameEn]) itemMap[i.nameEn] = { qty: 0, total: 0 };
-            itemMap[i.nameEn].qty += i.quantity;
-            itemMap[i.nameEn].total += i.totalPrice;
-        }));
-        const sorted = Object.entries(itemMap).sort((a,b) => b[1].total - a[1].total);
+        // ★ Sales Analysis with date range picker and comprehensive analysis
+        const _saCashPct = POS.settings.cashReportPct || 100;
         el.innerHTML = `
-            <table class="takings-table">
-                <thead><tr><th>Item</th><th>Qty Sold</th><th>Revenue</th></tr></thead>
-                <tbody>${sorted.map(([name, d]) => `<tr><td>${name}</td><td>${d.qty}</td><td class="val-green">${fp(d.total)}</td></tr>`).join('')}</tbody>
-            </table>
-            ${sorted.length === 0 ? '<div style="text-align:center;color:#6B7280;padding:20px">No sales data yet</div>' : ''}
-        `;
-    } else if (takingsView === 'vat') {
-        const vb = calcVatBreakdown(paidOrders);
-        const rateKeys = Object.keys(vb.byRate).sort((a,b) => Number(b) - Number(a));
-        el.innerHTML = `
-            <div class="takings-stat-grid">
-                <div class="takings-stat-card"><div class="takings-stat-val">${fp(vb.totalGross)}</div><div class="takings-stat-label">Gross Sales (inc VAT)</div></div>
-                <div class="takings-stat-card"><div class="takings-stat-val">${fp(vb.totalNet)}</div><div class="takings-stat-label">Net Sales (ex VAT)</div></div>
-                <div class="takings-stat-card"><div class="takings-stat-val">${fp(vb.totalVat)}</div><div class="takings-stat-label">Total VAT</div></div>
+            <div style="background:#F0F9FF;border:2px solid #2563EB;border-radius:12px;padding:16px;margin-bottom:14px">
+                <h4 style="color:#2563EB;margin:0 0 12px 0;font-size:16px">📊 Sales Analysis</h4>
+                <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end">
+                    <div style="flex:1;min-width:130px">
+                        <div style="font-size:11px;color:#6B7280;margin-bottom:3px">FROM</div>
+                        <button onclick="pickSaFrom()" style="width:100%;padding:10px;border:2px solid #D1D5DB;border-radius:8px;background:#fff;font-size:13px;font-weight:600;cursor:pointer;text-align:center;color:#374151" id="saFromLabel">Today 00:00</button>
+                    </div>
+                    <div style="flex:1;min-width:130px">
+                        <div style="font-size:11px;color:#6B7280;margin-bottom:3px">TO</div>
+                        <button onclick="pickSaTo()" style="width:100%;padding:10px;border:2px solid #D1D5DB;border-radius:8px;background:#fff;font-size:13px;font-weight:600;cursor:pointer;text-align:center;color:#374151" id="saToLabel">Today 23:59</button>
+                    </div>
+                    <button onclick="runSalesAnalysis()" style="padding:10px 20px;background:#2563EB;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">ANALYSE</button>
+                </div>
+                <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+                    <button onclick="setSaPeriod('today')" class="sa-quick-btn" style="padding:5px 12px;border:1px solid #93C5FD;border-radius:6px;background:#EFF6FF;color:#2563EB;font-size:11px;font-weight:600;cursor:pointer">Today</button>
+                    <button onclick="setSaPeriod('yesterday')" class="sa-quick-btn" style="padding:5px 12px;border:1px solid #93C5FD;border-radius:6px;background:#EFF6FF;color:#2563EB;font-size:11px;font-weight:600;cursor:pointer">Yesterday</button>
+                    <button onclick="setSaPeriod('week')" class="sa-quick-btn" style="padding:5px 12px;border:1px solid #93C5FD;border-radius:6px;background:#EFF6FF;color:#2563EB;font-size:11px;font-weight:600;cursor:pointer">This Week</button>
+                    <button onclick="setSaPeriod('month')" class="sa-quick-btn" style="padding:5px 12px;border:1px solid #93C5FD;border-radius:6px;background:#EFF6FF;color:#2563EB;font-size:11px;font-weight:600;cursor:pointer">This Month</button>
+                </div>
             </div>
-            <table class="takings-table">
-                <thead><tr><th>VAT Rate</th><th>Net</th><th>VAT</th><th>Gross</th></tr></thead>
-                <tbody>
-                    ${rateKeys.map(r => `<tr><td>${r}%</td><td>${fp(vb.byRate[r].net)}</td><td class="val-highlight">${fp(vb.byRate[r].vat)}</td><td class="val-green">${fp(vb.byRate[r].gross)}</td></tr>`).join('')}
-                    ${rateKeys.length === 0 ? '<tr><td colspan="4" style="text-align:center;color:#6B7280">No sales data</td></tr>' : ''}
-                </tbody>
-            </table>
-            <div class="takings-total-bar"><span class="label">TOTAL VAT</span><span class="value">${fp(vb.totalVat)}</span></div>
+            <div id="saResultBody"></div>
         `;
+        // Auto-run for today
+        _saFrom = new Date(); _saFrom.setHours(0,0,0,0);
+        _saTo = new Date(); _saTo.setHours(23,59,59,999);
+        _updateSaLabels();
+        runSalesAnalysis();
     } else if (takingsView === 'end_sales') {
         // END Sales tab — show last END sales info, history, and action button
         const r = POS.register;
@@ -3705,22 +4036,6 @@ function renderTakings() {
             </div>
             <div style="display:flex;gap:12px;margin-bottom:20px">
                 <button class="register-btn close" onclick="endSales()" style="flex:1;background:#DC2626;font-weight:700;font-size:16px;padding:16px">END SALES NOW</button>
-            </div>
-
-            <div style="background:#F0F9FF;border:2px solid #2563EB;border-radius:12px;padding:16px;margin-bottom:20px">
-                <h4 style="color:#2563EB;margin:0 0 12px 0;font-size:15px">Custom Range Report</h4>
-                <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
-                    <div style="flex:1;min-width:140px">
-                        <div style="font-size:11px;color:#6B7280;margin-bottom:4px">FROM</div>
-                        <button onclick="pickCustomRangeFrom()" style="width:100%;padding:12px;border:2px solid #D1D5DB;border-radius:10px;background:#fff;font-size:13px;font-weight:600;cursor:pointer;text-align:center;color:#374151" id="crFromLabel">Tap to select</button>
-                    </div>
-                    <div style="flex:1;min-width:140px">
-                        <div style="font-size:11px;color:#6B7280;margin-bottom:4px">TO</div>
-                        <button onclick="pickCustomRangeTo()" style="width:100%;padding:12px;border:2px solid #D1D5DB;border-radius:10px;background:#fff;font-size:13px;font-weight:600;cursor:pointer;text-align:center;color:#374151" id="crToLabel">Tap to select</button>
-                    </div>
-                </div>
-                <button onclick="runCustomRangeReport()" style="width:100%;padding:12px;background:#2563EB;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">GET REPORT</button>
-                <div id="crResultBody" style="margin-top:12px"></div>
             </div>
 
             <div style="margin-bottom:12px">
@@ -3747,22 +4062,24 @@ async function loadEndSalesHistory() {
         }
         el.innerHTML = `
             <table class="takings-table">
-                <thead><tr><th>Date/Time</th><th>Period</th><th>Orders</th><th>Cash</th><th>Card</th><th>Total</th><th>VAT</th><th></th></tr></thead>
+                <thead><tr><th>Date/Time</th><th>Period</th><th>Orders</th><th>Cash</th><th>Card</th><th>Total</th><th>VAT</th><th></th><th></th></tr></thead>
                 <tbody>
-                    ${myLog.slice(0, 50).map(e => {
+                    ${myLog.slice(0, 50).map((e, idx) => {
                         const dt = new Date(e.timestamp).toLocaleString('en-GB', {day:'2-digit',month:'short',year:'2-digit',hour:'2-digit',minute:'2-digit'});
                         const from = e.periodFrom ? new Date(e.periodFrom).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}) : 'Start';
                         const to = new Date(e.periodTo).toLocaleDateString('en-GB',{day:'2-digit',month:'short'});
-                        const hasId = e.id ? `onclick="viewEndSalesDetail('${e.id}')" style="cursor:pointer"` : '';
-                        return `<tr ${hasId}>
-                            <td style="font-size:12px">${dt}</td>
-                            <td style="font-size:11px;color:#6B7280">${from} → ${to}</td>
+                        const eId = e.id || '';
+                        const eTs = e.timestamp || '';
+                        return `<tr>
+                            <td style="font-size:12px${eId ? ';cursor:pointer' : ''}" ${eId ? `onclick="viewEndSalesDetail('${eId}')"` : ''}>${dt}</td>
+                            <td style="font-size:11px;color:#6B7280${eId ? ';cursor:pointer' : ''}" ${eId ? `onclick="viewEndSalesDetail('${eId}')"` : ''}>${from} → ${to}</td>
                             <td>${e.totalOrders || 0}</td>
                             <td class="val-green">${fp(e.cashTotal || 0)}</td>
                             <td class="val-green">${fp(e.cardTotal || 0)}</td>
                             <td class="val-highlight" style="font-weight:700">${fp(e.grandTotal || 0)}</td>
                             <td>${fp(e.vatTotal || 0)}</td>
-                            <td>${e.id ? '<span style="color:#006AFF;font-size:11px">Detail</span>' : ''}</td>
+                            <td>${eId ? '<span style="color:#006AFF;font-size:11px;cursor:pointer" onclick="viewEndSalesDetail(\''+eId+'\')">Detail</span>' : ''}</td>
+                            <td><span style="color:#DC2626;font-size:11px;cursor:pointer;font-weight:600" onclick="event.stopPropagation();deleteEndSalesRecord('${eId}','${eTs}')">✕</span></td>
                         </tr>`;
                     }).join('')}
                 </tbody>
@@ -3773,6 +4090,49 @@ async function loadEndSalesHistory() {
     }
 }
 
+async function pushEndSalesToSheet(esId) {
+    const statusEl = document.getElementById('esPushStatus_' + esId);
+    if (statusEl) { statusEl.style.display = 'block'; statusEl.innerHTML = '<span style="color:#2563EB">📤 Pushing to Google Sheets...</span>'; }
+    try {
+        const resp = await fetch('/api/tbms-endsales-push', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: esId })
+        });
+        const data = await resp.json();
+        if (!resp.ok) {
+            if (statusEl) statusEl.innerHTML = `<span style="color:#DC2626">❌ ${data.error || 'Push failed'}</span>`;
+            toast(data.error || 'Push failed', 'error');
+            return;
+        }
+        if (statusEl) statusEl.innerHTML = `<span style="color:#059669">✅ Pushed successfully!</span>`;
+        toast('END Sales pushed to TBMS', 'success');
+    } catch (e) {
+        if (statusEl) statusEl.innerHTML = `<span style="color:#DC2626">❌ ${e.message}</span>`;
+        toast('Push failed: ' + e.message, 'error');
+    }
+}
+
+async function deleteEndSalesRecord(esId, esTimestamp) {
+    const label = esId || (esTimestamp ? new Date(esTimestamp).toLocaleString('en-GB') : 'Unknown');
+    const ok = await tbConfirm(`Delete this END Sales record?\n\n${label}\n\nThis cannot be undone.`, 'Delete Record', '🗑️');
+    if (!ok) return;
+    try {
+        const resp = await fetch('/api/end-sales-delete', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: esId || null, timestamp: esTimestamp || null })
+        });
+        if (resp.ok) {
+            toast('END Sales record deleted', 'success');
+            loadEndSalesHistory();
+        } else {
+            const err = await resp.json().catch(() => ({}));
+            toast('Delete failed: ' + (err.error || 'Unknown error'), 'error');
+        }
+    } catch (e) { toast('Delete failed: ' + e.message, 'error'); }
+}
+
 async function viewEndSalesDetail(esId) {
     const el = document.getElementById('takingsContent');
     el.innerHTML = '<div style="text-align:center;padding:40px;color:#9CA3AF">Loading...</div>';
@@ -3781,40 +4141,87 @@ async function viewEndSalesDetail(esId) {
         if (!resp.ok) { toast('Record not found', 'error'); renderTakings(); return; }
         const rec = await resp.json();
         const s = rec.summary;
+        const sub = rec.sub || null;
+        const hasSub = !!sub;
         const fromStr = rec.periodFrom ? new Date(rec.periodFrom).toLocaleString('en-GB') : 'Start';
         const toStr = new Date(rec.periodTo).toLocaleString('en-GB');
-        const rateKeys = s.vatBreakdown ? Object.keys(s.vatBreakdown).sort((a,b) => Number(b) - Number(a)) : [];
+
+        // MAIN VAT rate keys
+        const mainRateKeys = s.vatBreakdown ? Object.keys(s.vatBreakdown).sort((a,b) => Number(b) - Number(a)) : [];
+        // SUB uses VATable% system (no per-rate breakdown)
 
         let html = `
-            <div style="background:#F0F9FF;border:2px solid #2563EB;border-radius:12px;padding:16px;margin-bottom:12px">
-                <h3 style="color:#2563EB;margin:0 0 6px 0;font-size:16px">END Sales Detail — ${rec.branchName}</h3>
-                <div style="font-size:12px;color:#6B7280">Period: ${fromStr} → ${toStr}</div>
-                <div style="font-size:11px;color:#9CA3AF">ID: ${rec.id}${rec.staff ? ` · Staff: ${rec.staff.name || rec.staff.id}` : ''}</div>
+            <div style="background:#FEF2F2;border:2px solid #DC2626;border-radius:12px;padding:16px;margin-bottom:12px">
+                <h3 style="color:#DC2626;margin:0 0 6px 0;font-size:16px">END Sales Detail — ${rec.branchName}</h3>
+                <div style="font-size:14px;font-weight:700;color:#374151;margin-bottom:4px">Period: ${fromStr} → ${toStr}</div>
+                <div style="font-size:11px;color:#9CA3AF">ID: ${rec.id}${rec.staff ? ` · Staff: ${rec.staff.name || rec.staff.id}` : ''} · ${s.totalOrders} orders</div>
             </div>
-            <div style="display:flex;gap:10px;align-items:stretch;flex-wrap:wrap">
-                <div class="takings-stat-grid" style="flex:1;min-width:0;margin:0">
-                    <div class="takings-stat-card"><div class="takings-stat-val">${s.totalOrders}</div><div class="takings-stat-label">Orders</div></div>
-                    <div class="takings-stat-card"><div class="takings-stat-val">${fp(s.cashTotal)}</div><div class="takings-stat-label">Cash (${s.cashCustomers})</div></div>
-                    <div class="takings-stat-card"><div class="takings-stat-val">${fp(s.cardTotal)}</div><div class="takings-stat-label">Card (${s.cardCustomers})</div></div>
-                    <div class="takings-stat-card"><div class="takings-stat-val">${fp(s.grandTotal)}</div><div class="takings-stat-label">Grand Total</div></div>
+
+            <!-- Google Sheets Push -->
+            <div style="background:#EFF6FF;border:2px solid #2563EB;border-radius:12px;padding:12px;margin-bottom:12px">
+                <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+                    <div>
+                        <div style="font-weight:700;color:#1E40AF;font-size:13px">📊 Google Sheets Push</div>
+                        <div style="font-size:11px;color:#6B7280">이 END Sales 레코드를 TBMS에 전송</div>
+                    </div>
+                    <button onclick="pushEndSalesToSheet('${rec.id}')" style="padding:8px 18px;background:#2563EB;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer">📤 PUSH</button>
                 </div>
-                <div style="display:flex;flex-direction:column;gap:6px;flex:0 0 auto;justify-content:center">
-                    <button class="register-btn open" onclick="printEndSalesDetail('${rec.id}')" style="padding:10px 18px;font-size:13px;white-space:nowrap">🖨️ PRINT</button>
-                    <button onclick="switchTakingsView('end_sales')" style="padding:10px 18px;border:1px solid #D1D5DB;border-radius:8px;background:#fff;font-weight:600;cursor:pointer;font-size:12px;white-space:nowrap;color:#6B7280">← Back</button>
-                </div>
+                <div id="esPushStatus_${rec.id}" style="margin-top:6px;font-size:12px;color:#6B7280;display:none"></div>
             </div>
-            <div style="background:#ECFDF5;border:2px solid #059669;border-radius:10px;padding:10px;margin:10px 0;display:flex;justify-content:space-between;align-items:center">
-                <span style="font-weight:700;color:#059669;font-size:13px">Cash in Drawer (£100 + Cash)</span>
+
+            <!-- ══ MAIN + SUB 나란히 ══ -->
+            <div style="display:flex;gap:12px;flex-wrap:wrap">
+                <!-- ── MAIN ── -->
+                <div style="flex:1;min-width:280px;background:#EFF6FF;border:2px solid #2563EB;border-radius:12px;padding:14px">
+                    <h4 style="color:#2563EB;margin:0 0 10px 0;font-size:15px">📊 MAIN (Actual Sales)</h4>
+                    <table class="takings-table">
+                        <thead><tr><th>Payment</th><th>Count</th><th>Amount</th></tr></thead>
+                        <tbody>
+                            <tr><td>💳 CARD</td><td>${s.cardCustomers || 0}</td><td class="val-green">${fp(s.cardTotal)}</td></tr>
+                            <tr><td>💵 CASH</td><td>${s.cashCustomers || 0}</td><td class="val-green">${fp(s.cashTotal)}</td></tr>
+                        </tbody>
+                    </table>
+                    <div class="takings-total-bar"><span class="label">MAIN TOTAL</span><span class="value">${fp(s.grandTotal)}</span></div>
+                    ${mainRateKeys.length > 0 ? `<div style="margin-top:8px">
+                        <table class="takings-table"><thead><tr><th>Rate</th><th>Net</th><th>VAT</th><th>Gross</th></tr></thead><tbody>
+                            ${mainRateKeys.map(r => `<tr><td>${r}%</td><td>${fp(s.vatBreakdown[r].net)}</td><td class="val-highlight">${fp(s.vatBreakdown[r].vat)}</td><td class="val-green">${fp(s.vatBreakdown[r].gross)}</td></tr>`).join('')}
+                        </tbody></table>
+                        <div style="display:flex;justify-content:space-between;padding:6px 12px;background:#DBEAFE;border-radius:8px;margin-top:4px">
+                            <span style="font-weight:700;color:#1E40AF;font-size:12px">Main VAT</span>
+                            <span style="font-weight:800;color:#1E40AF;font-size:14px">${fp(mainRateKeys.reduce((sum,r) => sum + (s.vatBreakdown[r]?.vat||0), 0))}</span>
+                        </div>
+                    </div>` : ''}
+                    <button class="register-btn open" onclick="printEndSalesDetail('${rec.id}','main')" style="width:100%;margin-top:10px;padding:8px;font-size:12px">🖨️ PRINT MAIN</button>
+                </div>
+
+                ${hasSub ? `
+                <!-- ── SUB ── -->
+                <div style="flex:1;min-width:280px;background:#FFFBEB;border:2px solid #F59E0B;border-radius:12px;padding:14px">
+                    <h4 style="color:#D97706;margin:0 0 10px 0;font-size:15px">📋 SUB</h4>
+                    <table class="takings-table">
+                        <thead><tr><th>Payment</th><th>Count</th><th>Amount</th></tr></thead>
+                        <tbody>
+                            <tr><td>💳 CARD</td><td>${s.cardCustomers || 0}</td><td class="val-green">${fp(sub.cardTotal || 0)}</td></tr>
+                            <tr><td>💵 CASH</td><td>${s.cashCustomers || 0}</td><td class="val-green">${fp(sub.cashTotal || 0)}</td></tr>
+                        </tbody>
+                    </table>
+                    <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FDE68A;border-radius:8px;margin-top:4px">
+                        <span style="font-weight:700;color:#92400E;font-size:13px">SUB TOTAL</span>
+                        <span style="font-weight:800;color:#D97706;font-size:16px">${fp(sub.grandTotal || 0)}</span>
+                    </div>
+                    <div style="margin-top:8px;padding:8px 12px;background:#FDE68A;border-radius:8px;font-size:13px;color:#92400E">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>VATable:</span><span style="font-weight:600">${fp(sub.vatableGross||0)}</span></div>
+                        <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Non-VATable:</span><span style="font-weight:600">${fp(sub.nonVatableGross||0)}</span></div>
+                        <div style="border-top:2px solid #D97706;padding-top:6px;display:flex;justify-content:space-between;margin-top:6px"><span style="font-weight:800;font-size:14px;color:#92400E">VAT (${sub.vatRate||20}%)</span><span style="font-weight:800;font-size:16px;color:#D97706">${fp(sub.vatTotal||0)}</span></div>
+                    </div>
+                    <button class="register-btn open" onclick="printEndSalesDetail('${rec.id}','sub')" style="width:100%;margin-top:10px;padding:8px;font-size:12px;background:#F59E0B;border-color:#D97706">🖨️ PRINT SUB</button>
+                </div>` : ''}
+            </div>
+
+            <div style="background:#ECFDF5;border:2px solid #059669;border-radius:10px;padding:10px;margin:12px 0;display:flex;justify-content:space-between;align-items:center">
+                <span style="font-weight:700;color:#059669;font-size:13px">💵 Cash in Drawer (£100 + Cash)</span>
                 <span style="font-weight:800;color:#059669;font-size:18px">${fp(s.cashInDrawer || (100 + s.cashTotal))}</span>
             </div>`;
-
-        // VAT breakdown
-        if (rateKeys.length > 0) {
-            html += `<h4 style="margin:12px 0 6px;color:#374151;font-size:13px">VAT Breakdown</h4>
-            <table class="takings-table"><thead><tr><th>Rate</th><th>Net</th><th>VAT</th><th>Gross</th></tr></thead><tbody>
-            ${rateKeys.map(r => `<tr><td>${r}%</td><td>${fp(s.vatBreakdown[r].net)}</td><td class="val-highlight">${fp(s.vatBreakdown[r].vat)}</td><td class="val-green">${fp(s.vatBreakdown[r].gross)}</td></tr>`).join('')}
-            </tbody></table>`;
-        }
 
         // Item breakdown
         if (rec.itemBreakdown && rec.itemBreakdown.length > 0) {
@@ -3836,7 +4243,8 @@ async function viewEndSalesDetail(esId) {
             </tbody></table>`;
         }
 
-        // Print & Back buttons are now next to Grand Total stat cards above
+        html += `<button onclick="switchTakingsView('end_sales')" style="margin-top:16px;padding:12px;border:1px solid #D1D5DB;border-radius:8px;background:#fff;font-weight:600;cursor:pointer;font-size:13px;color:#6B7280;width:100%;text-align:center">← Back to END Sales List</button>`;
+
         el.innerHTML = html;
     } catch (e) {
         toast('Failed to load detail', 'error');
@@ -5131,9 +5539,10 @@ function printCustomRangeReport() {
     ).join('');
     document.getElementById('esrVatTotal').textContent = fp(d.vatData.totalVat);
     document.getElementById('esrFooter').textContent = `Printed: ${new Date().toLocaleString('en-GB')}`;
-    document.getElementById('endSalesReceiptPrint').style.display = 'block';
-    setTimeout(() => window.print(), 200);
-    setTimeout(() => { document.getElementById('endSalesReceiptPrint').style.display = 'none'; }, 800);
+    const receiptEl = document.getElementById('endSalesReceiptPrint');
+    receiptEl.style.display = 'block';
+    window.print();
+    receiptEl.style.display = 'none';
 }
 
 // ═══════════════════════════════════════════
@@ -5173,74 +5582,121 @@ async function endSales() {
         return;
     }
 
-    // 3. Calculate totals (exclude refunded orders)
+    // 3. Calculate totals (exclude refunded orders) — MAIN + SUB Dual
     const esRefunded = periodOrders.filter(o => !!o.refunded);
     const esActive = periodOrders.filter(o => !o.refunded);
-    const cashOrders = esActive.filter(o => o.paymentMethod === 'cash');
-    const cardOrders = esActive.filter(o => o.paymentMethod === 'card');
-    const cashTotal = cashOrders.reduce((s, o) => s + (o.total || 0), 0);
-    const cardTotal = cardOrders.reduce((s, o) => s + (o.total || 0), 0);
-    const grandTotal = cashTotal + cardTotal;
     const esRefundTotal = esRefunded.reduce((s, o) => s + (o.total || 0), 0);
     const esCashRefund = esRefunded.filter(r=>r.refundMethod==='cash').reduce((s,r)=>s+(r.total||0),0);
-    const vatData = calcVatBreakdown(esActive);
+    const esVat = calcVatBreakdown(esActive);
+    const esCashOrders = esActive.filter(o => o.paymentMethod === 'cash');
+    const esCardOrders = esActive.filter(o => o.paymentMethod === 'card');
+    const esCashTotal = esCashOrders.reduce((s, o) => s + (o.total || 0), 0);
+    const esCardTotal = esCardOrders.reduce((s, o) => s + (o.total || 0), 0);
+    const esGrandTotal = esCashTotal + esCardTotal;
+    // ★ SUB 계산 (cashReportPct% 적용)
+    const esSub = calcSubBreakdown(esActive);
     const now = new Date();
     const fromStr = since ? new Date(since).toLocaleString('en-GB') : 'Start';
     const toStr = now.toLocaleString('en-GB');
 
-    // 4. Show END Sales report in takingsContent
+    // VAT rate keys for display
+    const mainRateKeys = Object.keys(esVat.byRate).sort((a,b) => Number(b) - Number(a));
+
+    // 4. Show END Sales report in takingsContent — DUAL Main + Sub side by side
     const el = document.getElementById('takingsContent');
-    const rateKeys = Object.keys(vatData.byRate).sort((a,b) => Number(b) - Number(a));
     el.innerHTML = `
         <div style="background:#FEF2F2;border:2px solid #DC2626;border-radius:12px;padding:20px;margin-bottom:16px">
             <h3 style="color:#DC2626;margin:0 0 8px 0;font-size:18px">END SALES REPORT</h3>
             <div style="color:#6B7280;font-size:13px">${POS.branchName}</div>
-            <div style="color:#6B7280;font-size:12px;margin-top:4px">Period: ${fromStr} → ${toStr}</div>
+            <div style="font-size:14px;font-weight:700;color:#374151;margin-top:4px">Period: ${fromStr} → ${toStr}</div>
+            <div style="color:#9CA3AF;font-size:11px;margin-top:2px">${esActive.length} orders${esRefunded.length > 0 ? ` · ${esRefunded.length} refunded` : ''}</div>
         </div>
-        <div class="takings-stat-grid">
-            <div class="takings-stat-card"><div class="takings-stat-val">${esActive.length}${esRefunded.length > 0 ? ` <span style="font-size:12px;color:#DC2626">(-${esRefunded.length} ref)</span>` : ''}</div><div class="takings-stat-label">Total Orders</div></div>
-            <div class="takings-stat-card"><div class="takings-stat-val">${cashOrders.length}</div><div class="takings-stat-label">Cash Customers</div></div>
-            <div class="takings-stat-card"><div class="takings-stat-val">${cardOrders.length}</div><div class="takings-stat-label">Card Customers</div></div>
-            <div class="takings-stat-card"><div class="takings-stat-val">${fp(grandTotal)}</div><div class="takings-stat-label">Grand Total</div></div>
+
+        <!-- ══ MAIN + SUB 나란히 ══ -->
+        <div style="display:flex;gap:12px;flex-wrap:wrap">
+            <!-- ── MAIN (Actual Sales) ── -->
+            <div style="flex:1;min-width:280px;background:#EFF6FF;border:2px solid #2563EB;border-radius:12px;padding:14px">
+                <h4 style="color:#2563EB;margin:0 0 10px 0;font-size:15px">📊 MAIN (Actual Sales)</h4>
+                <table class="takings-table">
+                    <thead><tr><th>Payment</th><th>Count</th><th>Amount</th></tr></thead>
+                    <tbody>
+                        <tr><td>💳 CARD</td><td>${esCardOrders.length}</td><td class="val-green">${fp(esCardTotal)}</td></tr>
+                        <tr><td>💵 CASH</td><td>${esCashOrders.length}</td><td class="val-green">${fp(esCashTotal)}</td></tr>
+                        ${esRefunded.length > 0 ? `<tr style="background:#FEF2F2"><td style="color:#DC2626;font-weight:600">🔄 REFUNDS</td><td style="color:#DC2626">${esRefunded.length}</td><td style="color:#DC2626;font-weight:600">-${fp(esRefundTotal)}</td></tr>` : ''}
+                    </tbody>
+                </table>
+                <div class="takings-total-bar"><span class="label">MAIN TOTAL</span><span class="value">${fp(esGrandTotal)}</span></div>
+                <div style="margin-top:8px">
+                    <table class="takings-table"><thead><tr><th>Rate</th><th>Net</th><th>VAT</th><th>Gross</th></tr></thead><tbody>
+                        ${mainRateKeys.map(r => `<tr><td>${r}%</td><td>${fp(esVat.byRate[r].net)}</td><td class="val-highlight">${fp(esVat.byRate[r].vat)}</td><td class="val-green">${fp(esVat.byRate[r].gross)}</td></tr>`).join('')}
+                    </tbody></table>
+                    <div style="display:flex;justify-content:space-between;padding:6px 12px;background:#DBEAFE;border-radius:8px;margin-top:4px">
+                        <span style="font-weight:700;color:#1E40AF;font-size:12px">Main VAT</span>
+                        <span style="font-weight:800;color:#1E40AF;font-size:14px">${fp(esVat.totalVat)}</span>
+                    </div>
+                </div>
+                <button class="register-btn open" onclick="printEndSalesReceipt('main')" style="width:100%;margin-top:10px;padding:8px;font-size:12px">🖨️ PRINT MAIN</button>
+            </div>
+
+            <!-- ── SUB ── -->
+            <div style="flex:1;min-width:280px;background:#FFFBEB;border:2px solid #F59E0B;border-radius:12px;padding:14px">
+                <h4 style="color:#D97706;margin:0 0 10px 0;font-size:15px">📋 SUB</h4>
+                <table class="takings-table">
+                    <thead><tr><th>Payment</th><th>Count</th><th>Amount</th></tr></thead>
+                    <tbody>
+                        <tr><td>💳 CARD</td><td>${esCardOrders.length}</td><td class="val-green">${fp(esSub.cardTotal)}</td></tr>
+                        <tr><td>💵 CASH</td><td>${esCashOrders.length}</td><td class="val-green">${fp(esSub.cashTotal)}</td></tr>
+                    </tbody>
+                </table>
+                <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FDE68A;border-radius:8px;margin-top:4px">
+                    <span style="font-weight:700;color:#92400E;font-size:13px">SUB TOTAL</span>
+                    <span style="font-weight:800;color:#D97706;font-size:16px">${fp(esSub.grandTotal)}</span>
+                </div>
+                <div style="margin-top:8px;padding:8px 12px;background:#FDE68A;border-radius:8px;font-size:13px;color:#92400E">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                        <span>VATable:</span>
+                        <span style="font-weight:600">${fp(esSub.vatableGross)}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                        <span>Non-VATable:</span>
+                        <span style="font-weight:600">${fp(esSub.nonVatableGross)}</span>
+                    </div>
+                    <div style="border-top:2px solid #D97706;padding-top:6px;display:flex;justify-content:space-between;margin-top:6px">
+                        <span style="font-weight:800;font-size:14px;color:#92400E">VAT (${esSub.vatRate}%)</span>
+                        <span style="font-weight:800;font-size:16px;color:#D97706">${fp(esSub.totalVat)}</span>
+                    </div>
+                </div>
+                <button class="register-btn open" onclick="printEndSalesReceipt('sub')" style="width:100%;margin-top:10px;padding:8px;font-size:12px;background:#F59E0B;border-color:#D97706">🖨️ PRINT SUB</button>
+            </div>
         </div>
-        <table class="takings-table">
-            <thead><tr><th>Payment</th><th>Count</th><th>Amount</th></tr></thead>
-            <tbody>
-                <tr><td>CASH</td><td>${cashOrders.length}</td><td class="val-green">${fp(cashTotal)}</td></tr>
-                <tr><td>CARD</td><td>${cardOrders.length}</td><td class="val-green">${fp(cardTotal)}</td></tr>
-                ${esRefunded.length > 0 ? `<tr style="background:#FEF2F2"><td style="color:#DC2626;font-weight:600">🔄 REFUNDS</td><td style="color:#DC2626">${esRefunded.length}</td><td style="color:#DC2626;font-weight:600">-${fp(esRefundTotal)}</td></tr>` : ''}
-            </tbody>
-        </table>
-        <div class="takings-total-bar"><span class="label">GRAND TOTAL</span><span class="value">${fp(grandTotal)}</span></div>
+
         ${esRefunded.length > 0 ? `
-        <div style="background:#FEF2F2;border:2px solid #DC2626;border-radius:10px;padding:10px 14px;margin:8px 0">
+        <div style="background:#FEF2F2;border:2px solid #DC2626;border-radius:10px;padding:10px 14px;margin:12px 0">
             <div style="font-size:12px;color:#6B7280;margin-bottom:4px">Refund detail:</div>
             ${esRefunded.map(r => `<div style="font-size:11px;color:#DC2626;padding:1px 0">• ${r.orderNumber} ${fp(r.total)} ${r.refundMethod==='cash'?'💵CASH':'💳CARD'} — by ${r.refundedBy||'?'}</div>`).join('')}
         </div>` : ''}
         <div style="background:#ECFDF5;border:2px solid #059669;border-radius:10px;padding:14px;margin:12px 0;display:flex;justify-content:space-between;align-items:center">
             <span style="font-weight:700;color:#059669;font-size:15px">💵 Cash in Drawer (£100 + Cash${esCashRefund > 0 ? ' - Refunds' : ''})</span>
-            <span style="font-weight:800;color:#059669;font-size:20px">${fp(100 + cashTotal - esCashRefund)}</span>
+            <span style="font-weight:800;color:#059669;font-size:20px">${fp(100 + esCashTotal - esCashRefund)}</span>
         </div>
-        <h4 style="margin:16px 0 8px 0;color:#374151">VAT Breakdown</h4>
-        <table class="takings-table">
-            <thead><tr><th>Rate</th><th>Net</th><th>VAT</th><th>Gross</th></tr></thead>
-            <tbody>
-                ${rateKeys.map(r => `<tr><td>${r}%</td><td>${fp(vatData.byRate[r].net)}</td><td class="val-highlight">${fp(vatData.byRate[r].vat)}</td><td class="val-green">${fp(vatData.byRate[r].gross)}</td></tr>`).join('')}
-            </tbody>
-        </table>
-        <div class="takings-total-bar"><span class="label">TOTAL VAT</span><span class="value">${fp(vatData.totalVat)}</span></div>
         <div style="display:flex;gap:12px;margin-top:20px">
-            <button class="register-btn open" onclick="printEndSalesReceipt()" style="flex:1">PRINT REPORT</button>
-            <button class="register-btn close" onclick="confirmEndSales()" style="flex:1;background:#DC2626;font-weight:700">CONFIRM & RESET</button>
+            <button class="register-btn close" onclick="confirmEndSales()" style="flex:1;background:#DC2626;font-weight:700;font-size:16px;padding:14px">CONFIRM & RESET</button>
+            <button class="register-btn eod" onclick="renderTakings()" style="flex:0 0 auto;background:#6B7280;color:#fff;padding:14px 28px;font-size:14px">CANCEL</button>
         </div>
-        <button class="register-btn eod" onclick="renderTakings()" style="margin-top:8px;background:#6B7280;color:#fff;width:100%">CANCEL</button>
     `;
 
-    // Stash data for print and confirm
+    // Stash data for print and confirm — MAIN + SUB
     POS._endSalesData = {
-        periodOrders: esActive, cashOrders, cardOrders, cashTotal, cardTotal, grandTotal,
+        periodOrders: esActive,
+        cashOrders: esCashOrders,
+        cardOrders: esCardOrders,
+        cashTotal: esCashTotal,
+        cardTotal: esCardTotal,
+        grandTotal: esGrandTotal,
+        vatData: esVat,
+        subData: esSub,
         refundedOrders: esRefunded, refundTotal: esRefundTotal,
-        vatData, fromStr, toStr, since, now: now.toISOString()
+        fromStr, toStr, since, now: now.toISOString()
     };
 }
 
@@ -5248,12 +5704,12 @@ async function confirmEndSales() {
     const d = POS._endSalesData;
     if (!d) return;
     const ok = await tbConfirm(
-        `Grand Total: ${fp(d.grandTotal)}\nCash: ${fp(d.cashTotal)} (${d.cashOrders.length} customers)\nCard: ${fp(d.cardTotal)} (${d.cardOrders.length} customers)\n\nThis will reset the register to £100 float.`,
+        `Grand Total: ${fp(d.grandTotal)}\nCash: ${fp(d.cashTotal)} (${d.cashOrders.length})\nCard: ${fp(d.cardTotal)} (${d.cardOrders.length})\n\nThis will reset the register to £100 float.`,
         'Confirm END Sales', '💰'
     );
     if (!ok) return;
 
-    // Build item breakdown for permanent record
+    // Build item breakdown for permanent record (with dual VAT rates)
     const itemMap = {};
     d.periodOrders.forEach(o => o.items.forEach(i => {
         const k = i.nameEn || i.name;
@@ -5273,7 +5729,7 @@ async function confirmEndSales() {
         items: o.items.map(i => ({ name: i.nameEn || i.name, qty: i.quantity, price: i.totalPrice || (i.price * i.quantity) }))
     }));
 
-    // Send to server (full data for permanent storage)
+    // Send to server — MAIN + SUB for END Sales
     wsSend({
         type: 'end_sales',
         branchCode: POS.branch,
@@ -5288,6 +5744,19 @@ async function confirmEndSales() {
         cardCustomers: d.cardOrders.length,
         vatTotal: d.vatData.totalVat,
         vatBreakdown: d.vatData.byRate,
+        // ★ SUB 데이터 포함 (VATable% 기반)
+        sub: {
+            cashPct: d.subData.cashPct,
+            vatablePct: d.subData.vatablePct,
+            vatRate: d.subData.vatRate,
+            cashTotal: d.subData.cashTotal,
+            cardTotal: d.subData.cardTotal,
+            grandTotal: d.subData.grandTotal,
+            vatableGross: d.subData.vatableGross,
+            nonVatableGross: d.subData.nonVatableGross,
+            vatTotal: d.subData.totalVat,
+            totalNet: d.subData.totalNet
+        },
         itemBreakdown: itemBreakdown,
         orders: ordersList,
         staff: POS.currentUser || null
@@ -5316,119 +5785,121 @@ async function confirmEndSales() {
     renderTakings();
 }
 
-async function printEndSalesReceipt() {
+function printEndSalesReceipt(mode) {
     const d = POS._endSalesData;
-    if (!d) return;
-
-    const rateKeys = Object.keys(d.vatData.byRate).sort((a,b) => Number(b) - Number(a));
-
-    // ★ Try direct ESC/POS print first
-    try {
-        const resp = await fetch('/api/print', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                type: 'report',
-                report: {
-                    branchName: POS.branchName,
-                    title: 'END SALES REPORT',
-                    from: d.fromStr,
-                    to: d.toStr,
-                    totalOrders: d.periodOrders.length,
-                    cashCount: d.cashOrders.length,
-                    cardCount: d.cardOrders.length,
-                    cashTotal: d.cashTotal,
-                    cardTotal: d.cardTotal,
-                    grandTotal: d.grandTotal,
-                    cashInDrawer: 100 + d.cashTotal,
-                    vatBreakdown: rateKeys.map(r => ({ rate: r, net: d.vatData.byRate[r].net, vat: d.vatData.byRate[r].vat })),
-                    totalVat: d.vatData.totalVat,
-                }
-            })
-        });
-        const result = await resp.json();
-        if (result.success) { toast('End Sales Report printed', 'success'); return; }
-        console.warn('[Print] Direct print failed:', result.error);
-    } catch (e) { console.warn('[Print] Direct print unavailable:', e.message); }
-
-    // ★ Fallback: browser window.print()
-    _fallbackBrowserPrint('END SALES REPORT', d.fromStr, d.toStr,
-        d.periodOrders.length, d.cashOrders.length, d.cardOrders.length,
-        d.cashTotal, d.cardTotal, d.grandTotal, rateKeys, d.vatData);
+    if (!d) { toast('No END Sales data to print', 'error'); return; }
+    if (mode === 'sub') {
+        if (!d.subData) { toast('SUB data missing', 'error'); return; }
+        _fallbackBrowserPrint('Sales Report — SUB', d.fromStr, d.toStr,
+            d.periodOrders.length, d.cashOrders.length, d.cardOrders.length,
+            d.subData.cashTotal, d.subData.cardTotal, d.subData.grandTotal, d.subData);
+    } else {
+        if (!d.vatData || !d.vatData.byRate) { toast('VAT data missing', 'error'); return; }
+        _fallbackBrowserPrint('Sales Report — MAIN', d.fromStr, d.toStr,
+            d.periodOrders.length, d.cashOrders.length, d.cardOrders.length,
+            d.cashTotal, d.cardTotal, d.grandTotal, d.vatData);
+    }
 }
 
-// ★ Print End Sales Detail (from history view)
-async function printEndSalesDetail(esId) {
-    let rec, s, rateKeys, fromStr, toStr;
+// ★ Print End Sales Detail (from history view) — browser preview, MAIN or SUB
+async function printEndSalesDetail(esId, mode) {
+    let rec, fromStr, toStr;
     try {
         const resp = await fetch(`/api/end-sales-detail?id=${encodeURIComponent(esId)}`);
         if (!resp.ok) { toast('Failed to load end sales data', 'error'); return; }
         rec = await resp.json();
-        s = rec.summary || {};
-        rateKeys = s.vatBreakdown ? Object.keys(s.vatBreakdown).sort((a,b) => Number(b) - Number(a)) : [];
         fromStr = rec.periodFrom ? new Date(rec.periodFrom).toLocaleString('en-GB') : 'Start';
         toStr = new Date(rec.periodTo).toLocaleString('en-GB');
     } catch (e) { toast('Failed to load end sales data', 'error'); return; }
 
-    // ★ Try direct ESC/POS print first
-    try {
-        const resp2 = await fetch('/api/print', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                type: 'report',
-                report: {
-                    branchName: rec.branchName || POS.branchName,
-                    title: 'END SALES REPORT',
-                    from: fromStr,
-                    to: toStr,
-                    totalOrders: s.totalOrders || 0,
-                    cashCount: s.cashCustomers || 0,
-                    cardCount: s.cardCustomers || 0,
-                    cashTotal: s.cashTotal || 0,
-                    cardTotal: s.cardTotal || 0,
-                    grandTotal: s.grandTotal || 0,
-                    cashInDrawer: s.cashInDrawer || (100 + (s.cashTotal || 0)),
-                    vatBreakdown: rateKeys.map(r => ({ rate: r, net: s.vatBreakdown[r].net, vat: s.vatBreakdown[r].vat })),
-                    totalVat: s.vatBreakdown ? rateKeys.reduce((sum, r) => sum + s.vatBreakdown[r].vat, 0) : 0,
-                }
-            })
-        });
-        const result = await resp2.json();
-        if (result.success) { toast('End Sales Detail printed', 'success'); return; }
-        console.warn('[Print] Direct print failed:', result.error);
-    } catch (e) { console.warn('[Print] Direct print error:', e.message); }
-
-    // ★ Fallback: browser window.print()
-    toast('Direct print failed — using browser print', 'warn');
-    const vatData = { byRate: s.vatBreakdown || {}, totalVat: rateKeys.reduce((sum, r) => sum + (s.vatBreakdown?.[r]?.vat || 0), 0) };
-    _fallbackBrowserPrint('END SALES REPORT', fromStr, toStr,
-        s.totalOrders || 0, s.cashCustomers || 0, s.cardCustomers || 0,
-        s.cashTotal || 0, s.cardTotal || 0, s.grandTotal || 0, rateKeys, vatData);
+    const s = rec.summary || {};
+    const sub = rec.sub || null;
+    if (mode === 'sub' && sub) {
+        // SUB: VATable 기반 — 새 형식 또는 구 형식 호환
+        const vatInfo = sub.vatableGross != null
+            ? { vatablePct: sub.vatablePct, vatRate: sub.vatRate || 20, vatableGross: sub.vatableGross, nonVatableGross: sub.nonVatableGross, totalVat: sub.vatTotal || 0, totalNet: sub.totalNet || 0 }
+            : { vatablePct: 100, vatRate: 20, vatableGross: sub.grandTotal || 0, nonVatableGross: 0, totalVat: sub.vatTotal || 0, totalNet: (sub.grandTotal || 0) - (sub.vatTotal || 0) };
+        _fallbackBrowserPrint('Sales Report — SUB', fromStr, toStr,
+            s.totalOrders || 0, s.cashCustomers || 0, s.cardCustomers || 0,
+            sub.cashTotal || 0, sub.cardTotal || 0, sub.grandTotal || 0, vatInfo);
+    } else {
+        // MAIN: per-rate breakdown
+        const vatData = { byRate: s.vatBreakdown || {}, totalVat: Object.values(s.vatBreakdown || {}).reduce((sum, v) => sum + (v?.vat || 0), 0) };
+        _fallbackBrowserPrint('Sales Report — MAIN', fromStr, toStr,
+            s.totalOrders || 0, s.cashCustomers || 0, s.cardCustomers || 0,
+            s.cashTotal || 0, s.cardTotal || 0, s.grandTotal || 0, vatData);
+    }
 }
 
 // ★ Browser fallback for report printing (used when direct ESC/POS fails)
-function _fallbackBrowserPrint(title, from, to, orders, cashCnt, cardCnt, cashTotal, cardTotal, grandTotal, rateKeys, vatData) {
-    document.getElementById('esrBranch').textContent = POS.branchName;
-    document.getElementById('esrTitle').textContent = title;
-    document.getElementById('esrFrom').textContent = from;
-    document.getElementById('esrTo').textContent = to;
-    document.getElementById('esrOrders').textContent = orders;
-    document.getElementById('esrCashCust').textContent = cashCnt;
-    document.getElementById('esrCardCust').textContent = cardCnt;
-    document.getElementById('esrCash').textContent = fp(cashTotal);
-    document.getElementById('esrCard').textContent = fp(cardTotal);
-    document.getElementById('esrGrand').textContent = fp(grandTotal);
-    const drawerEl = document.getElementById('esrCashDrawer');
-    if (drawerEl) drawerEl.textContent = fp(100 + cashTotal);
-    document.getElementById('esrVatRows').innerHTML = rateKeys.map(r =>
-        `<div class="r-row"><span>VAT ${r}%:</span><span>${fp(vatData.byRate[r].vat)} (Net: ${fp(vatData.byRate[r].net)})</span></div>`
-    ).join('');
-    document.getElementById('esrVatTotal').textContent = fp(vatData.totalVat);
-    document.getElementById('esrFooter').textContent = `Printed: ${new Date().toLocaleString('en-GB')}`;
-    document.getElementById('endSalesReceiptPrint').style.display = 'block';
-    setTimeout(() => window.print(), 200);
-    setTimeout(() => { document.getElementById('endSalesReceiptPrint').style.display = 'none'; }, 800);
+// vatInfo: MAIN용 = { byRate: {...}, totalVat } / SUB용 = { vatablePct, vatRate, vatableGross, nonVatableGross, totalVat, totalNet }
+function _fallbackBrowserPrint(title, from, to, orders, cashCnt, cardCnt, cashTotal, cardTotal, grandTotal, vatInfo) {
+    try {
+        document.getElementById('esrBranch').textContent = POS.branchName;
+        document.getElementById('esrTitle').textContent = title;
+        document.getElementById('esrFrom').textContent = from;
+        document.getElementById('esrTo').textContent = to;
+        document.getElementById('esrOrders').textContent = orders;
+        document.getElementById('esrCashCust').textContent = cashCnt;
+        document.getElementById('esrCardCust').textContent = cardCnt;
+        document.getElementById('esrCash').textContent = fp(cashTotal);
+        document.getElementById('esrCard').textContent = fp(cardTotal);
+        document.getElementById('esrGrand').textContent = fp(grandTotal);
+        const drawerEl = document.getElementById('esrCashDrawer');
+        if (drawerEl) drawerEl.textContent = fp(100 + cashTotal);
+        // VAT rows: MAIN=byRate breakdown, SUB=VATable breakdown
+        let vatHtml = '';
+        if (vatInfo.byRate) {
+            // MAIN: per-rate breakdown
+            const rk = Object.keys(vatInfo.byRate).sort((a,b) => Number(b) - Number(a));
+            vatHtml = rk.map(r =>
+                `<div class="r-row"><span>VAT ${r}%:</span><span>${fp(vatInfo.byRate[r].vat)} (Net: ${fp(vatInfo.byRate[r].net)})</span></div>`
+            ).join('');
+        } else {
+            // SUB: VATable breakdown
+            vatHtml = `<div class="r-row"><span>VATable:</span><span>${fp(vatInfo.vatableGross||0)}</span></div>
+            <div class="r-row"><span>Non-VATable:</span><span>${fp(vatInfo.nonVatableGross||0)}</span></div>
+            <div class="r-row" style="font-weight:800;font-size:14px;border-top:2px solid #333;padding-top:4px;margin-top:4px"><span>VAT (${vatInfo.vatRate||20}%)</span><span>${fp(vatInfo.totalVat||0)}</span></div>`;
+        }
+        document.getElementById('esrVatRows').innerHTML = vatHtml;
+        document.getElementById('esrVatTotal').textContent = fp(vatInfo.totalVat || 0);
+        document.getElementById('esrFooter').textContent = '';
+        const receiptEl = document.getElementById('endSalesReceiptPrint');
+        receiptEl.style.display = 'block';
+        window.print();
+        receiptEl.style.display = 'none';
+    } catch (e) {
+        console.error('[BrowserPrint] Error:', e);
+        toast('Browser print error: ' + e.message, 'error');
+    }
+}
+
+// ★ Takings Print — MAIN only
+function printTakingsMain() {
+    const paid = (dailyOrders || []).filter(o => o.status === 'paid');
+    if (!paid.length) { toast('No sales to print', 'error'); return; }
+    const vatData = calcVatBreakdown(paid);
+    const cashOrds = paid.filter(o => (o.paymentMethod||'').toLowerCase().includes('cash'));
+    const cardOrds = paid.filter(o => { const p=(o.paymentMethod||'').toLowerCase(); return p.includes('card')||p.includes('stripe'); });
+    const cashTot = cashOrds.reduce((s,o) => s + (o.total||0), 0);
+    const cardTot = cardOrds.reduce((s,o) => s + (o.total||0), 0);
+    const grandTot = paid.reduce((s,o) => s + (o.total||0), 0);
+    _fallbackBrowserPrint('TAKINGS — MAIN',
+        new Date().toLocaleDateString('en-GB'), new Date().toLocaleTimeString('en-GB'),
+        paid.length, cashOrds.length, cardOrds.length, cashTot, cardTot, grandTot, vatData);
+}
+
+// ★ Takings Print — SUB only
+function printTakingsSub() {
+    const paid = (dailyOrders || []).filter(o => o.status === 'paid');
+    if (!paid.length) { toast('No sales to print', 'error'); return; }
+    const subData = calcSubBreakdown(paid);
+    const cashOrds = paid.filter(o => (o.paymentMethod||'').toLowerCase().includes('cash'));
+    const cardOrds = paid.filter(o => { const p=(o.paymentMethod||'').toLowerCase(); return p.includes('card')||p.includes('stripe'); });
+    _fallbackBrowserPrint('TAKINGS — SUB',
+        new Date().toLocaleDateString('en-GB'), new Date().toLocaleTimeString('en-GB'),
+        subData.cashCount + subData.cardCount + (subData.otherCount||0), subData.cashCount, subData.cardCount,
+        subData.cashTotal, subData.cardTotal, subData.grandTotal, subData);
 }
 
 // ═══════════════════════════════════════════
@@ -5464,16 +5935,20 @@ async function quickDailyReport(targetDate) {
 
     const refundedOrders = orders.filter(o => !!o.refunded);
     const activeOrders = orders.filter(o => !o.refunded);
-    const cashOrders = activeOrders.filter(o => o.paymentMethod === 'cash');
-    const cardOrders = activeOrders.filter(o => o.paymentMethod === 'card');
-    const cashTotal = cashOrders.reduce((s, o) => s + (o.total || 0), 0);
-    const cardTotal = cardOrders.reduce((s, o) => s + (o.total || 0), 0);
     const refundTotal = refundedOrders.reduce((s, o) => s + (o.total || 0), 0);
-    const grandTotal = cashTotal + cardTotal;
     const paidOrders = activeOrders.filter(o => o.paymentMethod === 'cash' || o.paymentMethod === 'card' || o.paymentStatus === 'paid');
     const unpaidOrders = activeOrders.filter(o => !o.paymentMethod || o.paymentMethod === 'not_paid');
-    const vatData = calcVatBreakdown(paidOrders);
-    const rateKeys = Object.keys(vatData.byRate).sort((a,b) => Number(b) - Number(a));
+
+    // ★ DUAL: Main + Sub
+    const _drDual = buildDualSummary(paidOrders);
+    const _M = _drDual.main, _S = _drDual.sub;
+    const mainRK = Object.keys(_M.vat.byRate).sort((a,b) => Number(b) - Number(a));
+    // _S is now flat: { vatablePct, vatRate, vatableGross, nonVatableGross, totalVat, totalNet, ... }
+    // Legacy aliases
+    const cashOrders = paidOrders.filter(o => o.paymentMethod === 'cash');
+    const cardOrders = paidOrders.filter(o => o.paymentMethod === 'card');
+    const cashTotal = _M.cashTotal, cardTotal = _M.cardTotal, grandTotal = _M.grandTotal;
+    const vatData = _M.vat;
 
     // ── Discount summary ──
     const discountedOrders = paidOrders.filter(o => {
@@ -5493,41 +5968,76 @@ async function quickDailyReport(targetDate) {
     });
 
     el.innerHTML = `
-        <div style="background:#EFF6FF;border:2px solid #2563EB;border-radius:12px;padding:20px;margin-bottom:16px">
-            <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-                <div>
-                    <h3 style="color:#2563EB;margin:0 0 4px 0;font-size:18px">DAILY REPORT</h3>
-                    <div style="color:#6B7280;font-size:13px">${POS.branchName} — ${dateLabel}</div>
-                    <div style="color:#9CA3AF;font-size:11px;margin-top:2px">View only — no reset</div>
+        <div style="background:#EFF6FF;border:2px solid #2563EB;border-radius:12px;padding:14px;margin-bottom:12px">
+            <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+                <div style="flex:1;min-width:0">
+                    <h3 style="color:#2563EB;margin:0 0 2px 0;font-size:16px">DAILY REPORT</h3>
+                    <div style="color:#6B7280;font-size:12px">${POS.branchName} — ${dateLabel} <span style="color:#9CA3AF;font-size:10px">(view only)</span></div>
                 </div>
-                <div style="display:flex;gap:8px;align-items:center">
-                    <button onclick="_dailyReportNav(-1)" style="background:#2563EB;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:16px;cursor:pointer;font-weight:700">◀</button>
-                    <button onclick="_dailyReportPickDate()" style="background:#fff;color:#2563EB;border:2px solid #2563EB;border-radius:8px;padding:8px 16px;font-size:14px;cursor:pointer;font-weight:700">📅 ${dateLabel}</button>
-                    <button onclick="_dailyReportNav(1)" style="background:#2563EB;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:16px;cursor:pointer;font-weight:700"${isToday ? ';opacity:0.3;pointer-events:none' : ''}>▶</button>
-                    ${!isToday ? `<button onclick="quickDailyReport(new Date())" style="background:#059669;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:12px;cursor:pointer;font-weight:700">TODAY</button>` : ''}
+                <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+                    <button onclick="_dailyReportNav(-1)" style="background:#2563EB;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer;font-weight:700">◀</button>
+                    <button onclick="_dailyReportPickDate()" style="background:#fff;color:#2563EB;border:2px solid #2563EB;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;font-weight:700">📅 ${dateLabel}</button>
+                    <button onclick="_dailyReportNav(1)" style="background:#2563EB;color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:14px;cursor:pointer;font-weight:700"${isToday ? ';opacity:0.3;pointer-events:none' : ''}>▶</button>
+                    ${!isToday ? `<button onclick="quickDailyReport(new Date())" style="background:#059669;color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:11px;cursor:pointer;font-weight:700">TODAY</button>` : ''}
+                    <button onclick="printDailyReport('main')" style="padding:6px 12px;background:#2563EB;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;margin-left:4px">🖨️ MAIN</button>
+                    <button onclick="printDailyReport('sub')" style="padding:6px 12px;background:#F59E0B;color:#fff;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap">🖨️ SUB</button>
+                    <button onclick="_dailyReportDate=null;renderTakings()" style="padding:6px 14px;border:1px solid #D1D5DB;border-radius:8px;background:#fff;font-weight:600;cursor:pointer;font-size:11px;white-space:nowrap;color:#6B7280">← Back</button>
                 </div>
             </div>
         </div>
-        <div style="display:flex;gap:10px;align-items:stretch;flex-wrap:wrap">
-            <div class="takings-stat-grid" style="flex:1;min-width:0;margin:0">
-                <div class="takings-stat-card"><div class="takings-stat-val">${paidOrders.length}${unpaidOrders.length > 0 ? ` <span style="font-size:14px;color:#F97316">(+${unpaidOrders.length} unpaid)</span>` : ''}</div><div class="takings-stat-label">Paid Orders</div></div>
-                <div class="takings-stat-card"><div class="takings-stat-val">${cashOrders.length}</div><div class="takings-stat-label">Cash Customers</div></div>
-                <div class="takings-stat-card"><div class="takings-stat-val">${cardOrders.length}</div><div class="takings-stat-label">Card Customers</div></div>
-                <div class="takings-stat-card"><div class="takings-stat-val">${fp(grandTotal)}</div><div class="takings-stat-label">Grand Total</div></div>
+
+        <!-- ══ MAIN + SUB 나란히 ══ -->
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:12px">
+            <!-- MAIN -->
+            <div style="flex:1;min-width:280px;background:#EFF6FF;border:2px solid #2563EB;border-radius:12px;padding:14px">
+                <h4 style="color:#2563EB;margin:0 0 8px 0;font-size:14px">📊 MAIN (Actual Sales)</h4>
+                <table class="takings-table">
+                    <thead><tr><th>Payment</th><th>Count</th><th>Amount</th></tr></thead>
+                    <tbody>
+                        <tr><td>💳 CARD</td><td>${_M.cardCount}</td><td class="val-green">${fp(_M.cardTotal)}</td></tr>
+                        <tr><td>💵 CASH</td><td>${_M.cashCount}</td><td class="val-green">${fp(_M.cashTotal)}</td></tr>
+                    </tbody>
+                </table>
+                <div class="takings-total-bar"><span class="label">MAIN TOTAL</span><span class="value">${fp(_M.grandTotal)}</span></div>
+                <table class="takings-table" style="margin-top:6px"><thead><tr><th>Rate</th><th>Net</th><th>VAT</th><th>Gross</th></tr></thead><tbody>
+                    ${mainRK.map(r => `<tr><td>${r}%</td><td>${fp(_M.vat.byRate[r].net)}</td><td class="val-highlight">${fp(_M.vat.byRate[r].vat)}</td><td class="val-green">${fp(_M.vat.byRate[r].gross)}</td></tr>`).join('')}
+                </tbody></table>
+                <div style="display:flex;justify-content:space-between;padding:6px 12px;background:#DBEAFE;border-radius:8px;margin-top:4px">
+                    <span style="font-weight:700;color:#1E40AF;font-size:12px">Main VAT</span>
+                    <span style="font-weight:800;color:#1E40AF;font-size:14px">${fp(_M.vat.totalVat)}</span>
+                </div>
             </div>
-            <div style="display:flex;flex-direction:column;gap:6px;flex:0 0 auto;justify-content:center">
-                <button class="register-btn open" onclick="printDailyReport()" style="padding:10px 18px;font-size:13px;white-space:nowrap">🖨️ PRINT</button>
-                <button onclick="_dailyReportDate=null;renderTakings()" style="padding:10px 18px;border:1px solid #D1D5DB;border-radius:8px;background:#fff;font-weight:600;cursor:pointer;font-size:12px;white-space:nowrap;color:#6B7280">← Back</button>
+            <!-- SUB -->
+            <div style="flex:1;min-width:280px;background:#FFFBEB;border:2px solid #F59E0B;border-radius:12px;padding:14px">
+                <h4 style="color:#D97706;margin:0 0 8px 0;font-size:14px">📋 SUB</h4>
+                <table class="takings-table">
+                    <thead><tr><th>Payment</th><th>Count</th><th>Amount</th></tr></thead>
+                    <tbody>
+                        <tr><td>💳 CARD</td><td>${_S.cardCount}</td><td class="val-green">${fp(_S.cardTotal)}</td></tr>
+                        <tr><td>💵 CASH</td><td>${_S.cashCount}</td><td class="val-green">${fp(_S.cashTotal)}</td></tr>
+                    </tbody>
+                </table>
+                <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FDE68A;border-radius:8px;margin-top:4px">
+                    <span style="font-weight:700;color:#92400E;font-size:13px">SUB TOTAL</span>
+                    <span style="font-weight:800;color:#D97706;font-size:16px">${fp(_S.grandTotal)}</span>
+                </div>
+                <div style="margin-top:8px;padding:8px 12px;background:#FDE68A;border-radius:8px;font-size:13px;color:#92400E">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                        <span>VATable:</span>
+                        <span style="font-weight:600">${fp(_S.vatableGross)}</span>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+                        <span>Non-VATable:</span>
+                        <span style="font-weight:600">${fp(_S.nonVatableGross)}</span>
+                    </div>
+                    <div style="border-top:2px solid #D97706;padding-top:6px;display:flex;justify-content:space-between;margin-top:6px">
+                        <span style="font-weight:800;font-size:14px;color:#92400E">VAT (${_S.vatRate}%)</span>
+                        <span style="font-weight:800;font-size:16px;color:#D97706">${fp(_S.totalVat)}</span>
+                    </div>
+                </div>
             </div>
         </div>
-        <table class="takings-table">
-            <thead><tr><th>Payment</th><th>Count</th><th>Amount</th></tr></thead>
-            <tbody>
-                <tr><td>CASH</td><td>${cashOrders.length}</td><td class="val-green">${fp(cashTotal)}</td></tr>
-                <tr><td>CARD</td><td>${cardOrders.length}</td><td class="val-green">${fp(cardTotal)}</td></tr>
-            </tbody>
-        </table>
-        <div class="takings-total-bar"><span class="label">GRAND TOTAL</span><span class="value">${fp(grandTotal)}</span></div>
+
         ${discountedOrders.length > 0 ? `
         <div style="background:#FFFBEB;border:2px solid #F59E0B;border-radius:10px;padding:14px;margin:12px 0">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -5556,14 +6066,6 @@ async function quickDailyReport(targetDate) {
             <span style="font-weight:700;color:#059669;font-size:15px">💵 Cash in Drawer (£100 + Cash Sales${refundedOrders.some(r=>r.refundMethod==='cash') ? ' - Cash Refunds' : ''})</span>
             <span style="font-weight:800;color:#059669;font-size:20px">${fp(100 + cashTotal - refundedOrders.filter(r=>r.refundMethod==='cash').reduce((s,r)=>s+(r.total||0),0))}</span>
         </div>` : ''}
-        <h4 style="margin:16px 0 8px 0;color:#374151">VAT Breakdown</h4>
-        <table class="takings-table">
-            <thead><tr><th>Rate</th><th>Net</th><th>VAT</th><th>Gross</th></tr></thead>
-            <tbody>
-                ${rateKeys.map(r => `<tr><td>${r}%</td><td>${fp(vatData.byRate[r].net)}</td><td class="val-highlight">${fp(vatData.byRate[r].vat)}</td><td class="val-green">${fp(vatData.byRate[r].gross)}</td></tr>`).join('')}
-            </tbody>
-        </table>
-        <div class="takings-total-bar"><span class="label">TOTAL VAT</span><span class="value">${fp(vatData.totalVat)}</span></div>
         ${(() => {
             // Item Sales breakdown
             const itemMap = {};
@@ -5615,8 +6117,8 @@ async function quickDailyReport(targetDate) {
         })()}
     `;
 
-    // Stash for printing
-    POS._dailyReportData = { orders, cashOrders, cardOrders, cashTotal, cardTotal, grandTotal, refundedOrders, refundTotal, vatData, today: dateLabel, discountedOrders, discountDetails, totalDiscountAmt };
+    // Stash for printing (dual data included)
+    POS._dailyReportData = { orders, cashOrders, cardOrders, cashTotal, cardTotal, grandTotal, refundedOrders, refundTotal, vatData, today: dateLabel, discountedOrders, discountDetails, totalDiscountAmt, dual: _drDual };
 }
 
 // ─── Daily Report date navigation ───
@@ -5636,52 +6138,82 @@ async function _dailyReportPickDate() {
     quickDailyReport(d);
 }
 
-async function printDailyReport() {
+function printDailyReport(mode) {
     const d = POS._dailyReportData;
-    if (!d) return;
+    if (!d) { toast('No Daily Report data to print', 'error'); return; }
 
-    const rateKeys = Object.keys(d.vatData.byRate).sort((a,b) => Number(b) - Number(a));
+    const M = d.dual ? d.dual.main : null;
+    const S = d.dual ? d.dual.sub : null;
+    const mainRK = M ? Object.keys(M.vat.byRate).sort((a,b) => Number(b) - Number(a)) : Object.keys(d.vatData.byRate).sort((a,b) => Number(b) - Number(a));
 
-    // ★ Try direct ESC/POS print first
-    try {
-        const resp = await fetch('/api/print', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                type: 'report',
-                report: {
-                    branchName: POS.branchName,
-                    title: 'DAILY REPORT',
-                    from: d.today,
-                    to: new Date().toLocaleTimeString('en-GB'),
-                    totalOrders: d.orders.length,
-                    cashCount: d.cashOrders.length,
-                    cardCount: d.cardOrders.length,
-                    cashTotal: d.cashTotal,
-                    cardTotal: d.cardTotal,
-                    grandTotal: d.grandTotal,
-                    cashInDrawer: 100 + d.cashTotal,
-                    discountCount: (d.discountedOrders||[]).length,
-                    totalDiscountAmt: d.totalDiscountAmt || 0,
-                    discountDetails: (d.discountDetails||[]).map(x => `${x.orderNum} ${x.label}${x.name?' '+x.name:''} -${fp(x.amt)}`),
-                    vatBreakdown: rateKeys.map(r => ({ rate: r, net: d.vatData.byRate[r].net, vat: d.vatData.byRate[r].vat })),
-                    totalVat: d.vatData.totalVat,
-                }
-            })
-        });
-        const result = await resp.json();
-        if (result.success) {
-            toast('Daily Report printed', 'success');
-            return;
-        }
-        console.warn('[Print] Direct report print failed:', result.error);
-    } catch (e) { console.warn('[Print] Direct print unavailable:', e.message); }
+    // If mode specified, use _fallbackBrowserPrint for single-section print
+    if (mode === 'main') {
+        const vatData = M ? M.vat : d.vatData;
+        _fallbackBrowserPrint('DAILY REPORT — MAIN', d.today, new Date().toLocaleTimeString('en-GB'),
+            M ? M.totalOrders : d.orders.length, M ? M.cashCount : d.cashOrders.length, M ? M.cardCount : d.cardOrders.length,
+            M ? M.cashTotal : d.cashTotal, M ? M.cardTotal : d.cardTotal, M ? M.grandTotal : d.grandTotal, vatData);
+        return;
+    }
+    if (mode === 'sub') {
+        if (!S) { toast('SUB data not available', 'error'); return; }
+        _fallbackBrowserPrint('DAILY REPORT — SUB', d.today, new Date().toLocaleTimeString('en-GB'),
+            S.cashCount + S.cardCount + (S.otherCount||0), S.cashCount, S.cardCount,
+            S.cashTotal, S.cardTotal, S.grandTotal, S);
+        return;
+    }
 
-    // ★ Fallback: browser window.print()
-    toast('Direct print failed — using browser print', 'warn');
-    _fallbackBrowserPrint('DAILY REPORT', d.today, new Date().toLocaleTimeString('en-GB'),
-        d.orders.length, d.cashOrders.length, d.cardOrders.length,
-        d.cashTotal, d.cardTotal, d.grandTotal, rateKeys, d.vatData);
+    // ★ Browser print preview — dual MAIN + SUB receipt (fallback: both)
+    const printEl = document.getElementById('endSalesReceiptPrint');
+    if (!printEl) { toast('Print element not found', 'error'); return; }
+    const _fp = v => '£' + (Number(v)||0).toFixed(2);
+    const now = new Date().toLocaleTimeString('en-GB');
+    let html = `<div style="font-family:monospace;font-size:12px;max-width:300px;margin:0 auto;padding:8px">
+        <div style="text-align:center;font-weight:bold;font-size:14px;margin-bottom:6px">${POS.branchName}</div>
+        <div style="text-align:center;font-weight:bold;font-size:13px;margin-bottom:4px">DAILY REPORT</div>
+        <div style="text-align:center;margin-bottom:8px">${d.today} — ${now}</div>
+        <div style="border-top:1px dashed #000;margin:4px 0"></div>
+        <div style="text-align:center;font-weight:bold;margin:6px 0">═══ MAIN (Actual) ═══</div>
+        <div>Orders: ${M ? M.totalOrders : d.orders.length}</div>
+        <div>Cash (${M ? M.cashCount : d.cashOrders.length}): ${_fp(M ? M.cashTotal : d.cashTotal)}</div>
+        <div>Card (${M ? M.cardCount : d.cardOrders.length}): ${_fp(M ? M.cardTotal : d.cardTotal)}</div>
+        <div style="font-weight:bold;font-size:13px;margin:4px 0">MAIN TOTAL: ${_fp(M ? M.grandTotal : d.grandTotal)}</div>
+        <div style="margin:4px 0">Main VAT:</div>
+        ${mainRK.map(r => {
+            const b = M ? M.vat.byRate[r] : d.vatData.byRate[r];
+            return `<div>  ${r}%: Net ${_fp(b.net)} VAT ${_fp(b.vat)}</div>`;
+        }).join('')}
+        <div style="font-weight:bold">Main VAT Total: ${_fp(M ? M.vat.totalVat : d.vatData.totalVat)}</div>`;
+
+    if (S) {
+        html += `<div style="border-top:1px dashed #000;margin:6px 0"></div>
+        <div style="text-align:center;font-weight:bold;margin:6px 0">═══ SUB ═══</div>
+        <div>Orders: ${S.cashCount + S.cardCount + (S.otherCount||0)}</div>
+        <div>Cash (${S.cashCount}): ${_fp(S.cashTotal)}</div>
+        <div>Card (${S.cardCount}): ${_fp(S.cardTotal)}</div>
+        <div style="font-weight:bold;font-size:13px;margin:4px 0">SUB TOTAL: ${_fp(S.grandTotal)}</div>
+        <div style="margin:4px 0">VATable: ${_fp(S.vatableGross)}</div>
+        <div style="margin:4px 0">Non-VATable: ${_fp(S.nonVatableGross)}</div>
+        <div style="font-weight:bold;font-size:14px;margin:6px 0;border-top:1px dashed #000;padding-top:4px">VAT (${S.vatRate}%): ${_fp(S.totalVat)}</div>`;
+    }
+
+    if ((d.discountedOrders||[]).length > 0) {
+        html += `<div style="border-top:1px dashed #000;margin:6px 0"></div>
+        <div>Discounts (${d.discountedOrders.length}): -${_fp(d.totalDiscountAmt)}</div>`;
+    }
+    if ((d.refundedOrders||[]).length > 0) {
+        html += `<div>Refunds (${d.refundedOrders.length}): -${_fp(d.refundTotal)}</div>
+        <div style="font-weight:bold">Net: ${_fp((M ? M.grandTotal : d.grandTotal) - d.refundTotal)}</div>`;
+    }
+    html += `<div style="border-top:1px dashed #000;margin:6px 0"></div>
+        <div style="font-weight:bold">Cash in Drawer: ${_fp(100 + (M ? M.cashTotal : d.cashTotal))}</div>
+    </div>`;
+
+    const _origHTML = printEl.innerHTML; // ★ Save original template
+    printEl.innerHTML = html;
+    printEl.style.display = 'block';
+    window.print();
+    printEl.style.display = 'none';
+    printEl.innerHTML = _origHTML; // ★ Restore template children (esrBranch etc.)
 }
 
 // ═══════════════════════════════════════════
@@ -5728,13 +6260,30 @@ function toggleSetting(key) {
 function saveCashReportPct() {
     POS.settings.cashReportPct = parseInt(document.getElementById('cashReportPct').value) || 100;
     savePosSettings();
+    sendBranchInfoToServer(); // ★ 서버에 cashReportPct 동기화
     toast(`Cash Report: ${POS.settings.cashReportPct}%`, 'success');
+}
+
+function saveDailyPushTime() {
+    const val = document.getElementById('dailyPushTime')?.value || '23:50';
+    POS.settings.dailyPushTime = val;
+    savePosSettings();
+    sendBranchInfoToServer(); // ★ 서버에 dailyPushTime 동기화
+    toast(`Daily Push Time: ${val}`, 'success');
 }
 
 function saveCashReportPctFromTakings() {
     POS.settings.cashReportPct = parseInt(document.getElementById('takingsCashPct').value) || 100;
     savePosSettings();
+    sendBranchInfoToServer(); // ★ 서버에 cashReportPct 동기화
     toast(`Cash Report: ${POS.settings.cashReportPct}%`, 'success');
+}
+
+function saveVatPctFromTakings() {
+    POS.settings.vatPct = parseInt(document.getElementById('takingsVatPct').value) || 20;
+    savePosSettings();
+    sendBranchInfoToServer(); // ★ 서버에 vatPct 동기화
+    toast(`VATable: ${POS.settings.vatPct}%`, 'success');
 }
 
 // ═══════════════════════════════════════════
@@ -5811,49 +6360,26 @@ async function loadDailyReport() {
             return { orderNum: o.orderNumber, amt, label, name: d.name || '', approvedBy: d.approvedBy || '' };
         });
 
-        // Calculate totals (active orders only)
-        let cardTotal = 0, cashTotal = 0, otherTotal = 0;
-        let cardCount = 0, cashCount = 0, otherCount = 0;
-        activeOrders.forEach(o => {
-            const amount = o.total || 0;
-            const pm = (o.paymentMethod || '').toLowerCase();
-            if (pm.includes('card') || pm.includes('stripe')) {
-                cardTotal += amount; cardCount++;
-            } else if (pm.includes('cash')) {
-                cashTotal += amount; cashCount++;
-            } else {
-                otherTotal += amount; otherCount++;
-            }
-        });
+        // ═══ DUAL: Main + Sub calculation ═══
+        const _drDual = buildDualSummary(activeOrders);
+        const _drM = _drDual.main, _drS = _drDual.sub;
 
-        const cashPct = POS.settings.cashReportPct || 100;
-        const reportedCash = Math.round(cashTotal * (cashPct / 100) * 100) / 100;
-        const reportedCashCount = Math.round(cashCount * (cashPct / 100));
-        const reportedOther = Math.round(otherTotal * (cashPct / 100) * 100) / 100;
-        const reportedOtherCount = Math.round(otherCount * (cashPct / 100));
-        const reportedTotalOrders = cardCount + reportedCashCount + reportedOtherCount;
-        const grandTotal = cardTotal + reportedCash + reportedOther;
-
-        // VAT calculation — card 100%, cash/other는 cashPct 적용 (active only)
-        const vatBreakdown = {};
-        let totalVatAmount = 0;
-        activeOrders.forEach(o => {
-            const pm = (o.paymentMethod || '').toLowerCase();
-            const isCard = pm.includes('card') || pm.includes('stripe');
-            const pctMultiplier = isCard ? 1 : (cashPct / 100);
-            const items = o.items || [];
-            items.forEach(item => {
-                const rate = item.vatRate || (item.vatApplicable === false ? 0 : 20);
-                const itemTotal = (item.totalPrice || item.price || 0) * pctMultiplier;
-                const net = Math.round(itemTotal / (1 + rate / 100) * 100) / 100;
-                const vat = Math.round((itemTotal - net) * 100) / 100;
-                if (!vatBreakdown[rate]) vatBreakdown[rate] = { net: 0, vat: 0, gross: 0 };
-                vatBreakdown[rate].net += net;
-                vatBreakdown[rate].vat += vat;
-                vatBreakdown[rate].gross += itemTotal;
-                totalVatAmount += vat;
-            });
-        });
+        // Legacy vars for compatibility (used by print, refund, discount)
+        const cardTotal = _drM.cardTotal, cashTotal = _drM.cashTotal, otherTotal = _drM.otherTotal;
+        const cardCount = _drM.cardCount, cashCount = _drM.cashCount, otherCount = _drM.otherCount;
+        const cashPct = _drDual.cashPct;
+        const reportedCash = _drS.cashTotal;
+        const reportedCashCount = _drS.cashCount;
+        const reportedOther = _drS.otherTotal;
+        const reportedOtherCount = _drS.otherCount;
+        const reportedTotalOrders = _drS.cashCount + _drS.cardCount + (_drS.otherCount||0);
+        const grandTotal = _drS.grandTotal;
+        // SUB uses VATable% system (flat structure)
+        const subVatTotal = _drS.totalVat;
+        const subVatablePct = _drS.vatablePct;
+        const subVatableGross = _drS.vatableGross;
+        const subNonVatableGross = _drS.nonVatableGross;
+        const subTotalNet = _drS.totalNet;
 
         // Format period display
         const fmtDate = (ds) => {
@@ -5863,14 +6389,6 @@ async function loadDailyReport() {
         const periodStr = dateFrom === dateTo
             ? `${fmtDate(dateFrom)} ${timeFrom} - ${timeTo}`
             : `${fmtDate(dateFrom)} ${timeFrom} ~ ${fmtDate(dateTo)} ${timeTo}`;
-
-        const vatRates = Object.keys(vatBreakdown).sort((a, b) => Number(b) - Number(a));
-
-        // VAT — total only (simple)
-        const vatHtml = totalVatAmount > 0 ? `<div style="display:flex;justify-content:space-between;padding:14px 16px;background:#FFFBEB;border:2px solid #FDE68A;border-radius:12px;margin-top:12px">
-            <span style="font-weight:700;font-size:14px;color:#92400E">Total VAT</span>
-            <span style="font-weight:800;font-size:18px;color:#B45309">${fp(totalVatAmount)}</span>
-        </div>` : '';
 
         // Refund HTML
         const refundHtml = refundedOrders.length > 0 ? `<div style="background:#FEF2F2;border:2px solid #DC2626;border-radius:12px;padding:14px;margin-top:12px">
@@ -5904,33 +6422,58 @@ async function loadDailyReport() {
         content.innerHTML = `
             <div style="text-align:center;margin-bottom:16px">
                 <div style="font-size:13px;color:#6B7280">${periodStr}</div>
-                <div style="font-size:12px;color:#9CA3AF">${reportedTotalOrders} orders</div>
+                <div style="font-size:12px;color:#9CA3AF">${_drM.totalOrders} orders</div>
             </div>
-            <div style="background:#fff;border:2px solid #E5E7EB;border-radius:12px;overflow:hidden">
-                <div style="display:flex;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #F3F4F6">
-                    <span style="color:#6B7280;font-size:14px">💳 Card Sales (${cardCount})</span>
-                    <span style="font-weight:700;font-size:16px;color:#2563EB">${fp(cardTotal)}</span>
+
+            <!-- ══ MAIN (Actual Sales) ══ -->
+            <div style="background:#EFF6FF;border:2px solid #2563EB;border-radius:12px;overflow:hidden;margin-bottom:12px">
+                <div style="padding:10px 16px;background:#DBEAFE;font-weight:700;color:#1E40AF;font-size:14px">📊 MAIN (Actual Sales)</div>
+                <div style="display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #BFDBFE">
+                    <span style="color:#6B7280;font-size:14px">💳 Card (${_drM.cardCount})</span>
+                    <span style="font-weight:700;font-size:16px;color:#2563EB">${fp(_drM.cardTotal)}</span>
                 </div>
-                <div style="display:flex;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #F3F4F6">
-                    <span style="color:#6B7280;font-size:14px">💵 Cash Sales (${reportedCashCount})</span>
-                    <span style="font-weight:700;font-size:16px;color:#059669">${fp(reportedCash)}</span>
+                <div style="display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #BFDBFE">
+                    <span style="color:#6B7280;font-size:14px">💵 Cash (${_drM.cashCount})</span>
+                    <span style="font-weight:700;font-size:16px;color:#059669">${fp(_drM.cashTotal)}</span>
                 </div>
-                ${reportedOtherCount > 0 ? `<div style="display:flex;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #F3F4F6">
-                    <span style="color:#6B7280;font-size:14px">📋 Other (${reportedOtherCount})</span>
-                    <span style="font-weight:700;font-size:16px;color:#F59E0B">${fp(reportedOther)}</span>
-                </div>` : ''}
-                <div style="display:flex;justify-content:space-between;padding:16px;background:#F9FAFB">
-                    <span style="font-weight:700;font-size:16px;color:#111">TOTAL</span>
-                    <span style="font-weight:800;font-size:22px;color:#DC2626">${fp(grandTotal)}</span>
+                <div style="display:flex;justify-content:space-between;padding:14px 16px;background:#EFF6FF">
+                    <span style="font-weight:700;font-size:15px;color:#1E40AF">MAIN TOTAL</span>
+                    <span style="font-weight:800;font-size:20px;color:#1E40AF">${fp(_drM.grandTotal)}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:8px 16px;background:#DBEAFE;border-top:1px solid #93C5FD">
+                    <span style="font-size:12px;color:#1E40AF;font-weight:600">Main VAT</span>
+                    <span style="font-size:14px;color:#1E40AF;font-weight:700">${fp(_drM.vat.totalVat)}</span>
                 </div>
             </div>
+
+            <!-- ══ SUB ══ -->
+            <div style="background:#FDF2F8;border:2px solid #DB2777;border-radius:12px;overflow:hidden;margin-bottom:12px">
+                <div style="padding:10px 16px;background:#FCE7F3;font-weight:700;color:#DB2777;font-size:14px">📋 SUB</div>
+                <div style="display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #FBCFE8">
+                    <span style="color:#6B7280;font-size:14px">💳 Card (${_drS.cardCount})</span>
+                    <span style="font-weight:700;font-size:16px;color:#2563EB">${fp(_drS.cardTotal)}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #FBCFE8">
+                    <span style="color:#6B7280;font-size:14px">💵 Cash (${_drS.cashCount})</span>
+                    <span style="font-weight:700;font-size:16px;color:#059669">${fp(_drS.cashTotal)}</span>
+                </div>
+                <div style="display:flex;justify-content:space-between;padding:14px 16px;background:#FDF2F8">
+                    <span style="font-weight:700;font-size:15px;color:#DB2777">SUB TOTAL</span>
+                    <span style="font-weight:800;font-size:20px;color:#DB2777">${fp(_drS.grandTotal)}</span>
+                </div>
+                <div style="padding:8px 16px;background:#FCE7F3;border-top:1px solid #F9A8D4;font-size:12px;color:#DB2777">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span>VATable:</span><span style="font-weight:600">${fp(_drS.vatableGross)}</span></div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span>Non-VATable:</span><span style="font-weight:600">${fp(_drS.nonVatableGross)}</span></div>
+                    <div style="display:flex;justify-content:space-between;border-top:2px solid #DB2777;padding-top:4px;margin-top:4px"><span style="font-weight:800;font-size:13px">VAT (${_drS.vatRate||20}%)</span><span style="font-weight:800;font-size:15px">${fp(_drS.totalVat)}</span></div>
+                </div>
+            </div>
+
             ${discountHtml}
             ${refundHtml}
-            ${vatHtml}
         `;
-        printBtn.style.display = '';
+        printBtn.style.display = 'flex';
 
-        // Store for printing
+        // Store for printing — DUAL data
         POS._reportData = {
             periodStr, orders, activeOrders, dateFrom, dateTo, timeFrom, timeTo,
             cardTotal, cardCount, cashTotal, cashCount,
@@ -5938,25 +6481,42 @@ async function loadDailyReport() {
             reportedOther, reportedOtherCount,
             reportedTotalOrders, grandTotal,
             otherTotal, otherCount,
-            vatBreakdown, vatRates, totalVatAmount,
+            subVatTotal, subVatablePct, subVatableGross, subNonVatableGross, subTotalNet,
             refundedOrders, refundTotal,
-            discountedOrders, discountDetails, totalDiscountAmt
+            discountedOrders, discountDetails, totalDiscountAmt,
+            dual: _drDual
         };
     } catch (e) {
         content.innerHTML = `<div style="text-align:center;padding:40px;color:#DC2626">Failed to load: ${e.message}</div>`;
     }
 }
 
-async function printDailyReportSimple() {
+async function printDailyReportSimple(mode) {
     const r = POS._reportData;
     if (!r) { toast('No report data', 'error'); return; }
 
-    // Build VAT data for print
-    const vatByRate = (r.vatRates || []).map(rate => ({
+    const M = r.dual ? r.dual.main : null;
+    const S = r.dual ? r.dual.sub : null;
+
+    if (mode === 'sub') {
+        // SUB print — use VATable breakdown
+        if (!S) { toast('SUB data not available', 'error'); return; }
+        const subInfo = { vatablePct: S.vatablePct||r.subVatablePct, vatRate: S.vatRate||20, vatableGross: S.vatableGross||r.subVatableGross, nonVatableGross: S.nonVatableGross||r.subNonVatableGross, totalVat: S.totalVat||r.subVatTotal, totalNet: S.totalNet||r.subTotalNet };
+        _fallbackBrowserPrint('REPORT — SUB',
+            `${r.dateFrom} ${r.timeFrom}`, `${r.dateTo} ${r.timeTo}`,
+            S.cashCount + S.cardCount + (S.otherCount||0), S.cashCount||r.reportedCashCount, S.cardCount||r.cardCount,
+            S.cashTotal||r.reportedCash, S.cardTotal||r.cardTotal, S.grandTotal||r.grandTotal, subInfo);
+        return;
+    }
+
+    // MAIN print
+    const mainVat = M ? M.vat : null;
+    const vatRates = mainVat ? Object.keys(mainVat.byRate).sort((a,b) => Number(b) - Number(a)) : [];
+    const vatByRate = vatRates.map(rate => ({
         rate: Number(rate),
-        net: r.vatBreakdown[rate].net,
-        vat: r.vatBreakdown[rate].vat,
-        gross: r.vatBreakdown[rate].gross
+        net: mainVat.byRate[rate].net,
+        vat: mainVat.byRate[rate].vat,
+        gross: mainVat.byRate[rate].gross
     }));
 
     // Try direct ESC/POS
@@ -5979,20 +6539,18 @@ async function printDailyReportSimple() {
                     grandTotal: r.grandTotal,
                     otherTotal: r.reportedOther,
                     otherCustomers: r.reportedOtherCount,
-                    vatData: { byRate: vatByRate, totalVat: r.totalVatAmount || 0 }
+                    vatData: { byRate: vatByRate, totalVat: mainVat ? mainVat.totalVat : 0 }
                 }
             })
         });
         if (resp.ok) { toast('Report printed!', 'success'); return; }
     } catch (e) {}
 
-    // Fallback: browser print
+    // Fallback: browser print — use MAIN VAT data
     toast('Direct print failed, using browser print', 'warning');
-    // Build vatData object for fallback printer
-    const vatObj = { byRate: {}, totalVat: r.totalVatAmount || 0 };
-    (r.vatRates || []).forEach(rate => { vatObj.byRate[rate] = r.vatBreakdown[rate]; });
+    const vatObj = mainVat || { byRate: {}, totalVat: 0 };
     _fallbackBrowserPrint(
-        'DAILY REPORT',
+        'REPORT — MAIN',
         `${r.dateFrom} ${r.timeFrom}`,
         `${r.dateTo} ${r.timeTo}`,
         r.reportedTotalOrders,
@@ -6001,17 +6559,18 @@ async function printDailyReportSimple() {
         r.reportedCash,
         r.cardTotal,
         r.grandTotal,
-        r.vatRates || [],
         vatObj
     );
 }
 
-async function gotoSettings() {
-    const entered = await tbPromptPin('Manager PIN Required', '⚙️');
-    if (entered === false) return;
-    const user = checkUserPin(entered, ['admin', 'senior manager']);
-    if (!user) { toast('Access denied — Admin or Senior Manager PIN required', 'error'); return; }
-    toast(`Welcome ${user.name || user.id}`, 'success');
+async function gotoSettings(skipPin) {
+    if (!skipPin) {
+        const entered = await tbPromptPin('Manager PIN Required', '⚙️');
+        if (entered === false) return;
+        const user = checkUserPin(entered, ['admin', 'senior manager']);
+        if (!user) { toast('Access denied — Admin or Senior Manager PIN required', 'error'); return; }
+        toast(`Welcome ${user.name || user.id}`, 'success');
+    }
     showScreen('screenSettings');
     loadServerInfo();
     loadPrinterConfig();
@@ -6261,8 +6820,27 @@ function renderSettings() {
                 ${dataHtml}
             </div>
 
+            <div class="settings-card">
+                <h3>📊 TBMS Data Push</h3>
+                <p style="font-size:12px;color:#6B7280;margin:0 0 12px">매출 데이터를 TBMS Google Sheets에 전송합니다.</p>
+                <div class="settings-row" style="margin-bottom:12px">
+                    <div>
+                        <span class="label">Daily Auto Push Time</span>
+                        <div style="font-size:11px;color:#9CA3AF">매일 이 시간에 자동으로 DailySales 데이터를 전송</div>
+                    </div>
+                    <div style="display:flex;align-items:center;gap:8px">
+                        <input type="time" id="dailyPushTime" value="${POS.settings.dailyPushTime || '23:50'}" style="padding:6px 10px;border:2px solid #D1D5DB;border-radius:8px;font-size:14px;font-weight:700;width:120px">
+                        <button onclick="saveDailyPushTime()" style="padding:6px 14px;background:#059669;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer">SAVE</button>
+                    </div>
+                </div>
+                <button id="btnTbmsPush" onclick="manualTBMSPush()" style="width:100%;padding:14px;background:linear-gradient(135deg,#006AFF,#0052CC);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+                    <span style="font-size:18px">📤</span> Push Live Data to TBMS
+                </button>
+                <div id="tbmsPushStatus" style="margin-top:10px;font-size:12px;color:#9CA3AF;text-align:center"></div>
+            </div>
+
             <div style="text-align:center;padding:12px;color:#9CA3AF;font-size:11px">
-                The Bap POS v4.8 | Server v${s.serverVersion} | ${s.nodeVersion}
+                The Bap POS v7.5.1 | Server v${s.serverVersion} | ${s.nodeVersion}
             </div>
         `;
     }
@@ -6324,6 +6902,40 @@ async function loadAllBranchesSummary() {
         `;
     } catch (e) {
         bodyEl.innerHTML = `<div style="color:#DC2626">Failed to load: ${e.message}</div>`;
+    }
+}
+
+// ─── TBMS 수동 라이브 데이터 푸시 ───
+async function manualTBMSPush() {
+    const btn = document.getElementById('btnTbmsPush');
+    const statusEl = document.getElementById('tbmsPushStatus');
+    if (!btn || !statusEl) return;
+
+    // 버튼 비활성화 & 로딩 상태
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.innerHTML = '<span style="font-size:18px">⏳</span> Pushing...';
+    statusEl.textContent = '';
+
+    try {
+        const resp = await fetch('/api/tbms-push-live', { method: 'POST' });
+        const data = await resp.json();
+        if (data.success) {
+            const t = new Date(data.time);
+            const timeStr = t.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            statusEl.innerHTML = `<span style="color:#10B981">✅ 전송 완료 — ${timeStr}</span>`;
+            toast('TBMS Live data pushed!', 'success');
+        } else {
+            throw new Error(data.error || 'Push failed');
+        }
+    } catch (e) {
+        statusEl.innerHTML = `<span style="color:#DC2626">❌ 실패: ${e.message}</span>`;
+        toast('TBMS push failed: ' + e.message, 'error');
+    } finally {
+        // 버튼 복원
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.innerHTML = '<span style="font-size:18px">📤</span> Push Live Data to TBMS';
     }
 }
 
