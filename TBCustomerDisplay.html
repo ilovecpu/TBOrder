@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Order Status Display</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family: 'Segoe UI', -apple-system, sans-serif; background: #111827; color: #F9FAFB; overflow: hidden; height: 100vh; }
+
+/* ── Header ── */
+.header {
+    background: linear-gradient(135deg, #1F2937, #111827);
+    padding: 14px 32px;
+    display: flex; align-items: center; justify-content: space-between;
+    border-bottom: 2px solid #374151;
+}
+.header-logo { font-size: 26px; font-weight: 800; color: #F97316; }
+.header-branch { font-size: 18px; color: #9CA3AF; font-weight: 600; }
+.header-time { font-size: 16px; color: #6B7280; font-family: monospace; }
+.header-status { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+.header-status.connected { background: #22C55E; box-shadow: 0 0 6px #22C55E; }
+.header-status.disconnected { background: #EF4444; box-shadow: 0 0 6px #EF4444; }
+
+/* ── Main 3-Column Grid ── */
+.main { display: flex; height: calc(100vh - 66px); }
+
+/* ── Column Layout ── */
+.column {
+    flex: 1; padding: 16px; overflow-y: auto;
+    border-right: 1px solid #1F2937;
+}
+.column:last-child { border-right: none; }
+.column-header {
+    text-align: center; padding: 14px 0; margin-bottom: 14px;
+    border-radius: 12px; font-size: 18px; font-weight: 800;
+    letter-spacing: 2px; text-transform: uppercase;
+}
+
+/* Column-specific colors */
+.column.ordered .column-header { background: #1E293B; color: #94A3B8; }
+.column.preparing .column-header { background: #1E3A5F; color: #60A5FA; }
+.column.ready .column-header { background: #14532D; color: #4ADE80; }
+
+.column.ordered { background: rgba(30, 41, 59, 0.2); }
+.column.preparing { background: rgba(30, 58, 95, 0.15); }
+.column.ready { background: rgba(5, 46, 22, 0.3); }
+
+/* ── Order Card ── */
+.order-card {
+    background: #1F2937; border-radius: 14px; padding: 14px 18px;
+    margin-bottom: 10px; transition: all .3s;
+    border-left: 5px solid transparent;
+}
+
+/* Ordered column cards */
+.column.ordered .order-card {
+    border-left-color: #64748B;
+}
+
+/* Preparing column cards */
+.column.preparing .order-card {
+    border-left-color: #3B82F6;
+    background: #172554;
+}
+
+/* Ready column cards — pulsing glow */
+.column.ready .order-card {
+    border-left-color: #22C55E;
+    background: #052E16;
+    animation: readyPulse 2s ease-in-out infinite;
+}
+
+@keyframes readyPulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(34,197,94,0.3); }
+    50% { box-shadow: 0 0 20px 4px rgba(34,197,94,0.15); }
+}
+
+.order-row {
+    display: flex; align-items: baseline; gap: 10px;
+}
+.order-number {
+    font-size: 20px; font-weight: 800; color: #F9FAFB; white-space: nowrap;
+}
+.column.ordered .order-number { color: #CBD5E1; }
+.column.preparing .order-number { color: #93C5FD; }
+.column.ready .order-number { color: #4ADE80; font-size: 22px; }
+
+.order-name {
+    font-size: 18px; font-weight: 600; color: #9CA3AF;
+}
+.column.ready .order-name { color: #86EFAC; }
+
+
+/* ── Empty State ── */
+.empty-state {
+    text-align: center; color: #4B5563; padding: 50px 16px;
+    font-size: 16px;
+}
+.empty-icon { font-size: 42px; margin-bottom: 10px; }
+
+/* ── Count Badge ── */
+.count-badge {
+    display: inline-block; background: rgba(255,255,255,0.15);
+    color: #fff; font-size: 14px; font-weight: 700;
+    width: 28px; height: 28px; line-height: 28px;
+    border-radius: 50%; text-align: center; margin-left: 8px;
+}
+
+/* ── Ready announcement banner ── */
+.ready-banner {
+    display: none; position: fixed; top: 0; left: 0; right: 0;
+    background: linear-gradient(135deg, #166534, #15803D);
+    color: #fff; text-align: center; padding: 14px;
+    font-size: 22px; font-weight: 800; z-index: 100;
+    animation: bannerSlide .3s ease-out;
+}
+.ready-banner.active { display: block; }
+@keyframes bannerSlide { from { transform: translateY(-100%); } to { transform: translateY(0); } }
+.ready-banner-number { font-size: 32px; color: #86EFAC; }
+
+/* ── Scrollbar ── */
+.column::-webkit-scrollbar { width: 4px; }
+.column::-webkit-scrollbar-thumb { background: #374151; border-radius: 4px; }
+
+/* ── Responsive ── */
+@media (max-width: 900px) {
+    .main { flex-direction: column; }
+    .column { border-right: none; border-bottom: 1px solid #1F2937; flex: none; min-height: 30vh; }
+    .order-number { font-size: 22px; }
+    .order-name { font-size: 14px; }
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+    <div style="display:flex;align-items:center;gap:16px">
+        <div class="header-logo">🍱 ORDER STATUS</div>
+        <div class="header-branch" id="branchName">Loading...</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px">
+        <div id="connStatus"><span class="header-status disconnected" id="statusDot"></span><span id="statusText" style="color:#6B7280;font-size:13px">Connecting...</span></div>
+        <div class="header-time" id="headerTime">--:--:--</div>
+    </div>
+</div>
+
+<!-- Ready Announcement Banner -->
+<div class="ready-banner" id="readyBanner">
+    🔔 READY FOR PICKUP: <span class="ready-banner-number" id="bannerOrderNum"></span>
+</div>
+
+<div class="main">
+    <!-- Column 1: Ordered (received, pending) -->
+    <div class="column ordered" id="colOrdered">
+        <div class="column-header">
+            📋 Ordered <span class="count-badge" id="orderedCount">0</span>
+        </div>
+        <div id="orderedList"></div>
+    </div>
+
+    <!-- Column 2: Preparing -->
+    <div class="column preparing" id="colPreparing">
+        <div class="column-header">
+            🔥 Preparing <span class="count-badge" id="preparingCount">0</span>
+        </div>
+        <div id="preparingList"></div>
+    </div>
+
+    <!-- Column 3: Ready for Pickup -->
+    <div class="column ready" id="colReady">
+        <div class="column-header">
+            ✅ Pickup <span class="count-badge" id="readyCount">0</span>
+        </div>
+        <div id="readyList"></div>
+    </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  Customer Display — Order Status Board
+//  3 Columns: Ordered → Preparing → Pickup
+// ═══════════════════════════════════════════
+
+const orders = new Map();
+let websocket = null;
+let reconnectTimer = null;
+let reconnectAttempts = 0;
+let branchCode = '';
+let bannerTimer = null;
+
+// ── Clock ──
+setInterval(() => {
+    document.getElementById('headerTime').textContent = new Date().toLocaleTimeString('en-GB');
+}, 1000);
+
+// ── WebSocket ──
+function initWebSocket() {
+    if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
+    if (websocket && (websocket.readyState === WebSocket.OPEN || websocket.readyState === WebSocket.CONNECTING)) {
+        try { websocket.close(); } catch(e) {}
+    }
+
+    const wsHost = window.location.host || 'localhost:8080';
+    const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const wsUrl = `${wsProtocol}//${wsHost}`;
+
+    try {
+        websocket = new WebSocket(wsUrl);
+
+        websocket.onopen = () => {
+            console.log('[CustomerDisplay] WS connected');
+            reconnectAttempts = 0;
+            setStatus('connected');
+            websocket.send(JSON.stringify({ type: 'register', clientType: 'customer_display' }));
+        };
+
+        websocket.onmessage = (event) => {
+            try {
+                const msg = JSON.parse(event.data);
+                handleMessage(msg);
+            } catch(e) {
+                console.error('[CustomerDisplay] Parse error:', e);
+            }
+        };
+
+        websocket.onclose = () => {
+            setStatus('disconnected');
+            scheduleReconnect();
+        };
+
+        websocket.onerror = () => {
+            setStatus('disconnected');
+        };
+    } catch(e) {
+        setStatus('disconnected');
+        scheduleReconnect();
+    }
+}
+
+function scheduleReconnect() {
+    if (reconnectTimer) return;
+    reconnectAttempts++;
+    const delay = Math.min(1000 * Math.pow(1.5, reconnectAttempts), 15000);
+    reconnectTimer = setTimeout(() => { reconnectTimer = null; initWebSocket(); }, delay);
+}
+
+function setStatus(s) {
+    const dot = document.getElementById('statusDot');
+    const txt = document.getElementById('statusText');
+    dot.className = 'header-status ' + s;
+    txt.textContent = s === 'connected' ? 'Connected' : 'Reconnecting...';
+}
+
+// ── Message Handler ──
+function handleMessage(msg) {
+    switch (msg.type) {
+        case 'registered':
+            branchCode = msg.branchCode || '';
+            document.getElementById('branchName').textContent = branchCode;
+            console.log(`[CustomerDisplay] Registered: ${branchCode}`);
+            break;
+
+        case 'new_order': {
+            const order = msg.order;
+            if (!order || !order.orderNumber) break;
+            orders.set(order.orderNumber, {
+                orderNumber: order.orderNumber,
+                customerName: order.customerName || '',
+                items: order.items || [],
+                status: order.status || 'pending',
+                orderType: order.orderType || 'take_away',
+                source: order.source || 'pos',
+                timestamp: order.timestamp || order.createdAt || new Date().toISOString()
+            });
+            renderOrders();
+            break;
+        }
+
+        case 'order_status': {
+            // pickedUp → 바로 제거
+            if (msg.pickedUp) {
+                orders.delete(msg.orderNumber);
+                renderOrders();
+                break;
+            }
+            const o = orders.get(msg.orderNumber);
+            if (o) {
+                const prevStatus = o.status;
+                o.status = msg.status;
+                renderOrders();
+
+                // Ready announcement
+                if (msg.status === 'ready' && prevStatus !== 'ready') {
+                    showReadyBanner(o);
+                    playReadySound();
+                }
+            } else if (msg.order) {
+                // Recovery: add order we missed
+                orders.set(msg.orderNumber, {
+                    orderNumber: msg.order.orderNumber || msg.orderNumber,
+                    customerName: msg.order.customerName || '',
+                    items: msg.order.items || [],
+                    status: msg.status || msg.order.status || 'pending',
+                    orderType: msg.order.orderType || 'take_away',
+                    source: msg.order.source || 'pos',
+                    timestamp: msg.order.timestamp || new Date().toISOString()
+                });
+                renderOrders();
+                if (msg.status === 'ready') {
+                    showReadyBanner(orders.get(msg.orderNumber));
+                    playReadySound();
+                }
+            }
+
+            // Remove done orders after 30 seconds
+            if (msg.status === 'done') {
+                setTimeout(() => {
+                    orders.delete(msg.orderNumber);
+                    renderOrders();
+                }, 30000);
+            }
+            break;
+        }
+
+        case 'order_deleted':
+            orders.delete(msg.orderNumber);
+            renderOrders();
+            break;
+
+        case 'orders_cleared':
+        case 'day_reset':
+            orders.clear();
+            renderOrders();
+            break;
+    }
+}
+
+// ── Render 3 Columns ──
+function renderOrders() {
+    const ordered = [];    // pending (just received)
+    const preparing = [];  // preparing (kitchen started)
+    const ready = [];      // ready / done (pickup)
+
+    orders.forEach(o => {
+        if (o.status === 'ready' || o.status === 'done') ready.push(o);
+        else if (o.status === 'preparing') preparing.push(o);
+        else ordered.push(o); // pending, new, etc.
+    });
+
+    // Sort by timestamp (oldest first)
+    const byTime = (a, b) => new Date(a.timestamp) - new Date(b.timestamp);
+    ordered.sort(byTime);
+    preparing.sort(byTime);
+    ready.sort(byTime);
+
+    document.getElementById('orderedCount').textContent = ordered.length;
+    document.getElementById('preparingCount').textContent = preparing.length;
+    document.getElementById('readyCount').textContent = ready.length;
+
+    document.getElementById('orderedList').innerHTML = ordered.length === 0
+        ? '<div class="empty-state"><div class="empty-icon">📭</div>No new orders</div>'
+        : ordered.map(o => renderCard(o)).join('');
+
+    document.getElementById('preparingList').innerHTML = preparing.length === 0
+        ? '<div class="empty-state"><div class="empty-icon">⏳</div>No orders cooking</div>'
+        : preparing.map(o => renderCard(o)).join('');
+
+    document.getElementById('readyList').innerHTML = ready.length === 0
+        ? '<div class="empty-state"><div class="empty-icon">✨</div>No orders ready</div>'
+        : ready.map(o => renderCard(o)).join('');
+}
+
+function renderCard(order) {
+    const name = order.customerName || '';
+    return `
+        <div class="order-card">
+            <div class="order-row">
+                <div class="order-number">${escHtml(order.orderNumber)}</div>
+                ${name ? `<div class="order-name">${escHtml(name)}</div>` : ''}
+            </div>
+        </div>
+    `;
+}
+
+function escHtml(s) {
+    if (!s) return '';
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ── Ready Banner ──
+function showReadyBanner(order) {
+    const banner = document.getElementById('readyBanner');
+    document.getElementById('bannerOrderNum').textContent =
+        `${order.orderNumber}${order.customerName ? ' — ' + order.customerName : ''}`;
+    banner.classList.add('active');
+
+    if (bannerTimer) clearTimeout(bannerTimer);
+    bannerTimer = setTimeout(() => {
+        banner.classList.remove('active');
+        bannerTimer = null;
+    }, 8000);
+}
+
+// ── Sound ──
+function playReadySound() {
+    try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        // Pleasant ascending chime: C5 → E5 → G5
+        const notes = [
+            { freq: 523, time: 0, dur: 0.2 },
+            { freq: 659, time: 0.25, dur: 0.2 },
+            { freq: 784, time: 0.5, dur: 0.3 },
+        ];
+        notes.forEach(n => {
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'sine';
+            osc.frequency.value = n.freq;
+            gain.gain.setValueAtTime(0.2, ctx.currentTime + n.time);
+            gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + n.time + n.dur);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(ctx.currentTime + n.time);
+            osc.stop(ctx.currentTime + n.time + n.dur + 0.1);
+        });
+    } catch(e) {}
+}
+
+// ── Init ──
+renderOrders();
+initWebSocket();
+</script>
+</body>
+</html>

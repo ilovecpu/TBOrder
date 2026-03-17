@@ -1,0 +1,13 @@
+{
+  "name": "tborder",
+  "version": "5.0.0",
+  "description": "The Bap (더밥) Kiosk Ordering System with Stripe Terminal",
+  "main": "tb-server.js",
+  "scripts": {
+    "start": "node tb-server.js"
+  },
+  "dependencies": {
+    "ws": "^8.19.0",
+    "stripe": "^14.0.0"
+  }
+}
