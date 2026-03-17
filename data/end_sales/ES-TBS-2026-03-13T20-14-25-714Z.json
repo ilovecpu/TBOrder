@@ -1,0 +1,502 @@
+{
+  "id": "ES-TBS-2026-03-13T20-14-25-714Z",
+  "timestamp": "2026-03-13T20:14:25.714Z",
+  "branchCode": "TBS",
+  "branchName": "The Bap Swindon",
+  "periodFrom": null,
+  "periodTo": "2026-03-13T20:14:23.011Z",
+  "summary": {
+    "totalOrders": 18,
+    "cashTotal": 25.94,
+    "cardTotal": 162.8675,
+    "grandTotal": 188.8075,
+    "cashCustomers": 7,
+    "cardCustomers": 11,
+    "vatTotal": 33.18,
+    "vatBreakdown": {
+      "20": {
+        "net": 165.92,
+        "vat": 33.18,
+        "gross": 199.1
+      }
+    },
+    "cashInDrawer": 125.94
+  },
+  "itemBreakdown": [
+    {
+      "name": "Combo Bap",
+      "qty": 6,
+      "total": 57.3,
+      "vatRate": 20,
+      "subVatRate": 20
+    },
+    {
+      "name": "Jap Chae Bap",
+      "qty": 5,
+      "total": 34.75,
+      "vatRate": 20,
+      "subVatRate": 20
+    },
+    {
+      "name": "Custom",
+      "qty": 1,
+      "total": 25,
+      "vatRate": 20,
+      "subVatRate": 20
+    },
+    {
+      "name": "Beef Bap",
+      "qty": 1,
+      "total": 8.75,
+      "vatRate": 20,
+      "subVatRate": 20
+    },
+    {
+      "name": "KFC Bap",
+      "qty": 1,
+      "total": 8.25,
+      "vatRate": 20,
+      "subVatRate": 20
+    },
+    {
+      "name": "Katsu Bap",
+      "qty": 1,
+      "total": 8.25,
+      "vatRate": 20,
+      "subVatRate": 20
+    },
+    {
+      "name": "Kang Jung Bap",
+      "qty": 1,
+      "total": 8.25,
+      "vatRate": 20,
+      "subVatRate": 20
+    },
+    {
+      "name": "Man Du Guk Su ",
+      "qty": 1,
+      "total": 8,
+      "vatRate": 20,
+      "subVatRate": 20
+    },
+    {
+      "name": "Man Du Bap",
+      "qty": 1,
+      "total": 7.45,
+      "vatRate": 20,
+      "subVatRate": 20
+    },
+    {
+      "name": "Kim Mari Set ",
+      "qty": 2,
+      "total": 6.5,
+      "vatRate": 20,
+      "subVatRate": 20
+    },
+    {
+      "name": "Kim Chi",
+      "qty": 2,
+      "total": 5.9,
+      "vatRate": 20,
+      "subVatRate": 20
+    },
+    {
+      "name": "Jap Chae (Noodle) Only",
+      "qty": 1,
+      "total": 4.5,
+      "vatRate": 20,
+      "subVatRate": 20
+    },
+    {
+      "name": "Bap (Rice) Only",
+      "qty": 1,
+      "total": 3.5,
+      "vatRate": 20,
+      "subVatRate": 10
+    },
+    {
+      "name": "Man Du Set ",
+      "qty": 1,
+      "total": 2.95,
+      "vatRate": 20,
+      "subVatRate": 20
+    },
+    {
+      "name": "Korean Drink ",
+      "qty": 1,
+      "total": 2.55,
+      "vatRate": 20,
+      "subVatRate": 10
+    },
+    {
+      "name": "Aloe vera Drink ",
+      "qty": 1,
+      "total": 2.55,
+      "vatRate": 20,
+      "subVatRate": 10
+    },
+    {
+      "name": "Korean Snack",
+      "qty": 1,
+      "total": 1.95,
+      "vatRate": 20,
+      "subVatRate": 20
+    },
+    {
+      "name": "Extra Item",
+      "qty": 1,
+      "total": 1,
+      "vatRate": 20,
+      "subVatRate": 20
+    },
+    {
+      "name": "Choco Pie",
+      "qty": 2,
+      "total": 1,
+      "vatRate": 20,
+      "subVatRate": 20
+    },
+    {
+      "name": "Container",
+      "qty": 3,
+      "total": 0.7,
+      "vatRate": 20,
+      "subVatRate": 20
+    }
+  ],
+  "orders": [
+    {
+      "orderNumber": "PAB-001",
+      "timestamp": "2026-03-13T09:56:19.276Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 26,
+      "items": [
+        {
+          "name": "Custom",
+          "qty": 1,
+          "price": 25
+        },
+        {
+          "name": "Extra Item",
+          "qty": 1,
+          "price": 1
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-002",
+      "timestamp": "2026-03-13T09:56:32.309Z",
+      "orderType": "takeaway",
+      "paymentMethod": "cash",
+      "total": 8,
+      "items": [
+        {
+          "name": "Man Du Guk Su ",
+          "qty": 1,
+          "price": 8
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-003",
+      "timestamp": "2026-03-13T09:56:43.442Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 22.9,
+      "items": [
+        {
+          "name": "Man Du Set ",
+          "qty": 1,
+          "price": 2.95
+        },
+        {
+          "name": "Kim Chi",
+          "qty": 1,
+          "price": 2.95
+        },
+        {
+          "name": "Beef Bap",
+          "qty": 1,
+          "price": 8.75
+        },
+        {
+          "name": "KFC Bap",
+          "qty": 1,
+          "price": 8.25
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-004",
+      "timestamp": "2026-03-13T09:56:49.442Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 4.5,
+      "items": [
+        {
+          "name": "Jap Chae (Noodle) Only",
+          "qty": 1,
+          "price": 4.5
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-005",
+      "timestamp": "2026-03-13T09:58:09.710Z",
+      "orderType": "takeaway",
+      "paymentMethod": "cash",
+      "total": 0.5,
+      "items": [
+        {
+          "name": "Container",
+          "qty": 1,
+          "price": 0.2
+        },
+        {
+          "name": "Container",
+          "qty": 1,
+          "price": 0.3
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-006",
+      "timestamp": "2026-03-13T10:16:31.689Z",
+      "orderType": "takeaway",
+      "paymentMethod": "cash",
+      "total": 0.5,
+      "items": [
+        {
+          "name": "Choco Pie",
+          "qty": 1,
+          "price": 0.5
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-007",
+      "timestamp": "2026-03-13T10:16:50.690Z",
+      "orderType": "takeaway",
+      "paymentMethod": "cash",
+      "total": 7.640000000000001,
+      "items": [
+        {
+          "name": "Combo Bap",
+          "qty": 1,
+          "price": 9.55
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-008",
+      "timestamp": "2026-03-13T10:16:59.455Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 8.25,
+      "items": [
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-009",
+      "timestamp": "2026-03-13T10:17:04.289Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 3.25,
+      "items": [
+        {
+          "name": "Kim Mari Set ",
+          "qty": 1,
+          "price": 3.25
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-010",
+      "timestamp": "2026-03-13T10:17:10.256Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 2.95,
+      "items": [
+        {
+          "name": "Kim Chi",
+          "qty": 1,
+          "price": 2.95
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-011",
+      "timestamp": "2026-03-13T10:18:39.589Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 29.707500000000003,
+      "items": [
+        {
+          "name": "Container",
+          "qty": 1,
+          "price": 0.2
+        },
+        {
+          "name": "Jap Chae Bap",
+          "qty": 1,
+          "price": 6.95
+        },
+        {
+          "name": "Jap Chae Bap",
+          "qty": 1,
+          "price": 6.95
+        },
+        {
+          "name": "Jap Chae Bap",
+          "qty": 1,
+          "price": 6.95
+        },
+        {
+          "name": "Jap Chae Bap",
+          "qty": 1,
+          "price": 6.95
+        },
+        {
+          "name": "Jap Chae Bap",
+          "qty": 1,
+          "price": 6.95
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-012",
+      "timestamp": "2026-03-13T10:19:23.422Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 12.559999999999999,
+      "items": [
+        {
+          "name": "Man Du Bap",
+          "qty": 1,
+          "price": 7.45
+        },
+        {
+          "name": "Kang Jung Bap",
+          "qty": 1,
+          "price": 8.25
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-013",
+      "timestamp": "2026-03-13T12:09:17.153Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 49.7,
+      "items": [
+        {
+          "name": "Combo Bap",
+          "qty": 1,
+          "price": 9.55
+        },
+        {
+          "name": "Combo Bap",
+          "qty": 1,
+          "price": 9.55
+        },
+        {
+          "name": "Combo Bap",
+          "qty": 1,
+          "price": 9.55
+        },
+        {
+          "name": "Combo Bap",
+          "qty": 1,
+          "price": 9.55
+        },
+        {
+          "name": "Combo Bap",
+          "qty": 1,
+          "price": 9.55
+        },
+        {
+          "name": "Korean Snack",
+          "qty": 1,
+          "price": 1.95
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-014",
+      "timestamp": "2026-03-13T16:02:27.002Z",
+      "orderType": "takeaway",
+      "paymentMethod": "cash",
+      "total": 3.5,
+      "items": [
+        {
+          "name": "Bap (Rice) Only",
+          "qty": 1,
+          "price": 3.5
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-015",
+      "timestamp": "2026-03-13T16:02:40.833Z",
+      "orderType": "takeaway",
+      "paymentMethod": "cash",
+      "total": 2.55,
+      "items": [
+        {
+          "name": "Korean Drink ",
+          "qty": 1,
+          "price": 2.55
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-016",
+      "timestamp": "2026-03-13T16:02:50.300Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 2.55,
+      "items": [
+        {
+          "name": "Aloe vera Drink ",
+          "qty": 1,
+          "price": 2.55
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-017",
+      "timestamp": "2026-03-13T16:10:02.002Z",
+      "orderType": "takeaway",
+      "paymentMethod": "cash",
+      "total": 3.25,
+      "items": [
+        {
+          "name": "Kim Mari Set ",
+          "qty": 1,
+          "price": 3.25
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-018",
+      "timestamp": "2026-03-13T16:10:13.768Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 0.5,
+      "items": [
+        {
+          "name": "Choco Pie",
+          "qty": 1,
+          "price": 0.5
+        }
+      ]
+    }
+  ],
+  "staff": null
+}

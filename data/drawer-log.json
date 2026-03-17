@@ -1,0 +1,272 @@
+[
+  {
+    "timestamp": "2026-03-12T10:47:47.969Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Thir",
+    "reason": "manual_change",
+    "reasonDetail": "Change",
+    "serverTime": "2026-03-12T10:47:47.958Z"
+  },
+  {
+    "timestamp": "2026-03-12T10:48:27.464Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Thir",
+    "reason": "manual_change",
+    "reasonDetail": "Change",
+    "serverTime": "2026-03-12T10:48:27.510Z"
+  },
+  {
+    "timestamp": "2026-03-12T10:50:11.507Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Devi",
+    "reason": "manual_expense",
+    "reasonDetail": "Expense",
+    "serverTime": "2026-03-12T10:50:11.512Z"
+  },
+  {
+    "timestamp": "2026-03-12T10:52:12.510Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment",
+    "reasonDetail": "",
+    "serverTime": "2026-03-12T10:52:12.518Z"
+  },
+  {
+    "timestamp": "2026-03-12T10:53:13.774Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment",
+    "reasonDetail": "",
+    "serverTime": "2026-03-12T10:53:13.780Z"
+  },
+  {
+    "timestamp": "2026-03-12T10:56:06.878Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment",
+    "reasonDetail": "",
+    "serverTime": "2026-03-12T10:56:06.887Z"
+  },
+  {
+    "timestamp": "2026-03-12T11:11:56.519Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment",
+    "reasonDetail": "",
+    "serverTime": "2026-03-12T11:11:56.534Z"
+  },
+  {
+    "timestamp": "2026-03-12T13:31:48.703Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment_kiosk",
+    "reasonDetail": "",
+    "serverTime": "2026-03-12T13:31:48.842Z"
+  },
+  {
+    "timestamp": "2026-03-12T13:31:57.871Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Dipson",
+    "reason": "manual_change",
+    "reasonDetail": "Change",
+    "serverTime": "2026-03-12T13:31:57.839Z"
+  },
+  {
+    "timestamp": "2026-03-12T15:37:29.043Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment_kiosk",
+    "reasonDetail": "",
+    "serverTime": "2026-03-12T15:37:29.054Z"
+  },
+  {
+    "timestamp": "2026-03-12T15:37:37.642Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment_kiosk",
+    "reasonDetail": "",
+    "serverTime": "2026-03-12T15:37:37.651Z"
+  },
+  {
+    "timestamp": "2026-03-12T21:07:56.345Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Thir",
+    "reason": "manual_change",
+    "reasonDetail": "Change",
+    "serverTime": "2026-03-12T21:07:56.351Z"
+  },
+  {
+    "timestamp": "2026-03-12T23:48:50.792Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment",
+    "reasonDetail": "",
+    "serverTime": "2026-03-12T23:48:50.807Z"
+  },
+  {
+    "timestamp": "2026-03-13T09:56:32.311Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment",
+    "reasonDetail": "",
+    "serverTime": "2026-03-13T09:56:32.321Z"
+  },
+  {
+    "timestamp": "2026-03-13T09:58:09.712Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment",
+    "reasonDetail": "",
+    "serverTime": "2026-03-13T09:58:09.720Z"
+  },
+  {
+    "timestamp": "2026-03-13T10:16:31.691Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment",
+    "reasonDetail": "",
+    "serverTime": "2026-03-13T10:16:31.699Z"
+  },
+  {
+    "timestamp": "2026-03-13T10:16:50.691Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment",
+    "reasonDetail": "",
+    "serverTime": "2026-03-13T10:16:50.703Z"
+  },
+  {
+    "timestamp": "2026-03-13T10:18:45.789Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Thir",
+    "reason": "manual_change",
+    "reasonDetail": "Change",
+    "serverTime": "2026-03-13T10:18:45.793Z"
+  },
+  {
+    "timestamp": "2026-03-13T12:03:17.685Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Thir",
+    "reason": "manual_change",
+    "reasonDetail": "Change",
+    "serverTime": "2026-03-13T12:03:17.689Z"
+  },
+  {
+    "timestamp": "2026-03-13T16:02:27.003Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment",
+    "reasonDetail": "",
+    "serverTime": "2026-03-13T16:02:27.024Z"
+  },
+  {
+    "timestamp": "2026-03-13T16:02:40.835Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment",
+    "reasonDetail": "",
+    "serverTime": "2026-03-13T16:02:40.859Z"
+  },
+  {
+    "timestamp": "2026-03-13T16:10:02.003Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment",
+    "reasonDetail": "",
+    "serverTime": "2026-03-13T16:10:02.022Z"
+  },
+  {
+    "timestamp": "2026-03-13T21:10:00.357Z",
+    "branch": "TBS",
+    "branchName": "The Bap Swindon",
+    "staff": "The Bap Swindon",
+    "reason": "cash_payment",
+    "reasonDetail": "",
+    "serverTime": "2026-03-13T21:10:00.379Z"
+  },
+  {
+    "timestamp": "2026-03-13T23:16:56.259Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment",
+    "reasonDetail": "",
+    "serverTime": "2026-03-13T23:16:56.281Z"
+  },
+  {
+    "timestamp": "2026-03-14T08:13:27.858Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment",
+    "reasonDetail": "",
+    "serverTime": "2026-03-14T08:13:27.880Z"
+  },
+  {
+    "timestamp": "2026-03-14T09:02:11.226Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment",
+    "reasonDetail": "",
+    "serverTime": "2026-03-14T09:02:11.248Z"
+  },
+  {
+    "timestamp": "2026-03-14T13:14:30.450Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment",
+    "reasonDetail": "",
+    "serverTime": "2026-03-14T13:14:30.474Z"
+  },
+  {
+    "timestamp": "2026-03-14T13:43:04.389Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment",
+    "reasonDetail": "",
+    "serverTime": "2026-03-14T13:43:04.407Z"
+  },
+  {
+    "timestamp": "2026-03-15T10:38:35.106Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment",
+    "reasonDetail": "",
+    "serverTime": "2026-03-15T10:38:35.129Z"
+  },
+  {
+    "timestamp": "2026-03-17T13:50:51.075Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Thir",
+    "reason": "manual_change",
+    "reasonDetail": "Change",
+    "serverTime": "2026-03-17T13:50:51.078Z"
+  }
+]

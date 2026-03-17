@@ -1,0 +1,682 @@
+{
+  "2026-03-10": [],
+  "2026-03-11": [],
+  "2026-03-12": [],
+  "2026-03-13": [],
+  "2026-03-14": [
+    {
+      "orderNumber": "PAB-001",
+      "branchCode": "PAB",
+      "branchName": "Pick A Bap",
+      "orderType": "takeaway",
+      "items": [
+        {
+          "nameEn": "Combo Bap",
+          "nameKr": "콤보밥",
+          "quantity": 1,
+          "unitPrice": 9.55,
+          "totalPrice": 9.55,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": "Combo Bap",
+          "nameKr": "콤보밥",
+          "quantity": 1,
+          "unitPrice": 9.55,
+          "totalPrice": 9.55,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": "Combo Bap",
+          "nameKr": "콤보밥",
+          "quantity": 1,
+          "unitPrice": 9.55,
+          "totalPrice": 9.55,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": "Combo Bap",
+          "nameKr": "콤보밥",
+          "quantity": 1,
+          "unitPrice": 9.55,
+          "totalPrice": 9.55,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": "Combo Bap",
+          "nameKr": "콤보밥",
+          "quantity": 1,
+          "unitPrice": 9.55,
+          "totalPrice": 9.55,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        }
+      ],
+      "subtotal": 47.75,
+      "discount": {
+        "type": null,
+        "value": 0,
+        "name": "",
+        "approvedBy": ""
+      },
+      "total": 47.75,
+      "mainVat": 7.96,
+      "subTotal": 47.75,
+      "subCashPct": 5,
+      "paymentMethod": "card",
+      "paymentStatus": "paid",
+      "amountPaid": 47.75,
+      "change": 0,
+      "wantedTime": 25,
+      "staff": "Pick A Bap",
+      "status": "pending",
+      "timestamp": "2026-03-14T20:10:14.773Z",
+      "source": "pos",
+      "skipKitchen": true,
+      "receivedAt": "2026-03-14T20:10:14.779Z"
+    },
+    {
+      "orderNumber": "PAB-002",
+      "branchCode": "PAB",
+      "branchName": "Pick A Bap",
+      "orderType": "takeaway",
+      "items": [
+        {
+          "nameEn": "Chicken Bap",
+          "nameKr": "닭불고기 덮밥",
+          "quantity": 1,
+          "unitPrice": 8.75,
+          "totalPrice": 8.75,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        }
+      ],
+      "subtotal": 8.75,
+      "discount": {
+        "type": null,
+        "value": 0,
+        "name": "",
+        "approvedBy": ""
+      },
+      "total": 8.75,
+      "mainVat": 1.46,
+      "subTotal": 8.75,
+      "subCashPct": 5,
+      "paymentMethod": "card",
+      "paymentStatus": "paid",
+      "amountPaid": 8.75,
+      "change": 0,
+      "wantedTime": 25,
+      "staff": "Pick A Bap",
+      "status": "pending",
+      "timestamp": "2026-03-14T20:10:22.493Z",
+      "source": "pos",
+      "skipKitchen": true,
+      "receivedAt": "2026-03-14T20:10:22.496Z"
+    },
+    {
+      "orderNumber": "PAB-003",
+      "branchCode": "PAB",
+      "branchName": "Pick A Bap",
+      "orderType": "takeaway",
+      "items": [
+        {
+          "nameEn": "Tofu Bap",
+          "nameKr": "두부덮밥",
+          "quantity": 1,
+          "unitPrice": 7.45,
+          "totalPrice": 7.45,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        }
+      ],
+      "subtotal": 7.45,
+      "discount": {
+        "type": null,
+        "value": 0,
+        "name": "",
+        "approvedBy": ""
+      },
+      "total": 7.45,
+      "mainVat": 1.24,
+      "subTotal": 7.45,
+      "subCashPct": 5,
+      "paymentMethod": "card",
+      "paymentStatus": "paid",
+      "amountPaid": 7.45,
+      "change": 0,
+      "wantedTime": 25,
+      "staff": "Pick A Bap",
+      "status": "pending",
+      "timestamp": "2026-03-14T20:10:30.208Z",
+      "source": "pos",
+      "skipKitchen": true,
+      "receivedAt": "2026-03-14T20:10:30.209Z"
+    },
+    {
+      "orderNumber": "PAB-004",
+      "branchCode": "PAB",
+      "branchName": "Pick A Bap",
+      "orderType": "takeaway",
+      "items": [
+        {
+          "nameEn": "Soft Drink",
+          "nameKr": "캔음료수",
+          "quantity": 1,
+          "unitPrice": 1.4,
+          "totalPrice": 1.4,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": "Combo Bap",
+          "nameKr": "콤보밥",
+          "quantity": 1,
+          "unitPrice": 9.55,
+          "totalPrice": 9.55,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        }
+      ],
+      "subtotal": 10.950000000000001,
+      "discount": {
+        "type": null,
+        "value": 0,
+        "name": "",
+        "approvedBy": ""
+      },
+      "total": 10.950000000000001,
+      "mainVat": 1.83,
+      "subTotal": 10.95,
+      "subCashPct": 5,
+      "paymentMethod": "card",
+      "paymentStatus": "paid",
+      "amountPaid": 10.95,
+      "change": 0,
+      "wantedTime": 25,
+      "staff": "Pick A Bap",
+      "status": "pending",
+      "timestamp": "2026-03-14T20:10:40.634Z",
+      "source": "pos",
+      "skipKitchen": true,
+      "receivedAt": "2026-03-14T20:10:40.636Z"
+    },
+    {
+      "orderNumber": "PAB-005",
+      "branchCode": "PAB",
+      "branchName": "Pick A Bap",
+      "orderType": "takeaway",
+      "items": [
+        {
+          "nameEn": "Katsu Bap",
+          "nameKr": "치킨카츠 덮밥",
+          "quantity": 1,
+          "unitPrice": 8.25,
+          "totalPrice": 8.25,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": "Soft Drink",
+          "nameKr": "캔음료수",
+          "quantity": 1,
+          "unitPrice": 1.4,
+          "totalPrice": 1.4,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        }
+      ],
+      "subtotal": 9.65,
+      "discount": {
+        "type": null,
+        "value": 0,
+        "name": "",
+        "approvedBy": ""
+      },
+      "total": 9.65,
+      "mainVat": 1.61,
+      "subTotal": 9.65,
+      "subCashPct": 5,
+      "paymentMethod": "card",
+      "paymentStatus": "paid",
+      "amountPaid": 9.65,
+      "change": 0,
+      "wantedTime": 25,
+      "staff": "Pick A Bap",
+      "status": "pending",
+      "timestamp": "2026-03-14T20:11:02.230Z",
+      "source": "pos",
+      "skipKitchen": true,
+      "receivedAt": "2026-03-14T20:11:02.231Z"
+    },
+    {
+      "orderNumber": "PAB-006",
+      "branchCode": "PAB",
+      "branchName": "Pick A Bap",
+      "orderType": "takeaway",
+      "items": [
+        {
+          "nameEn": "Man Du Guk Su ",
+          "nameKr": "만두 우동",
+          "quantity": 1,
+          "unitPrice": 8,
+          "totalPrice": 8,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        }
+      ],
+      "subtotal": 8,
+      "discount": {
+        "type": null,
+        "value": 0,
+        "name": "",
+        "approvedBy": ""
+      },
+      "total": 8,
+      "mainVat": 1.33,
+      "subTotal": 8,
+      "subCashPct": 5,
+      "paymentMethod": "card",
+      "paymentStatus": "paid",
+      "amountPaid": 8,
+      "change": 0,
+      "wantedTime": 25,
+      "staff": "Pick A Bap",
+      "status": "pending",
+      "timestamp": "2026-03-14T22:28:49.126Z",
+      "source": "pos",
+      "skipKitchen": true,
+      "receivedAt": "2026-03-14T22:28:49.127Z"
+    },
+    {
+      "orderNumber": "PAB-007",
+      "clientOrderId": "PAB_1773527380771_lwe2ed",
+      "branchCode": "PAB",
+      "branchName": "Pick A Bap",
+      "orderType": "eat_in",
+      "customerName": "DJ",
+      "items": [
+        {
+          "itemId": "M1773338451616",
+          "nameEn": "Combo Bap",
+          "nameKr": "콤보밥",
+          "sauce": {
+            "id": "S004",
+            "name": "Sweet Chili",
+            "nameKr": "스위트칠리",
+            "spice": 1,
+            "desc": "",
+            "allergens": {},
+            "price": 0
+          },
+          "toppings": [],
+          "quantity": 1,
+          "unitPrice": 9.55,
+          "totalPrice": 9.55
+        }
+      ],
+      "subtotal": 9.55,
+      "vat": 1.9100000000000001,
+      "total": 9.55,
+      "paymentMethod": "pay_at_counter",
+      "paymentStatus": "unpaid",
+      "status": "preparing",
+      "source": "kiosk",
+      "timestamp": "2026-03-14T22:29:40.771Z",
+      "createdAt": "2026-03-14T22:29:40.771Z",
+      "receivedAt": "2026-03-14T22:29:40.771Z",
+      "statusUpdatedAt": "2026-03-14T22:29:55.201Z"
+    }
+  ],
+  "2026-03-15": [
+    {
+      "orderNumber": "PAB-001",
+      "branchCode": "PAB",
+      "branchName": "Pick A Bap",
+      "orderType": "takeaway",
+      "items": [
+        {
+          "nameEn": "Combo Bap",
+          "nameKr": "콤보밥",
+          "quantity": 1,
+          "unitPrice": 9.55,
+          "totalPrice": 9.55,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": "Combo Bap",
+          "nameKr": "콤보밥",
+          "quantity": 1,
+          "unitPrice": 9.55,
+          "totalPrice": 9.55,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": "Combo Bap",
+          "nameKr": "콤보밥",
+          "quantity": 1,
+          "unitPrice": 9.55,
+          "totalPrice": 9.55,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": "Combo Bap",
+          "nameKr": "콤보밥",
+          "quantity": 1,
+          "unitPrice": 9.55,
+          "totalPrice": 9.55,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": "Combo Bap",
+          "nameKr": "콤보밥",
+          "quantity": 1,
+          "unitPrice": 9.55,
+          "totalPrice": 9.55,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        }
+      ],
+      "subtotal": 47.75,
+      "discount": {
+        "type": null,
+        "value": 0,
+        "name": "",
+        "approvedBy": ""
+      },
+      "total": 47.75,
+      "mainVat": 7.96,
+      "subTotal": 47.75,
+      "subCashPct": 5,
+      "paymentMethod": "card",
+      "paymentStatus": "paid",
+      "amountPaid": 47.75,
+      "change": 0,
+      "wantedTime": 25,
+      "staff": "Pick A Bap",
+      "status": "pending",
+      "timestamp": "2026-03-15T10:38:30.555Z",
+      "source": "pos",
+      "skipKitchen": true,
+      "receivedAt": "2026-03-15T10:38:30.556Z"
+    },
+    {
+      "orderNumber": "PAB-002",
+      "branchCode": "PAB",
+      "branchName": "Pick A Bap",
+      "orderType": "takeaway",
+      "items": [
+        {
+          "nameEn": "Soft Cheese cake",
+          "nameKr": "치즈케익",
+          "quantity": 1,
+          "unitPrice": 2.55,
+          "totalPrice": 2.55,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        }
+      ],
+      "subtotal": 2.55,
+      "discount": {
+        "type": null,
+        "value": 0,
+        "name": "",
+        "approvedBy": ""
+      },
+      "total": 2.55,
+      "mainVat": 0.42,
+      "subTotal": 0.13,
+      "subCashPct": 5,
+      "paymentMethod": "cash",
+      "paymentStatus": "paid",
+      "amountPaid": 50,
+      "change": 47.45,
+      "wantedTime": 25,
+      "staff": "Pick A Bap",
+      "status": "pending",
+      "timestamp": "2026-03-15T10:38:35.105Z",
+      "source": "pos",
+      "skipKitchen": true,
+      "receivedAt": "2026-03-15T10:38:35.107Z"
+    },
+    {
+      "orderNumber": "PAB-003",
+      "branchCode": "PAB",
+      "branchName": "Pick A Bap",
+      "orderType": "takeaway",
+      "items": [
+        {
+          "nameEn": " Pork Bap ",
+          "nameKr": "매운 돼지고기 덮밥",
+          "quantity": 1,
+          "unitPrice": 8.75,
+          "totalPrice": 8.75,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": " Pork Bap ",
+          "nameKr": "매운 돼지고기 덮밥",
+          "quantity": 1,
+          "unitPrice": 8.75,
+          "totalPrice": 8.75,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": " Pork Bap ",
+          "nameKr": "매운 돼지고기 덮밥",
+          "quantity": 1,
+          "unitPrice": 8.75,
+          "totalPrice": 8.75,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": " Pork Bap ",
+          "nameKr": "매운 돼지고기 덮밥",
+          "quantity": 1,
+          "unitPrice": 8.75,
+          "totalPrice": 8.75,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": " Pork Bap ",
+          "nameKr": "매운 돼지고기 덮밥",
+          "quantity": 1,
+          "unitPrice": 8.75,
+          "totalPrice": 8.75,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": " Pork Bap ",
+          "nameKr": "매운 돼지고기 덮밥",
+          "quantity": 1,
+          "unitPrice": 8.75,
+          "totalPrice": 8.75,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": " Pork Bap ",
+          "nameKr": "매운 돼지고기 덮밥",
+          "quantity": 1,
+          "unitPrice": 8.75,
+          "totalPrice": 8.75,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        }
+      ],
+      "subtotal": 61.25,
+      "discount": {
+        "type": null,
+        "value": 0,
+        "name": "",
+        "approvedBy": ""
+      },
+      "total": 61.25,
+      "mainVat": 10.21,
+      "subTotal": 61.25,
+      "subCashPct": 5,
+      "paymentMethod": "card",
+      "paymentStatus": "paid",
+      "amountPaid": 61.25,
+      "change": 0,
+      "wantedTime": 25,
+      "staff": "Pick A Bap",
+      "status": "pending",
+      "timestamp": "2026-03-15T20:24:18.603Z",
+      "source": "pos",
+      "skipKitchen": true,
+      "receivedAt": "2026-03-15T20:24:18.605Z"
+    }
+  ],
+  "2026-03-16": [],
+  "2026-03-17": [
+    {
+      "orderNumber": "PAB-001",
+      "branchCode": "PAB",
+      "branchName": "Pick A Bap",
+      "orderType": "takeaway",
+      "items": [
+        {
+          "nameEn": "Katsu Bap",
+          "nameKr": "치킨카츠 덮밥",
+          "quantity": 1,
+          "unitPrice": 8.25,
+          "totalPrice": 8.25,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": "Katsu Bap",
+          "nameKr": "치킨카츠 덮밥",
+          "quantity": 1,
+          "unitPrice": 8.25,
+          "totalPrice": 8.25,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": "Katsu Bap",
+          "nameKr": "치킨카츠 덮밥",
+          "quantity": 1,
+          "unitPrice": 8.25,
+          "totalPrice": 8.25,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": "Katsu Bap",
+          "nameKr": "치킨카츠 덮밥",
+          "quantity": 1,
+          "unitPrice": 8.25,
+          "totalPrice": 8.25,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": "Katsu Bap",
+          "nameKr": "치킨카츠 덮밥",
+          "quantity": 1,
+          "unitPrice": 8.25,
+          "totalPrice": 8.25,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": "Katsu Bap",
+          "nameKr": "치킨카츠 덮밥",
+          "quantity": 1,
+          "unitPrice": 8.25,
+          "totalPrice": 8.25,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": "Katsu Bap",
+          "nameKr": "치킨카츠 덮밥",
+          "quantity": 1,
+          "unitPrice": 8.25,
+          "totalPrice": 8.25,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": "Katsu Bap",
+          "nameKr": "치킨카츠 덮밥",
+          "quantity": 1,
+          "unitPrice": 8.25,
+          "totalPrice": 8.25,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        }
+      ],
+      "subtotal": 66,
+      "discount": {
+        "type": null,
+        "value": 0,
+        "name": "",
+        "approvedBy": ""
+      },
+      "total": 66,
+      "mainVat": 11,
+      "subTotal": 66,
+      "subCashPct": 5,
+      "paymentMethod": "card",
+      "paymentStatus": "paid",
+      "amountPaid": 66,
+      "change": 0,
+      "wantedTime": 25,
+      "staff": "Pick A Bap",
+      "status": "pending",
+      "timestamp": "2026-03-17T13:46:45.675Z",
+      "source": "pos",
+      "skipKitchen": true,
+      "receivedAt": "2026-03-17T13:46:45.679Z"
+    }
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "id": "ES-TBS-2026-03-13T21-06-18-563Z",
+  "timestamp": "2026-03-13T21:06:18.563Z",
+  "branchCode": "TBS",
+  "branchName": "The Bap Swindon",
+  "periodFrom": "2026-03-13T20:54:09.621Z",
+  "periodTo": "2026-03-13T21:06:15.223Z",
+  "summary": {
+    "totalOrders": 1,
+    "cashTotal": 0,
+    "cardTotal": 18,
+    "grandTotal": 18,
+    "cashCustomers": 0,
+    "cardCustomers": 1,
+    "vatTotal": 3,
+    "vatBreakdown": {
+      "20": {
+        "net": 15,
+        "vat": 3,
+        "gross": 18
+      }
+    },
+    "cashInDrawer": 100
+  },
+  "sub": {
+    "cashPct": 5,
+    "cashTotal": 0,
+    "cardTotal": 18,
+    "grandTotal": 18,
+    "vatTotal": 1.64
+  },
+  "itemBreakdown": [
+    {
+      "name": "Jap Chae (Noodle) Only",
+      "qty": 4,
+      "total": 18,
+      "vatRate": 20,
+      "subVatRate": 10
+    }
+  ],
+  "orders": [
+    {
+      "orderNumber": "TBS-020",
+      "timestamp": "2026-03-13T21:05:53.972Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 18,
+      "items": [
+        {
+          "name": "Jap Chae (Noodle) Only",
+          "qty": 1,
+          "price": 4.5
+        },
+        {
+          "name": "Jap Chae (Noodle) Only",
+          "qty": 1,
+          "price": 4.5
+        },
+        {
+          "name": "Jap Chae (Noodle) Only",
+          "qty": 1,
+          "price": 4.5
+        },
+        {
+          "name": "Jap Chae (Noodle) Only",
+          "qty": 1,
+          "price": 4.5
+        }
+      ]
+    }
+  ],
+  "staff": null
+}

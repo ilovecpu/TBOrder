@@ -1,0 +1,86 @@
+{
+  "id": "ES-TBS-2026-03-13T20-54-13-453Z",
+  "timestamp": "2026-03-13T20:54:13.453Z",
+  "branchCode": "TBS",
+  "branchName": "The Bap Swindon",
+  "periodFrom": "2026-03-13T20:14:23.011Z",
+  "periodTo": "2026-03-13T20:54:09.621Z",
+  "summary": {
+    "totalOrders": 1,
+    "cashTotal": 0,
+    "cardTotal": 64,
+    "grandTotal": 64,
+    "cashCustomers": 0,
+    "cardCustomers": 1,
+    "vatTotal": 10.67,
+    "vatBreakdown": {
+      "20": {
+        "net": 53.33,
+        "vat": 10.67,
+        "gross": 64
+      }
+    },
+    "cashInDrawer": 100
+  },
+  "itemBreakdown": [
+    {
+      "name": "Katsu Guk Su",
+      "qty": 8,
+      "total": 64,
+      "vatRate": 20,
+      "subVatRate": 10
+    }
+  ],
+  "orders": [
+    {
+      "orderNumber": "PAB-019",
+      "timestamp": "2026-03-13T20:15:55.148Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 64,
+      "items": [
+        {
+          "name": "Katsu Guk Su",
+          "qty": 1,
+          "price": 8
+        },
+        {
+          "name": "Katsu Guk Su",
+          "qty": 1,
+          "price": 8
+        },
+        {
+          "name": "Katsu Guk Su",
+          "qty": 1,
+          "price": 8
+        },
+        {
+          "name": "Katsu Guk Su",
+          "qty": 1,
+          "price": 8
+        },
+        {
+          "name": "Katsu Guk Su",
+          "qty": 1,
+          "price": 8
+        },
+        {
+          "name": "Katsu Guk Su",
+          "qty": 1,
+          "price": 8
+        },
+        {
+          "name": "Katsu Guk Su",
+          "qty": 1,
+          "price": 8
+        },
+        {
+          "name": "Katsu Guk Su",
+          "qty": 1,
+          "price": 8
+        }
+      ]
+    }
+  ],
+  "staff": null
+}

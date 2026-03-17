@@ -1,0 +1,35 @@
+{
+  "branchCode": "PAB",
+  "branchName": "Pick A Bap",
+  "cashReportPct": 5,
+  "vatPct": 61,
+  "dailyPushTime": "23:39",
+  "allBranches": [
+    {
+      "code": "PAB",
+      "name": "Pick A Bap",
+      "nameKr": ""
+    },
+    {
+      "code": "TBS",
+      "name": "The Bap Swindon",
+      "nameKr": ""
+    },
+    {
+      "code": "TBR",
+      "name": "The Bap Reading",
+      "nameKr": ""
+    },
+    {
+      "code": "TBB",
+      "name": "The Bap Bristol",
+      "nameKr": ""
+    },
+    {
+      "code": "TBO",
+      "name": "The Bap Oxford",
+      "nameKr": ""
+    }
+  ],
+  "savedAt": "2026-03-17T13:46:20.931Z"
+}

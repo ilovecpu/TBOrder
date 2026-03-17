@@ -1,0 +1,14 @@
+{
+  "branchCode": "PAB",
+  "branchName": "Pick A Bap",
+  "isOpen": false,
+  "openingFloat": 100,
+  "cashSales": 0,
+  "cardSales": 0,
+  "transactions": [],
+  "openedAt": null,
+  "closedAt": null,
+  "lastEndSalesAt": "2026-03-09T23:16:17.393Z",
+  "date": "2026-03-09",
+  "updatedAt": "2026-03-09T23:16:21.997Z"
+}

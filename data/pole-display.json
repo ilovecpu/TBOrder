@@ -1,0 +1,6 @@
+{
+  "enabled": false,
+  "port": "",
+  "baudRate": 9600,
+  "welcomeMsg": "Thank you for Visiting!"
+}

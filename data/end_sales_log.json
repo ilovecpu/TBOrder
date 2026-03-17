@@ -1,0 +1,156 @@
+[
+  {
+    "id": "ES-TBS-2026-03-13T20-14-25-714Z",
+    "timestamp": "2026-03-13T20:14:25.714Z",
+    "branchCode": "TBS",
+    "branchName": "The Bap Swindon",
+    "periodFrom": null,
+    "periodTo": "2026-03-13T20:14:23.011Z",
+    "totalOrders": 18,
+    "cashTotal": 25.94,
+    "cardTotal": 162.8675,
+    "grandTotal": 188.8075,
+    "cashCustomers": 7,
+    "cardCustomers": 11,
+    "vatTotal": 33.18,
+    "vatBreakdown": {
+      "20": {
+        "net": 165.92,
+        "vat": 33.18,
+        "gross": 199.1
+      }
+    }
+  },
+  {
+    "id": "ES-TBS-2026-03-13T20-54-13-453Z",
+    "timestamp": "2026-03-13T20:54:13.453Z",
+    "branchCode": "TBS",
+    "branchName": "The Bap Swindon",
+    "periodFrom": "2026-03-13T20:14:23.011Z",
+    "periodTo": "2026-03-13T20:54:09.621Z",
+    "totalOrders": 1,
+    "cashTotal": 0,
+    "cardTotal": 64,
+    "grandTotal": 64,
+    "cashCustomers": 0,
+    "cardCustomers": 1,
+    "vatTotal": 10.67,
+    "vatBreakdown": {
+      "20": {
+        "net": 53.33,
+        "vat": 10.67,
+        "gross": 64
+      }
+    }
+  },
+  {
+    "id": "ES-TBS-2026-03-13T21-06-18-563Z",
+    "timestamp": "2026-03-13T21:06:18.563Z",
+    "branchCode": "TBS",
+    "branchName": "The Bap Swindon",
+    "periodFrom": "2026-03-13T20:54:09.621Z",
+    "periodTo": "2026-03-13T21:06:15.223Z",
+    "totalOrders": 1,
+    "cashTotal": 0,
+    "cardTotal": 18,
+    "grandTotal": 18,
+    "cashCustomers": 0,
+    "cardCustomers": 1,
+    "vatTotal": 3,
+    "vatBreakdown": {
+      "20": {
+        "net": 15,
+        "vat": 3,
+        "gross": 18
+      }
+    }
+  },
+  {
+    "id": "ES-TBS-2026-03-13T21-10-23-834Z",
+    "timestamp": "2026-03-13T21:10:23.834Z",
+    "branchCode": "TBS",
+    "branchName": "The Bap Swindon",
+    "periodFrom": "2026-03-13T21:06:15.223Z",
+    "periodTo": "2026-03-13T21:10:19.009Z",
+    "totalOrders": 2,
+    "cashTotal": 86.7,
+    "cardTotal": 93.95,
+    "grandTotal": 180.65,
+    "cashCustomers": 1,
+    "cardCustomers": 1,
+    "vatTotal": 30.11,
+    "vatBreakdown": {
+      "20": {
+        "net": 150.54,
+        "vat": 30.11,
+        "gross": 180.65
+      }
+    }
+  },
+  {
+    "id": "ES-TBO-2026-03-14T11-26-04-713Z",
+    "timestamp": "2026-03-14T11:26:04.713Z",
+    "branchCode": "TBO",
+    "branchName": "The Bap Oxford",
+    "periodFrom": null,
+    "periodTo": "2026-03-14T11:26:02.011Z",
+    "totalOrders": 10,
+    "cashTotal": 187.5,
+    "cardTotal": 473.24,
+    "grandTotal": 660.74,
+    "cashCustomers": 2,
+    "cardCustomers": 8,
+    "vatTotal": 110.12,
+    "vatBreakdown": {
+      "20": {
+        "net": 550.62,
+        "vat": 110.12,
+        "gross": 660.74
+      }
+    }
+  },
+  {
+    "id": "ES-PAB-2026-03-15T10-38-46-631Z",
+    "timestamp": "2026-03-15T10:38:46.631Z",
+    "branchCode": "PAB",
+    "branchName": "Pick A Bap",
+    "periodFrom": "2026-03-14T09:02:24.292Z",
+    "periodTo": "2026-03-15T10:38:44.523Z",
+    "totalOrders": 9,
+    "cashTotal": 2.55,
+    "cardTotal": 140.3,
+    "grandTotal": 142.85000000000002,
+    "cashCustomers": 1,
+    "cardCustomers": 7,
+    "vatTotal": 25.4,
+    "vatBreakdown": {
+      "20": {
+        "net": 127,
+        "vat": 25.4,
+        "gross": 152.4
+      }
+    }
+  },
+  {
+    "id": "ES-PAB-2026-03-15T20-24-35-169Z",
+    "timestamp": "2026-03-15T20:24:35.169Z",
+    "branchCode": "PAB",
+    "branchName": "Pick A Bap",
+    "periodFrom": "2026-03-15T10:38:44.523Z",
+    "periodTo": "2026-03-15T20:24:32.605Z",
+    "totalOrders": 1,
+    "cashTotal": 0,
+    "cardTotal": 61.25,
+    "grandTotal": 61.25,
+    "cashCustomers": 0,
+    "cardCustomers": 1,
+    "vatTotal": 10.21,
+    "vatBreakdown": {
+      "20": {
+        "net": 51.04,
+        "vat": 10.21,
+        "gross": 61.25
+      }
+    }
+  }
+]

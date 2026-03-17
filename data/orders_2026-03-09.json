@@ -1,0 +1,245 @@
+[
+  {
+    "orderNumber": "PAB-001",
+    "branchCode": "TB",
+    "branchName": "Pick A Bap",
+    "orderType": "takeaway",
+    "items": [
+      {
+        "nameEn": "1. Tofu Bap",
+        "nameKr": "두부덮밥",
+        "quantity": 1,
+        "unitPrice": 7.45,
+        "totalPrice": 7.45,
+        "vatRate": 20,
+        "note": "",
+        "free": false
+      }
+    ],
+    "subtotal": 7.45,
+    "discount": {
+      "type": null,
+      "value": 0,
+      "name": ""
+    },
+    "total": 7.45,
+    "paymentMethod": "cash",
+    "paymentStatus": "paid",
+    "amountPaid": 20,
+    "change": 2.55,
+    "wantedTime": 25,
+    "staff": "Pick A Bap",
+    "status": "done",
+    "timestamp": "2026-03-09T11:36:05.478Z",
+    "source": "pos",
+    "skipKitchen": true,
+    "receivedAt": "2026-03-09T11:36:05.481Z",
+    "statusUpdatedAt": "2026-03-09T13:28:02.822Z"
+  },
+  {
+    "orderNumber": "PAB-001",
+    "branchCode": "TB",
+    "branchName": "Pick A Bap",
+    "orderType": "eat_in",
+    "customerName": "DJ",
+    "items": [
+      {
+        "itemId": "M1772842574059",
+        "nameEn": "1. Tofu Bap",
+        "nameKr": "두부덮밥",
+        "sauce": {
+          "id": "S002",
+          "name": "Soy Sauce",
+          "nameKr": "간장소스",
+          "spice": 0,
+          "desc": "",
+          "allergens": {},
+          "price": 0
+        },
+        "toppings": [],
+        "quantity": 1,
+        "unitPrice": 7.45,
+        "totalPrice": 7.45
+      }
+    ],
+    "subtotal": 7.45,
+    "vat": 1.4900000000000002,
+    "total": 7.45,
+    "paymentMethod": "pay_at_counter",
+    "paymentStatus": "unpaid",
+    "status": "pending",
+    "source": "kiosk",
+    "timestamp": "2026-03-09T11:39:28.447Z",
+    "createdAt": "2026-03-09T11:39:28.447Z",
+    "receivedAt": "2026-03-09T11:39:28.448Z"
+  },
+  {
+    "orderNumber": "PAB-002",
+    "branchCode": "TB",
+    "branchName": "Pick A Bap",
+    "orderType": "take_away",
+    "customerName": "JJ",
+    "items": [
+      {
+        "itemId": "M1772914888411",
+        "nameEn": "4. KFC Bap",
+        "nameKr": "양념치킨 덮밥",
+        "sauce": {
+          "id": "S006",
+          "name": "Extra Sauce",
+          "nameKr": "소스 추가",
+          "spice": 0,
+          "desc": "",
+          "allergens": {},
+          "price": 0.3
+        },
+        "toppings": [],
+        "quantity": 1,
+        "unitPrice": 8.25,
+        "totalPrice": 8.25
+      }
+    ],
+    "subtotal": 8.25,
+    "vat": 1.6500000000000001,
+    "total": 8.25,
+    "paymentMethod": "cash",
+    "paymentStatus": "paid",
+    "status": "done",
+    "source": "kiosk",
+    "timestamp": "2026-03-09T11:39:55.272Z",
+    "createdAt": "2026-03-09T11:39:55.272Z",
+    "receivedAt": "2026-03-09T11:39:55.274Z",
+    "statusUpdatedAt": "2026-03-09T11:43:16.022Z",
+    "amountPaid": 20,
+    "staff": "Pick A Bap"
+  },
+  {
+    "orderNumber": "PAB-002",
+    "branchCode": "TB",
+    "branchName": "Pick A Bap",
+    "orderType": "eat_in",
+    "items": [
+      {
+        "nameEn": "1. Tofu Bap",
+        "nameKr": "두부덮밥",
+        "quantity": 1,
+        "unitPrice": 7.45,
+        "totalPrice": 7.45,
+        "vatRate": 20,
+        "note": "",
+        "free": false
+      },
+      {
+        "nameEn": "0. Combo Bap",
+        "nameKr": "콤보밥",
+        "quantity": 1,
+        "unitPrice": 9.55,
+        "totalPrice": 9.55,
+        "vatRate": 20,
+        "note": "",
+        "free": false
+      }
+    ],
+    "subtotal": 17,
+    "discount": {
+      "type": null,
+      "value": 0,
+      "name": ""
+    },
+    "total": 17,
+    "paymentMethod": "card",
+    "paymentStatus": "paid",
+    "amountPaid": 17,
+    "change": 0,
+    "wantedTime": 25,
+    "staff": "Pick A Bap",
+    "status": "pending",
+    "timestamp": "2026-03-09T11:41:35.943Z",
+    "source": "pos",
+    "skipKitchen": true,
+    "receivedAt": "2026-03-09T11:41:35.945Z"
+  },
+  {
+    "orderNumber": "PAB-005",
+    "branchCode": "TB",
+    "branchName": "Pick A Bap",
+    "orderType": "takeaway",
+    "items": [
+      {
+        "nameEn": "0. Combo Bap",
+        "nameKr": "콤보밥",
+        "quantity": 1,
+        "unitPrice": 9.55,
+        "totalPrice": 9.55,
+        "vatRate": 20,
+        "note": "",
+        "free": false
+      },
+      {
+        "nameEn": "2. Man Du Bap",
+        "nameKr": "만두덮밥",
+        "quantity": 2,
+        "unitPrice": 7.45,
+        "totalPrice": 14.9,
+        "vatRate": 20,
+        "note": "",
+        "free": false
+      }
+    ],
+    "subtotal": 24.45,
+    "discount": {
+      "type": null,
+      "value": 0,
+      "name": ""
+    },
+    "total": 24.45,
+    "paymentMethod": "cash",
+    "paymentStatus": "paid",
+    "amountPaid": 50,
+    "change": 25.55,
+    "wantedTime": 25,
+    "staff": "Pick A Bap",
+    "status": "pending",
+    "timestamp": "2026-03-09T13:25:10.622Z",
+    "source": "pos",
+    "skipKitchen": true,
+    "receivedAt": "2026-03-09T13:25:10.629Z"
+  },
+  {
+    "orderNumber": "PAB-001",
+    "branchCode": "TB",
+    "branchName": "Pick A Bap",
+    "orderType": "take_away",
+    "customerName": "DJ",
+    "items": [
+      {
+        "itemId": "M1772840320919",
+        "nameEn": "0. Combo Bap",
+        "nameKr": "콤보밥",
+        "sauce": {
+          "id": "S001",
+          "name": "No Sauce",
+          "nameKr": "소스 없음",
+          "spice": 0,
+          "desc": "",
+          "allergens": {},
+          "price": 0
+        },
+        "toppings": [],
+        "quantity": 1,
+        "unitPrice": 9.55,
+        "totalPrice": 9.55
+      }
+    ],
+    "subtotal": 9.55,
+    "vat": 1.9100000000000001,
+    "total": 9.55,
+    "paymentMethod": "pay_at_counter",
+    "paymentStatus": "unpaid",
+    "status": "pending",
+    "source": "kiosk",
+    "timestamp": "2026-03-09T13:27:30.162Z",
+    "createdAt": "2026-03-09T13:27:30.162Z",
+    "receivedAt": "2026-03-09T13:27:30.165Z"
+  }
+]

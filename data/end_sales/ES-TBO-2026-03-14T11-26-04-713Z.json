@@ -1,0 +1,612 @@
+{
+  "id": "ES-TBO-2026-03-14T11-26-04-713Z",
+  "timestamp": "2026-03-14T11:26:04.713Z",
+  "branchCode": "TBO",
+  "branchName": "The Bap Oxford",
+  "periodFrom": null,
+  "periodTo": "2026-03-14T11:26:02.011Z",
+  "summary": {
+    "totalOrders": 10,
+    "cashTotal": 187.5,
+    "cardTotal": 473.24,
+    "grandTotal": 660.74,
+    "cashCustomers": 2,
+    "cardCustomers": 8,
+    "vatTotal": 110.12,
+    "vatBreakdown": {
+      "20": {
+        "net": 550.62,
+        "vat": 110.12,
+        "gross": 660.74
+      }
+    },
+    "cashInDrawer": 287.5
+  },
+  "sub": {
+    "cashPct": 5,
+    "vatablePct": 61,
+    "vatRate": 20,
+    "cashTotal": 9.38,
+    "cardTotal": 473.24,
+    "grandTotal": 482.62,
+    "vatableGross": 294.4,
+    "nonVatableGross": 188.22,
+    "vatTotal": 49.07,
+    "totalNet": 433.55
+  },
+  "itemBreakdown": [
+    {
+      "name": "Katsu Bap",
+      "qty": 21,
+      "total": 173.25,
+      "vatRate": 20
+    },
+    {
+      "name": " Bibim Bap with Topping",
+      "qty": 10,
+      "total": 99.50000000000001,
+      "vatRate": 20
+    },
+    {
+      "name": "KFC Bap",
+      "qty": 12,
+      "total": 99,
+      "vatRate": 20
+    },
+    {
+      "name": "Katsu Guk Su",
+      "qty": 11,
+      "total": 88,
+      "vatRate": 20
+    },
+    {
+      "name": "Tofu Bap",
+      "qty": 8,
+      "total": 59.60000000000001,
+      "vatRate": 20
+    },
+    {
+      "name": " Pork Bap ",
+      "qty": 6,
+      "total": 52.5,
+      "vatRate": 20
+    },
+    {
+      "name": "Beef Bap",
+      "qty": 6,
+      "total": 52.5,
+      "vatRate": 20
+    },
+    {
+      "name": "Kim Mari Set ",
+      "qty": 8,
+      "total": 26,
+      "vatRate": 20
+    },
+    {
+      "name": "Combo Bap",
+      "qty": 1,
+      "total": 9.55,
+      "vatRate": 20
+    },
+    {
+      "name": "Container",
+      "qty": 1,
+      "total": 0.84,
+      "vatRate": 20
+    }
+  ],
+  "orders": [
+    {
+      "orderNumber": "TBO-010",
+      "timestamp": "2026-03-14T11:25:53.990Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 52.5,
+      "items": [
+        {
+          "name": " Pork Bap ",
+          "qty": 1,
+          "price": 8.75
+        },
+        {
+          "name": " Pork Bap ",
+          "qty": 1,
+          "price": 8.75
+        },
+        {
+          "name": " Pork Bap ",
+          "qty": 1,
+          "price": 8.75
+        },
+        {
+          "name": " Pork Bap ",
+          "qty": 1,
+          "price": 8.75
+        },
+        {
+          "name": " Pork Bap ",
+          "qty": 1,
+          "price": 8.75
+        },
+        {
+          "name": " Pork Bap ",
+          "qty": 1,
+          "price": 8.75
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-001",
+      "timestamp": "2026-03-14T08:13:18.636Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 35.55,
+      "items": [
+        {
+          "name": "Combo Bap",
+          "qty": 1,
+          "price": 9.55
+        },
+        {
+          "name": "Kim Mari Set ",
+          "qty": 1,
+          "price": 3.25
+        },
+        {
+          "name": "Kim Mari Set ",
+          "qty": 1,
+          "price": 3.25
+        },
+        {
+          "name": "Kim Mari Set ",
+          "qty": 1,
+          "price": 3.25
+        },
+        {
+          "name": "Kim Mari Set ",
+          "qty": 1,
+          "price": 3.25
+        },
+        {
+          "name": "Kim Mari Set ",
+          "qty": 1,
+          "price": 3.25
+        },
+        {
+          "name": "Kim Mari Set ",
+          "qty": 1,
+          "price": 3.25
+        },
+        {
+          "name": "Kim Mari Set ",
+          "qty": 1,
+          "price": 3.25
+        },
+        {
+          "name": "Kim Mari Set ",
+          "qty": 1,
+          "price": 3.25
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-002",
+      "timestamp": "2026-03-14T08:13:27.856Z",
+      "orderType": "takeaway",
+      "paymentMethod": "cash",
+      "total": 88,
+      "items": [
+        {
+          "name": "Katsu Guk Su",
+          "qty": 1,
+          "price": 8
+        },
+        {
+          "name": "Katsu Guk Su",
+          "qty": 1,
+          "price": 8
+        },
+        {
+          "name": "Katsu Guk Su",
+          "qty": 1,
+          "price": 8
+        },
+        {
+          "name": "Katsu Guk Su",
+          "qty": 1,
+          "price": 8
+        },
+        {
+          "name": "Katsu Guk Su",
+          "qty": 1,
+          "price": 8
+        },
+        {
+          "name": "Katsu Guk Su",
+          "qty": 1,
+          "price": 8
+        },
+        {
+          "name": "Katsu Guk Su",
+          "qty": 1,
+          "price": 8
+        },
+        {
+          "name": "Katsu Guk Su",
+          "qty": 1,
+          "price": 8
+        },
+        {
+          "name": "Katsu Guk Su",
+          "qty": 1,
+          "price": 8
+        },
+        {
+          "name": "Katsu Guk Su",
+          "qty": 1,
+          "price": 8
+        },
+        {
+          "name": "Katsu Guk Su",
+          "qty": 1,
+          "price": 8
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-003",
+      "timestamp": "2026-03-14T08:13:33.344Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 99,
+      "items": [
+        {
+          "name": "KFC Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "KFC Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "KFC Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "KFC Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "KFC Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "KFC Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "KFC Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "KFC Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "KFC Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "KFC Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "KFC Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "KFC Bap",
+          "qty": 1,
+          "price": 8.25
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-004",
+      "timestamp": "2026-03-14T08:13:40.281Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 59.60000000000001,
+      "items": [
+        {
+          "name": "Tofu Bap",
+          "qty": 1,
+          "price": 7.45
+        },
+        {
+          "name": "Tofu Bap",
+          "qty": 1,
+          "price": 7.45
+        },
+        {
+          "name": "Tofu Bap",
+          "qty": 1,
+          "price": 7.45
+        },
+        {
+          "name": "Tofu Bap",
+          "qty": 1,
+          "price": 7.45
+        },
+        {
+          "name": "Tofu Bap",
+          "qty": 1,
+          "price": 7.45
+        },
+        {
+          "name": "Tofu Bap",
+          "qty": 1,
+          "price": 7.45
+        },
+        {
+          "name": "Tofu Bap",
+          "qty": 1,
+          "price": 7.45
+        },
+        {
+          "name": "Tofu Bap",
+          "qty": 1,
+          "price": 7.45
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-005",
+      "timestamp": "2026-03-14T08:13:46.927Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 52.5,
+      "items": [
+        {
+          "name": "Beef Bap",
+          "qty": 1,
+          "price": 8.75
+        },
+        {
+          "name": "Beef Bap",
+          "qty": 1,
+          "price": 8.75
+        },
+        {
+          "name": "Beef Bap",
+          "qty": 1,
+          "price": 8.75
+        },
+        {
+          "name": "Beef Bap",
+          "qty": 1,
+          "price": 8.75
+        },
+        {
+          "name": "Beef Bap",
+          "qty": 1,
+          "price": 8.75
+        },
+        {
+          "name": "Beef Bap",
+          "qty": 1,
+          "price": 8.75
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-006",
+      "timestamp": "2026-03-14T08:14:04.424Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 0.84,
+      "items": [
+        {
+          "name": "Container",
+          "qty": 1,
+          "price": 0.84
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-007",
+      "timestamp": "2026-03-14T09:02:04.728Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 82.5,
+      "items": [
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-008",
+      "timestamp": "2026-03-14T09:02:11.223Z",
+      "orderType": "takeaway",
+      "paymentMethod": "cash",
+      "total": 99.50000000000001,
+      "items": [
+        {
+          "name": " Bibim Bap with Topping",
+          "qty": 1,
+          "price": 9.95
+        },
+        {
+          "name": " Bibim Bap with Topping",
+          "qty": 1,
+          "price": 9.95
+        },
+        {
+          "name": " Bibim Bap with Topping",
+          "qty": 1,
+          "price": 9.95
+        },
+        {
+          "name": " Bibim Bap with Topping",
+          "qty": 1,
+          "price": 9.95
+        },
+        {
+          "name": " Bibim Bap with Topping",
+          "qty": 1,
+          "price": 9.95
+        },
+        {
+          "name": " Bibim Bap with Topping",
+          "qty": 1,
+          "price": 9.95
+        },
+        {
+          "name": " Bibim Bap with Topping",
+          "qty": 1,
+          "price": 9.95
+        },
+        {
+          "name": " Bibim Bap with Topping",
+          "qty": 1,
+          "price": 9.95
+        },
+        {
+          "name": " Bibim Bap with Topping",
+          "qty": 1,
+          "price": 9.95
+        },
+        {
+          "name": " Bibim Bap with Topping",
+          "qty": 1,
+          "price": 9.95
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-009",
+      "timestamp": "2026-03-14T09:02:17.615Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 90.75,
+      "items": [
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        }
+      ]
+    }
+  ],
+  "staff": null
+}

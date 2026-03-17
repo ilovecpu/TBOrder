@@ -1,0 +1,266 @@
+[
+  {
+    "orderNumber": "PAB-002",
+    "branchCode": "PAB",
+    "branchName": "Pick A Bap",
+    "orderType": "takeaway",
+    "items": [
+      {
+        "nameEn": "2. Man Du Bap",
+        "nameKr": "만두덮밥",
+        "quantity": 1,
+        "unitPrice": 7.45,
+        "totalPrice": 7.45,
+        "vatRate": 20,
+        "note": "",
+        "free": false
+      },
+      {
+        "nameEn": "1. Tofu Bap",
+        "nameKr": "두부덮밥",
+        "quantity": 1,
+        "unitPrice": 7.45,
+        "totalPrice": 7.45,
+        "vatRate": 20,
+        "note": "",
+        "free": false
+      }
+    ],
+    "subtotal": 14.9,
+    "discount": {
+      "type": null,
+      "value": 0,
+      "name": ""
+    },
+    "total": 14.9,
+    "paymentMethod": "cash",
+    "paymentStatus": "paid",
+    "amountPaid": 50,
+    "change": 35.1,
+    "wantedTime": 25,
+    "staff": "Pick A Bap",
+    "status": "done",
+    "timestamp": "2026-03-07T23:47:44.496Z",
+    "source": "pos",
+    "skipKitchen": true,
+    "receivedAt": "2026-03-07T23:47:44.498Z",
+    "statusUpdatedAt": "2026-03-07T23:58:18.293Z"
+  },
+  {
+    "orderNumber": "PAB-003",
+    "branchCode": "PAB",
+    "branchName": "Pick A Bap",
+    "orderType": "takeaway",
+    "items": [
+      {
+        "nameEn": "2. Man Du Bap",
+        "nameKr": "만두덮밥",
+        "quantity": 1,
+        "unitPrice": 7.45,
+        "totalPrice": 7.45,
+        "vatRate": 20,
+        "note": "",
+        "free": false
+      },
+      {
+        "nameEn": "1. Tofu Bap",
+        "nameKr": "두부덮밥",
+        "quantity": 3,
+        "unitPrice": 7.45,
+        "totalPrice": 22.35,
+        "vatRate": 20,
+        "note": "",
+        "free": false
+      }
+    ],
+    "subtotal": 29.8,
+    "discount": {
+      "type": null,
+      "value": 0,
+      "name": ""
+    },
+    "total": 29.8,
+    "paymentMethod": "cash",
+    "paymentStatus": "paid",
+    "amountPaid": 10,
+    "change": 20.2,
+    "wantedTime": 25,
+    "staff": "Pick A Bap",
+    "status": "done",
+    "timestamp": "2026-03-07T23:48:55.562Z",
+    "source": "pos",
+    "skipKitchen": true,
+    "receivedAt": "2026-03-07T23:48:55.564Z",
+    "statusUpdatedAt": "2026-03-07T23:58:12.906Z"
+  },
+  {
+    "orderNumber": "PAB-001",
+    "branchCode": "PAB",
+    "branchName": "Pick A Bap",
+    "orderType": "eat_in",
+    "customerName": "GGGG",
+    "items": [
+      {
+        "itemId": "M1772840320919",
+        "nameEn": "0. Combo Bap",
+        "nameKr": "콤보밥",
+        "sauce": {
+          "id": "S003",
+          "name": "Spicy Sauce",
+          "nameKr": "매운소스",
+          "spice": 3,
+          "desc": "",
+          "allergens": {},
+          "price": 0
+        },
+        "toppings": [],
+        "quantity": 1,
+        "unitPrice": 9.55,
+        "totalPrice": 9.55
+      }
+    ],
+    "subtotal": 9.55,
+    "vat": 1.9100000000000001,
+    "total": 9.55,
+    "paymentMethod": "cash",
+    "paymentStatus": "paid",
+    "status": "done",
+    "source": "kiosk",
+    "timestamp": "2026-03-07T23:55:47.314Z",
+    "createdAt": "2026-03-07T23:55:47.314Z",
+    "receivedAt": "2026-03-07T23:55:47.248Z",
+    "statusUpdatedAt": "2026-03-07T23:56:17.434Z",
+    "amountPaid": 20,
+    "staff": "Pick A Bap"
+  },
+  {
+    "orderNumber": "PAB-002",
+    "branchCode": "PAB",
+    "branchName": "Pick A Bap",
+    "orderType": "eat_in",
+    "customerName": "DJ",
+    "items": [
+      {
+        "itemId": "M1772914888411",
+        "nameEn": "4. KFC Bap",
+        "nameKr": "양념치킨 덮밥",
+        "sauce": {
+          "id": "S006",
+          "name": "Extra Sauce",
+          "nameKr": "소스 추가",
+          "spice": 0,
+          "desc": "",
+          "allergens": {},
+          "price": 0.3
+        },
+        "toppings": [],
+        "quantity": 4,
+        "unitPrice": 8.25,
+        "totalPrice": 33
+      }
+    ],
+    "subtotal": 33,
+    "vat": 6.6000000000000005,
+    "total": 33,
+    "paymentMethod": "pay_at_counter",
+    "paymentStatus": "unpaid",
+    "status": "pending",
+    "source": "kiosk",
+    "timestamp": "2026-03-07T23:57:04.919Z",
+    "createdAt": "2026-03-07T23:57:04.919Z",
+    "receivedAt": "2026-03-07T23:57:04.810Z"
+  },
+  {
+    "orderNumber": "PAB-003",
+    "branchCode": "PAB",
+    "branchName": "Pick A Bap",
+    "orderType": "eat_in",
+    "customerName": "DJI",
+    "items": [
+      {
+        "itemId": "M1772843455579",
+        "nameEn": "2. Man Du Bap",
+        "nameKr": "만두덮밥",
+        "sauce": {
+          "id": "S006",
+          "name": "Extra Sauce",
+          "nameKr": "소스 추가",
+          "spice": 0,
+          "desc": "",
+          "allergens": {},
+          "price": 0.3
+        },
+        "toppings": [],
+        "quantity": 1,
+        "unitPrice": 7.45,
+        "totalPrice": 7.45
+      }
+    ],
+    "subtotal": 7.45,
+    "vat": 1.4900000000000002,
+    "total": 7.45,
+    "paymentMethod": "pay_at_counter",
+    "paymentStatus": "unpaid",
+    "status": "pending",
+    "source": "kiosk",
+    "timestamp": "2026-03-07T23:57:25.097Z",
+    "createdAt": "2026-03-07T23:57:25.097Z",
+    "receivedAt": "2026-03-07T23:57:25.035Z"
+  },
+  {
+    "orderNumber": "PAB-004",
+    "branchCode": "PAB",
+    "branchName": "Pick A Bap",
+    "orderType": "eat_in",
+    "items": [
+      {
+        "nameEn": "1. Tofu Bap",
+        "nameKr": "두부덮밥",
+        "quantity": 1,
+        "unitPrice": 7.45,
+        "totalPrice": 7.45,
+        "vatRate": 20,
+        "note": "",
+        "free": false
+      },
+      {
+        "nameEn": "2. Man Du Bap",
+        "nameKr": "만두덮밥",
+        "quantity": 1,
+        "unitPrice": 7.45,
+        "totalPrice": 7.45,
+        "vatRate": 20,
+        "note": "",
+        "free": false
+      },
+      {
+        "nameEn": "3. Jap Che Bap",
+        "nameKr": "잡채덮밥",
+        "quantity": 1,
+        "unitPrice": 6.95,
+        "totalPrice": 6.95,
+        "vatRate": 20,
+        "note": "",
+        "free": false
+      }
+    ],
+    "subtotal": 21.85,
+    "discount": {
+      "type": null,
+      "value": 0,
+      "name": ""
+    },
+    "total": 21.85,
+    "paymentMethod": "card",
+    "paymentStatus": "paid",
+    "amountPaid": 21.85,
+    "change": 0,
+    "wantedTime": 25,
+    "staff": "Pick A Bap",
+    "status": "pending",
+    "timestamp": "2026-03-07T23:57:42.902Z",
+    "source": "pos",
+    "skipKitchen": true,
+    "receivedAt": "2026-03-07T23:57:42.903Z"
+  }
+]

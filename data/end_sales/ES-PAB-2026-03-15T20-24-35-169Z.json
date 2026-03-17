@@ -1,0 +1,92 @@
+{
+  "id": "ES-PAB-2026-03-15T20-24-35-169Z",
+  "timestamp": "2026-03-15T20:24:35.169Z",
+  "branchCode": "PAB",
+  "branchName": "Pick A Bap",
+  "periodFrom": "2026-03-15T10:38:44.523Z",
+  "periodTo": "2026-03-15T20:24:32.605Z",
+  "summary": {
+    "totalOrders": 1,
+    "cashTotal": 0,
+    "cardTotal": 61.25,
+    "grandTotal": 61.25,
+    "cashCustomers": 0,
+    "cardCustomers": 1,
+    "vatTotal": 10.21,
+    "vatBreakdown": {
+      "20": {
+        "net": 51.04,
+        "vat": 10.21,
+        "gross": 61.25
+      }
+    },
+    "cashInDrawer": 100
+  },
+  "sub": {
+    "cashPct": 5,
+    "vatablePct": 61,
+    "vatRate": 20,
+    "cashTotal": 0,
+    "cardTotal": 61.25,
+    "grandTotal": 61.25,
+    "vatableGross": 37.36,
+    "nonVatableGross": 23.89,
+    "vatTotal": 6.23,
+    "totalNet": 55.02
+  },
+  "itemBreakdown": [
+    {
+      "name": " Pork Bap ",
+      "qty": 7,
+      "total": 61.25,
+      "vatRate": 20
+    }
+  ],
+  "orders": [
+    {
+      "orderNumber": "PAB-003",
+      "timestamp": "2026-03-15T20:24:18.603Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 61.25,
+      "items": [
+        {
+          "name": " Pork Bap ",
+          "qty": 1,
+          "price": 8.75
+        },
+        {
+          "name": " Pork Bap ",
+          "qty": 1,
+          "price": 8.75
+        },
+        {
+          "name": " Pork Bap ",
+          "qty": 1,
+          "price": 8.75
+        },
+        {
+          "name": " Pork Bap ",
+          "qty": 1,
+          "price": 8.75
+        },
+        {
+          "name": " Pork Bap ",
+          "qty": 1,
+          "price": 8.75
+        },
+        {
+          "name": " Pork Bap ",
+          "qty": 1,
+          "price": 8.75
+        },
+        {
+          "name": " Pork Bap ",
+          "qty": 1,
+          "price": 8.75
+        }
+      ]
+    }
+  ],
+  "staff": null
+}

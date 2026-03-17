@@ -1,0 +1,260 @@
+{
+  "id": "ES-PAB-2026-03-15T10-38-46-631Z",
+  "timestamp": "2026-03-15T10:38:46.631Z",
+  "branchCode": "PAB",
+  "branchName": "Pick A Bap",
+  "periodFrom": "2026-03-14T09:02:24.292Z",
+  "periodTo": "2026-03-15T10:38:44.523Z",
+  "summary": {
+    "totalOrders": 9,
+    "cashTotal": 2.55,
+    "cardTotal": 140.3,
+    "grandTotal": 142.85000000000002,
+    "cashCustomers": 1,
+    "cardCustomers": 7,
+    "vatTotal": 25.4,
+    "vatBreakdown": {
+      "20": {
+        "net": 127,
+        "vat": 25.4,
+        "gross": 152.4
+      }
+    },
+    "cashInDrawer": 102.55
+  },
+  "sub": {
+    "cashPct": 5,
+    "vatablePct": 61,
+    "vatRate": 20,
+    "cashTotal": 0.13,
+    "cardTotal": 140.3,
+    "grandTotal": 140.91,
+    "vatableGross": 85.96,
+    "nonVatableGross": 54.95,
+    "vatTotal": 14.33,
+    "totalNet": 126.58
+  },
+  "itemBreakdown": [
+    {
+      "name": "Combo Bap",
+      "qty": 12,
+      "total": 114.59999999999998,
+      "vatRate": 20
+    },
+    {
+      "name": "Chicken Bap",
+      "qty": 1,
+      "total": 8.75,
+      "vatRate": 20
+    },
+    {
+      "name": "Katsu Bap",
+      "qty": 1,
+      "total": 8.25,
+      "vatRate": 20
+    },
+    {
+      "name": "Man Du Guk Su ",
+      "qty": 1,
+      "total": 8,
+      "vatRate": 20
+    },
+    {
+      "name": "Tofu Bap",
+      "qty": 1,
+      "total": 7.45,
+      "vatRate": 20
+    },
+    {
+      "name": "Soft Drink",
+      "qty": 2,
+      "total": 2.8,
+      "vatRate": 20
+    },
+    {
+      "name": "Soft Cheese cake",
+      "qty": 1,
+      "total": 2.55,
+      "vatRate": 20
+    }
+  ],
+  "orders": [
+    {
+      "orderNumber": "PAB-001",
+      "timestamp": "2026-03-14T20:10:14.773Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 47.75,
+      "items": [
+        {
+          "name": "Combo Bap",
+          "qty": 1,
+          "price": 9.55
+        },
+        {
+          "name": "Combo Bap",
+          "qty": 1,
+          "price": 9.55
+        },
+        {
+          "name": "Combo Bap",
+          "qty": 1,
+          "price": 9.55
+        },
+        {
+          "name": "Combo Bap",
+          "qty": 1,
+          "price": 9.55
+        },
+        {
+          "name": "Combo Bap",
+          "qty": 1,
+          "price": 9.55
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-002",
+      "timestamp": "2026-03-14T20:10:22.493Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 8.75,
+      "items": [
+        {
+          "name": "Chicken Bap",
+          "qty": 1,
+          "price": 8.75
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-003",
+      "timestamp": "2026-03-14T20:10:30.208Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 7.45,
+      "items": [
+        {
+          "name": "Tofu Bap",
+          "qty": 1,
+          "price": 7.45
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-004",
+      "timestamp": "2026-03-14T20:10:40.634Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 10.950000000000001,
+      "items": [
+        {
+          "name": "Soft Drink",
+          "qty": 1,
+          "price": 1.4
+        },
+        {
+          "name": "Combo Bap",
+          "qty": 1,
+          "price": 9.55
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-005",
+      "timestamp": "2026-03-14T20:11:02.230Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 9.65,
+      "items": [
+        {
+          "name": "Katsu Bap",
+          "qty": 1,
+          "price": 8.25
+        },
+        {
+          "name": "Soft Drink",
+          "qty": 1,
+          "price": 1.4
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-006",
+      "timestamp": "2026-03-14T22:28:49.126Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 8,
+      "items": [
+        {
+          "name": "Man Du Guk Su ",
+          "qty": 1,
+          "price": 8
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-007",
+      "timestamp": "2026-03-14T22:29:40.771Z",
+      "orderType": "eat_in",
+      "paymentMethod": "pay_at_counter",
+      "total": 9.55,
+      "items": [
+        {
+          "name": "Combo Bap",
+          "qty": 1,
+          "price": 9.55
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-001",
+      "timestamp": "2026-03-15T10:38:30.555Z",
+      "orderType": "takeaway",
+      "paymentMethod": "card",
+      "total": 47.75,
+      "items": [
+        {
+          "name": "Combo Bap",
+          "qty": 1,
+          "price": 9.55
+        },
+        {
+          "name": "Combo Bap",
+          "qty": 1,
+          "price": 9.55
+        },
+        {
+          "name": "Combo Bap",
+          "qty": 1,
+          "price": 9.55
+        },
+        {
+          "name": "Combo Bap",
+          "qty": 1,
+          "price": 9.55
+        },
+        {
+          "name": "Combo Bap",
+          "qty": 1,
+          "price": 9.55
+        }
+      ]
+    },
+    {
+      "orderNumber": "PAB-002",
+      "timestamp": "2026-03-15T10:38:35.105Z",
+      "orderType": "takeaway",
+      "paymentMethod": "cash",
+      "total": 2.55,
+      "items": [
+        {
+          "name": "Soft Cheese cake",
+          "qty": 1,
+          "price": 2.55
+        }
+      ]
+    }
+  ],
+  "staff": null
+}
