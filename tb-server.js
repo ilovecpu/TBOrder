@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * ════════════════════════════════════════════════════════════
- *  🍚 The Bap (더밥) — TBOrder Local Server v4.4.0
+ *  🍚 The Bap (더밥) — TBOrder Local Server v4.4.4
  *  Last Updated: 2026-03-17
  * ════════════════════════════════════════════════════════════
  *
@@ -73,7 +73,7 @@ let _branchReady = false;                            // ★ POS 로그인 완료
 let _cashReportPct = 100;                            // ★ POS에서 설정한 Cash Report % (SUB 계산용)
 let _dailyPushTime = '23:50';                        // ★ POS에서 설정한 Daily Push 시간 (HH:MM)
 let _vatPct = 20;                                    // ★ POS에서 설정한 VAT 비율 (0-100%)
-const SERVER_VERSION = '4.4.2';
+const SERVER_VERSION = '4.4.3';
 
 // ════════════════════════════════════════════════════════════
 //  ★ Last Session Restore — 마지막 로그인 세션 저장/복원 (v4.4.0)
@@ -1584,6 +1584,15 @@ async function handleMessage(clientId, rawData) {
         }
       }
       broadcastMsg({ type: 'order_refunded', orderNumber: refNum, date: refDate, refundedBy: msg.refundedBy, refundedAt: msg.refundedAt, refundMethod: msg.refundMethod }, clientId);
+      // ★ v4.4.4: 리펀드된 주문을 SalesOrders 큐에 다시 넣어 Google Sheets 업데이트
+      {
+        const refOrder = (refDate === getTodayStr() ? dailyOrders : loadOrders(refDate)).find(o => o.orderNumber === refNum);
+        if (refOrder) {
+          queueOrderForPush(refOrder);
+          flushOrderQueue();
+          console.log(`  📤 [WS Refund→SalesOrders] ${refNum} 리펀드 상태 큐에 추가`);
+        }
+      }
       break;
     }
 
@@ -1823,6 +1832,108 @@ const server = http.createServer(async (req, res) => {
   }
 
   // ─── REST API ───
+  // ★ v4.4.3: Staff + 오프라인 데이터 저장/서빙 API
+  // Staff 데이터: TBMS에서 가져온 걸 서버에 저장 → 오프라인 시 파일에서 서빙
+  // ★ v4.4.4: 지점별 Staff 저장/로드
+  if (url === '/api/branch-staff' && req.method === 'GET') {
+    const urlParams = new URL(req.url, `http://localhost:${PORT}`).searchParams;
+    const qBranch = urlParams.get('branch') || '';
+    // 지점별 파일 우선, 없으면 공통 파일
+    const branchFile = qBranch ? path.join(DATA_DIR, `branch_staff_${qBranch}.json`) : '';
+    const genericFile = path.join(DATA_DIR, 'branch_staff.json');
+    const staffFile = (branchFile && fs.existsSync(branchFile)) ? branchFile : genericFile;
+    try {
+      if (fs.existsSync(staffFile)) {
+        const data = JSON.parse(fs.readFileSync(staffFile, 'utf8'));
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ staff: data.staff || [], source: 'file', savedAt: data.savedAt, branchCode: data.branchCode || '' }));
+      } else {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ staff: [], source: 'none' }));
+      }
+    } catch (e) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ staff: [], source: 'error', error: e.message }));
+    }
+    return;
+  }
+  if (url === '/api/branch-staff' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const { staff, branchCode } = JSON.parse(body);
+        const bc = branchCode || BRANCH_CODE || 'unknown';
+        // 지점별 파일 + 공통 파일 둘 다 저장
+        const branchFile = path.join(DATA_DIR, `branch_staff_${bc}.json`);
+        const genericFile = path.join(DATA_DIR, 'branch_staff.json');
+        const payload = JSON.stringify({ staff: staff || [], savedAt: new Date().toISOString(), branchCode: bc });
+        safeWriteFileSync(branchFile, payload);
+        safeWriteFileSync(genericFile, payload);
+        console.log(`  👥 [Staff] ${bc}: ${(staff || []).length}명 저장 완료`);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true, count: (staff || []).length, branchCode: bc }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // 오프라인 데이터 일괄 저장/로딩 API (POS 로그인/PIN users 등)
+  if (url === '/api/offline-data' && req.method === 'GET') {
+    const result = {};
+    // Staff
+    try { const sf = path.join(DATA_DIR, 'branch_staff.json'); if (fs.existsSync(sf)) result.staff = JSON.parse(fs.readFileSync(sf, 'utf8')); } catch(e) {}
+    // PIN Users (POS user list)
+    try { const pf = path.join(DATA_DIR, 'pin_users.json'); if (fs.existsSync(pf)) result.pinUsers = JSON.parse(fs.readFileSync(pf, 'utf8')); } catch(e) {}
+    // Branches (phone 포함 → 지점 PIN 체크용)
+    try { const bf = path.join(DATA_DIR, 'branches.json'); if (fs.existsSync(bf)) result.branches = JSON.parse(fs.readFileSync(bf, 'utf8')); } catch(e) {}
+    // Last session
+    try { if (fs.existsSync(LAST_SESSION_FILE)) result.lastSession = JSON.parse(fs.readFileSync(LAST_SESSION_FILE, 'utf8')); } catch(e) {}
+    // ★ v4.4.4: Session (지점/직원)
+    try { const sf = path.join(DATA_DIR, 'session.json'); if (fs.existsSync(sf)) result.session = JSON.parse(fs.readFileSync(sf, 'utf8')); } catch(e) {}
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(result));
+    return;
+  }
+  if (url === '/api/offline-data' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const data = JSON.parse(body);
+        // Staff
+        if (data.staff) {
+          safeWriteFileSync(path.join(DATA_DIR, 'branch_staff.json'), JSON.stringify({ staff: data.staff, savedAt: new Date().toISOString(), branchCode: BRANCH_CODE }));
+          console.log(`  👥 [Offline] Staff ${data.staff.length}명 저장`);
+        }
+        // PIN Users
+        if (data.pinUsers) {
+          safeWriteFileSync(path.join(DATA_DIR, 'pin_users.json'), JSON.stringify({ users: data.pinUsers, savedAt: new Date().toISOString() }));
+          console.log(`  🔑 [Offline] PIN Users ${data.pinUsers.length}명 저장`);
+        }
+        // Branches (phone 포함)
+        if (data.branches) {
+          safeWriteFileSync(path.join(DATA_DIR, 'branches.json'), JSON.stringify({ branches: data.branches, savedAt: new Date().toISOString() }));
+          console.log(`  🏪 [Offline] Branches ${data.branches.length}개 저장`);
+        }
+        // ★ v4.4.4: Session (지점/직원 세션 정보)
+        if (data.session) {
+          safeWriteFileSync(path.join(DATA_DIR, 'session.json'), JSON.stringify({ ...data.session, savedAt: new Date().toISOString() }));
+          console.log(`  📋 [Offline] Session 저장: ${data.session.branch} — ${data.session.branchName}`);
+        }
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: false, error: e.message }));
+      }
+    });
+    return;
+  }
+
   if (url === '/api/health') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
@@ -1924,14 +2035,28 @@ const server = http.createServer(async (req, res) => {
         const { line1, line2 } = JSON.parse(body);
         let cfg;
         try { cfg = JSON.parse(fs.readFileSync(POLE_DISPLAY_CONFIG_FILE, 'utf8')); } catch (e) { cfg = {}; }
-        if (!cfg.enabled) { res.writeHead(200, { 'Content-Type': 'application/json' }); res.end(JSON.stringify({ success: true, skipped: true })); return; }
+        // ★ v4.4.4: enabled 체크 제거 — 포트 설정되어 있으면 항상 전송
         const port = cfg.port || 'COM3';
         const baud = cfg.baudRate || 9600;
         // HP LD220: 2 lines x 20 chars
         const pad = (s, n) => (s || '').substring(0, n).padEnd(n);
         const L1 = pad(line1, 20);
         const L2 = pad(line2, 20);
-        // ★ v4.4.2: 다양한 VFD 프로토콜 시도 + 상세 디버그 로그
+        // ★ v4.4.4: Clear + overwrite 방식 (0x0C로 화면 클리어 후 40자 전송)
+        // £ 기호: JavaScript \xA3 → CP437 0x9C 변환
+        const safeLine = (s) => (s || '').replace(/£/g, '\x9C').substring(0, 20).padEnd(20);
+        const sL1 = safeLine(L1);
+        const sL2 = safeLine(L2);
+        // Build hex byte array string for PowerShell (avoid encoding issues)
+        const toHexBytes = (str) => {
+            const bytes = [];
+            for (let i = 0; i < str.length; i++) {
+                bytes.push('0x' + str.charCodeAt(i).toString(16).toUpperCase().padStart(2, '0'));
+            }
+            return bytes.join(',');
+        };
+        const hexL1 = toHexBytes(sL1);
+        const hexL2 = toHexBytes(sL2);
         const psScript = `
 $ErrorActionPreference = 'Stop'
 $log = @()
@@ -1946,37 +2071,21 @@ try {
     $sp.Handshake = [System.IO.Ports.Handshake]::None
     $sp.DtrEnable = $true
     $sp.RtsEnable = $true
-    $sp.ReadTimeout = 2000
     $sp.WriteTimeout = 2000
     $sp.Open()
-    $log += "Port opened OK. DTR=true RTS=true"
-    Start-Sleep -Milliseconds 200
-
-    # Method: 0x0C clear + line1(20) + CR LF + line2(20)
-    $clear = [byte[]]@(0x0C)
-    $sp.Write($clear, 0, $clear.Length)
-    $log += "Sent 0x0C (clear)"
     Start-Sleep -Milliseconds 100
 
-    $L1 = '${L1.replace(/'/g, "''")}'
-    $L2 = '${L2.replace(/'/g, "''")}'
-    $enc = [System.Text.Encoding]::GetEncoding(437)
-    $line1Bytes = $enc.GetBytes($L1)
-    $sp.Write($line1Bytes, 0, $line1Bytes.Length)
-    $log += "Sent line1: $L1 ($($line1Bytes.Length) bytes)"
+    # ★ v4.4.4: Clear (0x0C) → 40바이트 연속 (CR+LF 없이 자동 줄넘김)
+    $b1 = [byte[]]@(${hexL1})
+    $b2 = [byte[]]@(${hexL2})
+    # 0x0C(clear+home) + Line1(20) + Line2(20) = 41 bytes
+    $allBytes = [byte[]]@(0x0C) + $b1 + $b2
+    $sp.Write($allBytes, 0, $allBytes.Length)
+    $log += "Sent: $($allBytes.Length) bytes (clear+40chars)"
 
-    # CR+LF to move to line 2
-    $crlf = [byte[]]@(0x0D, 0x0A)
-    $sp.Write($crlf, 0, $crlf.Length)
-    $log += "Sent CR+LF"
-
-    $line2Bytes = $enc.GetBytes($L2)
-    $sp.Write($line2Bytes, 0, $line2Bytes.Length)
-    $log += "Sent line2: $L2 ($($line2Bytes.Length) bytes)"
-
-    Start-Sleep -Milliseconds 100
+    Start-Sleep -Milliseconds 50
     $sp.Close()
-    $log += "Port closed OK"
+    $log += "OK"
     Write-Output ("OK|" + ($log -join ';'))
 } catch {
     $log += "ERROR: $_"
@@ -2806,6 +2915,15 @@ foreach ($p in $ports) {
           }
         }
         broadcastAll({ type: 'order_refunded', orderNumber: refNum, date: refDate, refundedBy: msg.refundedBy, refundedAt: msg.refundedAt, refundMethod: msg.refundMethod });
+        // ★ v4.4.4: 리펀드된 주문을 SalesOrders 큐에 다시 넣어 Google Sheets 업데이트
+        if (found) {
+          const refOrder = (refDate === getTodayStr() ? dailyOrders : loadOrders(refDate)).find(o => o.orderNumber === refNum);
+          if (refOrder) {
+            queueOrderForPush(refOrder);
+            flushOrderQueue(); // 즉시 푸시
+            console.log(`  📤 [Refund→SalesOrders] ${refNum} 리펀드 상태 큐에 추가`);
+          }
+        }
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ success: true, found }));
       } catch (e) {

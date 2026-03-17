@@ -1,6 +1,6 @@
 {
   "version": 37,
-  "lastUpdated": "2026-03-17T14:04:40.824Z",
+  "lastUpdated": "2026-03-17T17:28:50.152Z",
   "googleSheetId": "1EvMjW2Pq-6owizlNHorQfXwgKw0uM9hIMefg8s5b6fM",
   "categories": [
     {
@@ -293,7 +293,7 @@
       "id": "M1773184862405",
       "catId": "soup",
       "nameEn": "Katsu Guk Su",
-      "nameKr": "카���국수 우동",
+      "nameKr": "카츠국수 우동",
       "desc": "Noodle soup with Katsu Topping \nFish soup base with thick noodle (Guk Su/Udon)",
       "price": 8,
       "driveId": "13LSjLVesShzC9qtkqkh6eklDtOGkaCOz",
@@ -1167,7 +1167,7 @@
     }
   ],
   "branchPricing": {},
-  "lastSynced": "2026-03-17T14:04:40.824Z",
+  "lastSynced": "2026-03-17T17:28:50.152Z",
   "branches": [
     {
       "code": "PAB",

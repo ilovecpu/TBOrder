@@ -121,20 +121,38 @@
     "branchName": "Pick A Bap",
     "isOpen": false,
     "openingFloat": 100,
-    "cashSales": 0,
-    "cardSales": 66,
+    "cashSales": 8.25,
+    "cardSales": 22.7,
     "transactions": [
       {
-        "time": "13:46:45",
+        "time": "17:24:45",
         "method": "card",
-        "amount": 66,
-        "orderNum": "PAB-001"
+        "amount": 16.5,
+        "orderNum": "PAB-005"
+      },
+      {
+        "time": "17:24:53",
+        "method": "cash",
+        "amount": 8.25,
+        "orderNum": "PAB-006"
+      },
+      {
+        "time": "17:25:30",
+        "method": "card",
+        "amount": 2.95,
+        "orderNum": "PAB-007"
+      },
+      {
+        "time": "17:25:36",
+        "method": "card",
+        "amount": 3.25,
+        "orderNum": "PAB-008"
       }
     ],
     "openedAt": null,
     "closedAt": null,
     "lastEndSalesAt": "2026-03-15T20:24:32.605Z",
     "date": "2026-03-17",
-    "updatedAt": "2026-03-17T13:46:45.697Z"
+    "updatedAt": "2026-03-17T17:25:36.867Z"
   }
 }

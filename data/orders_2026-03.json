@@ -677,6 +677,338 @@
       "source": "pos",
       "skipKitchen": true,
       "receivedAt": "2026-03-17T13:46:45.679Z"
+    },
+    {
+      "orderNumber": "TBS-002",
+      "branchCode": "TBS",
+      "branchName": "The Bap Swindon",
+      "orderType": "takeaway",
+      "items": [
+        {
+          "nameEn": "Kim Mari Set ",
+          "nameKr": "김말이",
+          "quantity": 1,
+          "unitPrice": 3.25,
+          "totalPrice": 3.25,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        }
+      ],
+      "subtotal": 3.25,
+      "discount": {
+        "type": "percentage",
+        "value": 15,
+        "name": "15% Disc",
+        "approvedBy": "Sunny"
+      },
+      "total": 2.7625,
+      "mainVat": 0.54,
+      "subTotal": 2.76,
+      "subCashPct": 5,
+      "paymentMethod": "card",
+      "paymentStatus": "paid",
+      "amountPaid": 2.76,
+      "change": 0,
+      "wantedTime": 25,
+      "staff": "The Bap Swindon",
+      "status": "pending",
+      "timestamp": "2026-03-17T15:24:59.138Z",
+      "source": "pos",
+      "skipKitchen": true,
+      "receivedAt": "2026-03-17T15:24:59.142Z"
+    },
+    {
+      "orderNumber": "PAB-003",
+      "branchCode": "PAB",
+      "branchName": "Pick A Bap",
+      "orderType": "takeaway",
+      "items": [
+        {
+          "nameEn": "Tofu Bap",
+          "nameKr": "두부덮밥",
+          "quantity": 1,
+          "unitPrice": 7.45,
+          "totalPrice": 7.45,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        }
+      ],
+      "subtotal": 7.45,
+      "discount": {
+        "type": null,
+        "value": 0,
+        "name": "",
+        "approvedBy": ""
+      },
+      "total": 7.45,
+      "mainVat": 1.24,
+      "subTotal": 7.45,
+      "subCashPct": 5,
+      "paymentMethod": "card",
+      "paymentStatus": "paid",
+      "amountPaid": 7.45,
+      "change": 0,
+      "wantedTime": 25,
+      "staff": "Pick A Bap",
+      "status": "pending",
+      "timestamp": "2026-03-17T17:11:21.483Z",
+      "source": "pos",
+      "skipKitchen": true,
+      "receivedAt": "2026-03-17T17:11:21.488Z"
+    },
+    {
+      "orderNumber": "PAB-004",
+      "branchCode": "PAB",
+      "branchName": "Pick A Bap",
+      "orderType": "takeaway",
+      "items": [
+        {
+          "nameEn": "Man Du Set ",
+          "nameKr": "군만두",
+          "quantity": 1,
+          "unitPrice": 2.95,
+          "totalPrice": 2.95,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": "Man Du Set ",
+          "nameKr": "군만두",
+          "quantity": 1,
+          "unitPrice": 2.95,
+          "totalPrice": 2.95,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": "Man Du Set ",
+          "nameKr": "군만두",
+          "quantity": 1,
+          "unitPrice": 2.95,
+          "totalPrice": 2.95,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": "Man Du Set ",
+          "nameKr": "군만두",
+          "quantity": 1,
+          "unitPrice": 2.95,
+          "totalPrice": 2.95,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        }
+      ],
+      "subtotal": 11.8,
+      "discount": {
+        "type": null,
+        "value": 0,
+        "name": "",
+        "approvedBy": ""
+      },
+      "total": 11.8,
+      "mainVat": 1.97,
+      "subTotal": 11.8,
+      "subCashPct": 5,
+      "paymentMethod": "card",
+      "paymentStatus": "paid",
+      "amountPaid": 11.8,
+      "change": 0,
+      "wantedTime": 25,
+      "staff": "Pick A Bap",
+      "status": "pending",
+      "timestamp": "2026-03-17T17:11:26.816Z",
+      "source": "pos",
+      "skipKitchen": true,
+      "receivedAt": "2026-03-17T17:11:26.819Z",
+      "refunded": true,
+      "refundedBy": "Thir",
+      "refundedAt": "2026-03-17T17:11:44.084Z",
+      "refundMethod": "card"
+    },
+    {
+      "orderNumber": "PAB-005",
+      "branchCode": "PAB",
+      "branchName": "Pick A Bap",
+      "orderType": "takeaway",
+      "items": [
+        {
+          "nameEn": "Katsu Bap",
+          "nameKr": "치킨카츠 덮밥",
+          "quantity": 1,
+          "unitPrice": 8.25,
+          "totalPrice": 8.25,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        },
+        {
+          "nameEn": "Katsu Bap",
+          "nameKr": "치킨카츠 덮밥",
+          "quantity": 1,
+          "unitPrice": 8.25,
+          "totalPrice": 8.25,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        }
+      ],
+      "subtotal": 16.5,
+      "discount": {
+        "type": null,
+        "value": 0,
+        "name": "",
+        "approvedBy": ""
+      },
+      "total": 16.5,
+      "mainVat": 2.75,
+      "subTotal": 16.5,
+      "subCashPct": 5,
+      "paymentMethod": "card",
+      "paymentStatus": "paid",
+      "amountPaid": 16.5,
+      "change": 0,
+      "wantedTime": 25,
+      "staff": "Pick A Bap",
+      "status": "pending",
+      "timestamp": "2026-03-17T17:24:45.182Z",
+      "source": "pos",
+      "skipKitchen": true,
+      "receivedAt": "2026-03-17T17:24:45.187Z"
+    },
+    {
+      "orderNumber": "PAB-006",
+      "branchCode": "PAB",
+      "branchName": "Pick A Bap",
+      "orderType": "takeaway",
+      "items": [
+        {
+          "nameEn": "Katsu Bap",
+          "nameKr": "치킨카츠 덮밥",
+          "quantity": 1,
+          "unitPrice": 8.25,
+          "totalPrice": 8.25,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        }
+      ],
+      "subtotal": 8.25,
+      "discount": {
+        "type": null,
+        "value": 0,
+        "name": "",
+        "approvedBy": ""
+      },
+      "total": 8.25,
+      "mainVat": 1.38,
+      "subTotal": 0.41,
+      "subCashPct": 5,
+      "paymentMethod": "cash",
+      "paymentStatus": "paid",
+      "amountPaid": 8.25,
+      "change": 0,
+      "wantedTime": 25,
+      "staff": "Pick A Bap",
+      "status": "pending",
+      "timestamp": "2026-03-17T17:24:53.948Z",
+      "source": "pos",
+      "skipKitchen": true,
+      "receivedAt": "2026-03-17T17:24:53.951Z",
+      "refunded": true,
+      "refundedBy": "Thir",
+      "refundedAt": "2026-03-17T17:25:09.316Z",
+      "refundMethod": "card"
+    },
+    {
+      "orderNumber": "PAB-007",
+      "branchCode": "PAB",
+      "branchName": "Pick A Bap",
+      "orderType": "takeaway",
+      "items": [
+        {
+          "nameEn": "Kim Chi",
+          "nameKr": "김치",
+          "quantity": 1,
+          "unitPrice": 2.95,
+          "totalPrice": 2.95,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        }
+      ],
+      "subtotal": 2.95,
+      "discount": {
+        "type": null,
+        "value": 0,
+        "name": "",
+        "approvedBy": ""
+      },
+      "total": 2.95,
+      "mainVat": 0.49,
+      "subTotal": 2.95,
+      "subCashPct": 5,
+      "paymentMethod": "card",
+      "paymentStatus": "paid",
+      "amountPaid": 2.95,
+      "change": 0,
+      "wantedTime": 25,
+      "staff": "Pick A Bap",
+      "status": "pending",
+      "timestamp": "2026-03-17T17:25:30.481Z",
+      "source": "pos",
+      "skipKitchen": true,
+      "receivedAt": "2026-03-17T17:25:30.484Z"
+    },
+    {
+      "orderNumber": "PAB-008",
+      "branchCode": "PAB",
+      "branchName": "Pick A Bap",
+      "orderType": "takeaway",
+      "items": [
+        {
+          "nameEn": "Kim Mari Set ",
+          "nameKr": "김말이",
+          "quantity": 1,
+          "unitPrice": 3.25,
+          "totalPrice": 3.25,
+          "vatRate": 20,
+          "note": "",
+          "free": false
+        }
+      ],
+      "subtotal": 3.25,
+      "discount": {
+        "type": null,
+        "value": 0,
+        "name": "",
+        "approvedBy": ""
+      },
+      "total": 3.25,
+      "mainVat": 0.54,
+      "subTotal": 3.25,
+      "subCashPct": 5,
+      "paymentMethod": "card",
+      "paymentStatus": "paid",
+      "amountPaid": 3.25,
+      "change": 0,
+      "wantedTime": 25,
+      "staff": "Pick A Bap",
+      "status": "pending",
+      "timestamp": "2026-03-17T17:25:36.848Z",
+      "source": "pos",
+      "skipKitchen": true,
+      "receivedAt": "2026-03-17T17:25:36.851Z",
+      "refunded": true,
+      "refundedBy": "Thir",
+      "refundedAt": "2026-03-17T17:26:25.017Z",
+      "refundMethod": "card"
     }
   ]
 }

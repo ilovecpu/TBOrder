@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap POS v7.9.9 | 2026-03-17 -->
+<!-- The Bap POS v8.0.3 | 2026-03-17 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -1654,6 +1654,7 @@ async function gotoMainMenu() {
         POS.cart = [];
         POS.selectedCartIdx = -1;
         renderOrderList();
+        poleDisplayWelcome();
     }
     showScreen('screenMainMenu');
     updateKioskBadge();
@@ -1668,6 +1669,8 @@ function gotoPayment() {
     document.querySelectorAll('.payment-method-btn').forEach(b => b.classList.remove('selected'));
     document.getElementById('btnNoReceipt').disabled = true;
     document.getElementById('btnPrintOne').disabled = true;
+    // ★ v8.0.1: Pole display — 결제 화면 진입 시 Total Due 표시
+    poleDisplayTotal();
 }
 // ═══════════════════════════════════════════
 //  PIN PROMPT POPUP (separate overlay from tbPopup)
@@ -1686,23 +1689,75 @@ async function loadBranchStaff(branchCode) {
         const resp = await fetch(url, { redirect: 'follow' });
         const result = await resp.json();
         const raw = (result && result.data && result.data.Staff) || [];
-        // Normalize and filter active staff for this branch
-        BRANCH_STAFF = raw.map(r => {
+        // Normalize staff — TBMS API already filters by store, but double-check storeId
+        const allStaff = raw.map(r => {
             const m = {};
             for (const k in r) m[k.replace(/[\s_\-]+/g, '').toLowerCase()] = r[k];
-            return { id: m.id || '', name: m.name || '', nickName: m.nickname || '', storeId: m.storeid || '', active: m.active, kioskLogin: m.kiosklogin, pin: String(m.pin || m.password || '') };
-        }).filter(s => {
+            return { id: m.id || '', name: m.name || '', nickName: m.nickname || '', storeId: m.storeid || '', active: m.active, kioskLogin: m.kiosklogin, pin: String(m.kioskpwd || m.kioskpassword || m.pin || m.password || m.pwd || '') };
+        });
+        // ★ v8.0.1: storeId 필터 유연하게 (빈 storeId면 현재 지점으로 간주)
+        BRANCH_STAFF = allStaff.filter(s => {
             const a = s.active;
             const kl = s.kioskLogin;
-            return String(s.storeId) === branchCode
-                && (a === true || a === 'true' || a === 'TRUE')
-                && (kl !== false && kl !== 'false' && kl !== 'FALSE');
+            const storeMatch = !s.storeId || String(s.storeId) === branchCode;
+            return storeMatch
+                && (a === true || a === 'true' || a === 'TRUE' || a === 1 || a === '1' || a === 'Y' || a === 'Yes')
+                && (kl !== false && kl !== 'false' && kl !== 'FALSE' && kl !== 0 && kl !== '0' && kl !== 'N' && kl !== 'No');
         });
-        console.log('[POS] Branch staff loaded for', branchCode, ':', BRANCH_STAFF.length, 'members');
+        console.log('[POS] Branch staff loaded for', branchCode, ':', BRANCH_STAFF.length, '/', allStaff.length, 'total from TBMS');
+        if (allStaff.length > 0 && BRANCH_STAFF.length === 0) {
+            console.warn('[POS] ⚠️ All staff filtered out! storeIds:', allStaff.map(s => s.storeId).join(','), 'vs branchCode:', branchCode);
+            // storeId 필터 문제 → 모든 active staff 사용 (TBMS가 이미 지점 필터함)
+            BRANCH_STAFF = allStaff.filter(s => {
+                const a = s.active;
+                const kl = s.kioskLogin;
+                return (a === true || a === 'true' || a === 'TRUE' || a === 1 || a === '1' || a === 'Y' || a === 'Yes')
+                    && (kl !== false && kl !== 'false' && kl !== 'FALSE' && kl !== 0 && kl !== '0' && kl !== 'N' && kl !== 'No');
+            });
+            console.log('[POS] Using all active TBMS staff (storeId filter skipped):', BRANCH_STAFF.length);
+        }
+        // ★ v8.0.1: 지점별로 저장 (오프라인 대비)
+        _saveOfflineStaff(branchCode, BRANCH_STAFF);
+        _saveOfflineData();
     } catch (e) {
-        console.warn('[POS] Branch staff load failed:', e.message);
-        BRANCH_STAFF = [];
+        console.warn('[POS] Branch staff TBMS load failed:', e.message, '— trying saved file...');
+        // ★ v8.0.1: 실패 시 해당 지점 파일에서 로딩
+        try {
+            const resp2 = await fetch('/api/branch-staff?branch=' + encodeURIComponent(branchCode));
+            const data2 = await resp2.json();
+            if (data2.staff && data2.staff.length > 0) {
+                BRANCH_STAFF = data2.staff;
+                console.log('[POS] Branch staff restored from file:', BRANCH_STAFF.length, 'members (branch:', data2.branchCode, 'saved:', data2.savedAt, ')');
+            } else {
+                BRANCH_STAFF = [];
+            }
+        } catch (e2) {
+            console.warn('[POS] Branch staff file load also failed:', e2.message);
+            BRANCH_STAFF = [];
+        }
     }
+}
+
+// ★ v8.0.1: 지점별 Staff 저장
+function _saveOfflineStaff(branchCode, staffList) {
+    fetch('/api/branch-staff', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staff: staffList, branchCode: branchCode })
+    }).catch(() => {});
+}
+
+// ★ v8.0.0: 오프라인 대비 — Staff + PIN Users + Branches 서버에 파일 저장
+function _saveOfflineData() {
+    try {
+        const data = {};
+        if (BRANCH_STAFF.length > 0) data.staff = BRANCH_STAFF;
+        if (POS_USERS && POS_USERS.length > 0) data.pinUsers = POS_USERS;
+        if (typeof BRANCHES !== 'undefined' && BRANCHES.length > 0) data.branches = BRANCHES;
+        fetch('/api/offline-data', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        }).catch(() => {});
+    } catch (e) {}
 }
 
 let _pinResolve = null;
@@ -1753,6 +1808,7 @@ async function loadTBMSUsers() {
             if (data.users && data.users.length > 0) {
                 POS_USERS = data.users;
                 console.log('[POS] Users loaded from server:', POS_USERS.length);
+                _saveOfflineData(); // ★ v7.9.9: 오프라인 대비 저장
                 return;
             }
         }
@@ -1766,22 +1822,60 @@ async function loadTBMSUsers() {
         if (users.length > 0) {
             POS_USERS = users;
             console.log('[POS] Users loaded from TBMS API:', POS_USERS.length);
+            POS_USERS.forEach(u => console.log('  👤 User:', u.name || u.id, 'role:', u.role, 'pwd:', (u.password || u.pin || '').substring(0,2) + '**'));
+            _saveOfflineData(); // ★ v8.0.0: 오프라인 대비 저장
+            return;
         }
-    } catch(e) { console.log('[POS] Users load error:', e.message); }
+    } catch(e) { console.log('[POS] Users online load error:', e.message); }
+    // ★ v7.9.9: 3) 온라인 실패 → 서버 저장 파일에서 복원
+    try {
+        const resp3 = await fetch('/api/offline-data');
+        const od = await resp3.json();
+        if (od.pinUsers && od.pinUsers.users && od.pinUsers.users.length > 0) {
+            POS_USERS = od.pinUsers.users;
+            console.log('[POS] Users restored from saved file:', POS_USERS.length, '(saved:', od.pinUsers.savedAt, ')');
+        }
+    } catch(e2) { console.log('[POS] Users file restore also failed:', e2.message); }
 }
 
 // ─── Check PIN against users with allowed roles ───
+// ★ v8.0.0: POS_USERS + TBMS admin password 모두 체크
 function checkUserPin(pin, allowedRoles) {
-    // DEV MODE: blank PIN bypasses check
-    if (pin === '') return { id: 'dev', name: 'Dev Mode', role: 'admin' };
+    // ★ v8.0.3: dev bypass 제거 — 빈 PIN 허용 안함
+    if (!pin || pin === '') return null;
     // normalize: "senior_manager" / "Senior Manager" / "senior-manager" → "seniormanager"
     const norm = s => s.toLowerCase().replace(/[_\-\s]+/g, '');
     const roles = allowedRoles.map(norm);
-    return POS_USERS.find(u => {
+    // 1) POS_USERS에서 role 매칭 체크
+    const found = POS_USERS.find(u => {
         const uPin = String(u.password || u.pin || '').trim();
         const uRole = norm(String(u.role || ''));
         return uPin === pin && roles.some(r => uRole === r);
     });
+    if (found) return found;
+    // 2) admin role이 허용된 경우: TBMS admin 비밀번호로도 체크
+    //    (POS_USERS 중 role=admin인 사람의 password와 입력 PIN 비교)
+    if (roles.includes('admin')) {
+        const adminUser = POS_USERS.find(u => {
+            const uRole = norm(String(u.role || ''));
+            return uRole === 'admin';
+        });
+        if (adminUser) {
+            const adminPwd = String(adminUser.password || adminUser.pin || '').trim();
+            if (adminPwd === pin) return adminUser;
+        }
+    }
+    return null;
+}
+
+// ★ v8.0.0: Staff Kiosk Pwd 확인 (직원 본인 확인용)
+function checkStaffPin(pin) {
+    // ★ v8.0.3: dev bypass 제거
+    if (!pin || pin === '') return null;
+    return BRANCH_STAFF.find(s => {
+        const sPwd = String(s.pin || s.kioskPwd || s.password || '').trim();
+        return sPwd === pin;
+    }) || null;
 }
 
 async function gotoTakings() {
@@ -1829,13 +1923,9 @@ function sendDrawerCommand() {
     });
 }
 
-// ─── OPEN TILL = PIN → Staff Select → Reason Select → Open ───
+// ─── OPEN TILL = Staff Select → PIN verify → Reason Select → Open ───
+// ★ v8.0.1: 직원 먼저 선택 → PIN 확인 → Reason → Open
 async function openCashDrawer() {
-    const entered = await tbPromptPin('Cash Drawer PIN', '💰');
-    if (entered === false) return;
-    const user = checkUserPin(entered, ['admin', 'senior manager', 'manager', 'staff']);
-    if (!user) { toast('Wrong PIN — access denied', 'error'); return; }
-    // Show staff selection popup
     showDrawerStaffSelect();
 }
 
@@ -1850,20 +1940,21 @@ function showDrawerStaffSelect() {
     if (staffList.length === 0) {
         staffGrid = '<div style="color:#9CA3AF;text-align:center;padding:16px">No staff loaded</div>';
     } else {
-        staffGrid = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:10px;max-height:240px;overflow-y:auto;padding:4px">';
+        staffGrid = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-height:300px;overflow-y:auto;padding:4px">';
         staffList.forEach(s => {
             const dn = s.nickName || s.name || '?';
             const initial = dn.charAt(0).toUpperCase();
-            staffGrid += `<div class="_drs-btn" data-name="${dn}" style="padding:10px 6px;background:#FFF7ED;border:2px solid #F97316;border-radius:12px;text-align:center;cursor:pointer" onmouseover="this.style.background='#FFEDD5';this.style.borderColor='#EA580C'" onmouseout="this.style.background='#FFF7ED';this.style.borderColor='#F97316'">
-                <div style="width:44px;height:44px;background:#F97316;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 6px;font-weight:700;font-size:18px">${initial}</div>
-                <div style="font-size:12px;font-weight:600;line-height:1.2;word-break:keep-all">${dn}</div>
+            const sid = s.id || '';
+            staffGrid += `<div class="_drs-btn" data-name="${dn}" data-id="${sid}" style="padding:14px 6px;background:#FFF7ED;border:2px solid #F97316;border-radius:12px;text-align:center;cursor:pointer" onmouseover="this.style.background='#FFEDD5';this.style.borderColor='#EA580C'" onmouseout="this.style.background='#FFF7ED';this.style.borderColor='#F97316'">
+                <div style="width:50px;height:50px;background:#F97316;color:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;font-weight:700;font-size:20px">${initial}</div>
+                <div style="font-size:13px;font-weight:600;line-height:1.2;word-break:keep-all">${dn}</div>
             </div>`;
         });
         staffGrid += '</div>';
     }
 
     popup.innerHTML = `
-        <div style="background:#fff;border-radius:16px;width:380px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column">
+        <div style="background:#fff;border-radius:16px;width:400px;max-height:90vh;overflow:hidden;display:flex;flex-direction:column">
             <div style="padding:16px 20px;text-align:center;border-bottom:1px solid #E5E7EB">
                 <div style="font-size:28px;margin-bottom:4px">💰</div>
                 <div style="font-size:16px;font-weight:700">Who is opening the drawer?</div>
@@ -1879,12 +1970,33 @@ function showDrawerStaffSelect() {
 
     document.body.appendChild(popup);
 
-    // Staff button clicks → go to reason select
+    // Staff button clicks → verify PIN → reason select
     popup.querySelectorAll('._drs-btn').forEach(btn => {
-        btn.onclick = () => {
+        btn.onclick = async () => {
             const staffName = btn.dataset.name;
+            const staffId = btn.dataset.id;
             popup.remove();
-            showDrawerReasonPopup(staffName);
+            // ★ v8.0.1: 선택한 직원의 Kiosk PIN 또는 Admin PIN 확인
+            const entered = await tbPromptPin(`Enter PIN for ${staffName}`, '💰');
+            if (entered === false) return;
+            // 1) 해당 직원의 Kiosk Pwd 확인
+            const staffMatch = BRANCH_STAFF.find(s => {
+                const sn = s.nickName || s.name || '';
+                return sn === staffName && s.pin && String(s.pin) === String(entered);
+            });
+            if (staffMatch) {
+                toast(`Welcome ${staffName}`, 'success');
+                showDrawerReasonPopup(staffName);
+                return;
+            }
+            // 2) Admin/Manager PIN으로도 가능
+            const user = checkUserPin(entered, ['admin', 'senior manager', 'manager']);
+            if (user) {
+                toast(`${staffName} (verified by ${user.name || 'Admin'})`, 'success');
+                showDrawerReasonPopup(staffName);
+                return;
+            }
+            toast('Wrong PIN — access denied', 'error');
         };
     });
 }
@@ -2074,12 +2186,19 @@ async function initLogin() {
         if (stores.length > 0) {
             tbmsBranches = stores
                 .filter(s => s.active !== false && s.active !== 'false')
-                .map(s => ({
-                    code: s.code || s.id, name: s.name,
-                    nameKr: s.nameKr || '', phone: String(s.phone || ''),
-                    active: true
-                }));
-            console.log('[POS] TBMS branches:', tbmsBranches.length);
+                .map(s => {
+                    // ★ v8.0.0: TBMS 필드명 유연하게 매칭 (Phone, phone, PHONE, tel 등)
+                    const m = {};
+                    for (const k in s) m[k.toLowerCase().replace(/[\s_\-]+/g, '')] = s[k];
+                    return {
+                        code: s.code || s.id || m.code || m.storeid || '',
+                        name: s.name || m.name || m.storename || '',
+                        nameKr: s.nameKr || m.namekr || m.koreanname || '',
+                        phone: String(s.phone || m.phone || m.tel || m.telephone || m.phonenumber || ''),
+                        active: true
+                    };
+                });
+            console.log('[POS] TBMS branches:', tbmsBranches.length, tbmsBranches.map(b => b.code + ':' + b.phone).join(', '));
         }
     }).catch(e => { console.log('[POS] TBMS API error:', e.message); });
 
@@ -2107,14 +2226,31 @@ async function initLogin() {
     if (BRANCHES.length > 0) {
         renderBranchGrid();
         console.log('[POS] Final branch count:', BRANCHES.length, BRANCHES.map(b => b.code).join(', '));
+        // ★ v8.0.0: 성공 시 서버에 branches 파일 저장 (오프라인 대비)
+        fetch('/api/offline-data', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ branches: BRANCHES })
+        }).catch(() => {});
     } else {
+        // ★ v8.0.0: 온라인 실패 → 서버 파일에서 branches 복원
+        try {
+            const offResp = await fetch('/api/offline-data');
+            const od = await offResp.json();
+            if (od.branches && od.branches.branches && od.branches.branches.length > 0) {
+                BRANCHES = od.branches.branches;
+                renderBranchGrid();
+                console.log('[POS] Branches restored from saved file:', BRANCHES.length, '(saved:', od.branches.savedAt, ')');
+            }
+        } catch(e3) { console.log('[POS] Branches file restore failed:', e3.message); }
+        if (BRANCHES.length === 0) {
         const grid = document.getElementById('loginBranchGrid');
         grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:32px 0;color:#DC2626;font-size:14px;">
             <div style="margin-bottom:8px;font-size:24px;">⚠️</div>Failed to load branches.<br>Check network connection.</div>`;
+        }
     }
 }
 
-function selectBranch(code) {
+async function selectBranch(code) {
     POS.branch = code;
     const b = BRANCHES.find(x => x.code === code);
     POS.branchName = b ? b.name : code;
@@ -2128,8 +2264,10 @@ function selectBranch(code) {
     document.getElementById('loginBranchDate').textContent = 'Date : ' + dd + '/' + mm + '/' + yyyy;
     POS.pin = '';
     updatePinDots();
-    // Load branch staff from TBMS (background)
-    loadBranchStaff(code);
+    // ★ v8.0.1: Staff 로딩 완료까지 기다림 (이전 지점 직원 보이는 버그 수정)
+    BRANCH_STAFF = []; // 이전 데이터 즉시 클리어
+    await loadBranchStaff(code);
+    console.log('[POS] Branch selected:', code, '→ Staff loaded:', BRANCH_STAFF.length, BRANCH_STAFF.map(s=>s.nickName||s.name).join(', '));
 }
 
 function updatePinDots() {
@@ -2147,21 +2285,28 @@ function pinClear() { POS.pin = ''; updatePinDots(); }
 function pinEnter() {
     if (!POS.branch) { toast('Select a branch first', 'error'); return; }
     const branch = BRANCHES.find(b => b.code === POS.branch);
-    // DEV MODE: blank PIN bypasses check
-    if (POS.pin.length === 0) { /* dev bypass */ }
-    else if (POS.pin.length < 4) { toast('Enter 4-digit PIN', 'error'); return; }
-    else {
-        // Verify PIN = last 4 digits of branch phone number
-        if (branch && branch.phone) {
-            const digits = branch.phone.replace(/\D/g, '');
-            const correctPin = digits.slice(-4);
-            if (POS.pin !== correctPin) {
-                toast('Wrong PIN', 'error');
-                POS.pin = '';
-                updatePinDots();
-                return;
-            }
-        }
+    // ★ v8.0.1: PIN 필수 — dev bypass 제거
+    if (POS.pin.length === 0) { toast('Enter 4-digit PIN', 'error'); return; }
+    if (POS.pin.length < 4) { toast('Enter 4-digit PIN', 'error'); return; }
+    // Verify PIN = last 4 digits of branch phone number
+    if (!branch || !branch.phone) {
+        console.warn('[PIN] Branch phone missing! branch:', branch?.code, 'phone:', branch?.phone);
+        toast('Branch phone not loaded — cannot verify PIN', 'error');
+        return;
+    }
+    const digits = branch.phone.replace(/\D/g, '');
+    if (digits.length < 4) {
+        console.warn('[PIN] Branch phone too short:', branch.phone, '→ digits:', digits);
+        toast('Branch phone invalid — contact admin', 'error');
+        return;
+    }
+    const correctPin = digits.slice(-4);
+    console.log('[PIN] Branch:', branch.code, 'Phone:', branch.phone, 'Expected last 4:', correctPin, 'Entered:', POS.pin);
+    if (POS.pin !== correctPin) {
+        toast('Wrong PIN', 'error');
+        POS.pin = '';
+        updatePinDots();
+        return;
     }
     POS.staffId = 'staff_' + POS.branch;
     POS.staffName = branch ? branch.name : POS.branch;
@@ -2176,6 +2321,8 @@ function pinSkip() {
 async function startPOS() {
     // Load persisted settings
     loadPosSettings();
+    // ★ v8.0.1: Pole display config 로드 (POS 시작 시)
+    await loadPoleDisplayConfig();
     // Update branch displays
     ['mainMenuBranch','orderBranch'].forEach(id => {
         const el = document.getElementById(id); if (el) el.textContent = POS.branch + ' — ' + POS.branchName;
@@ -2193,6 +2340,9 @@ async function startPOS() {
     connectWebSocket();
     updateKioskBadge();
     showScreen('screenMainMenu');
+    // ★ v8.0.1: 세션 정보 저장 (오프라인 대비)
+    localSave();
+    saveSessionToServer();
     // ★ 로그인 완료 후 서버에 지점 전체 정보 전송 (약간 딜레이 — WS 연결 대기)
     setTimeout(() => sendBranchInfoToServer(), 2000);
 }
@@ -2499,6 +2649,7 @@ const LS_COMPLETED_KEY = 'tb_pos_completed';
 const LS_REGISTER_KEY = 'tb_pos_register';
 const LS_ORDER_COUNT_KEY = 'tb_pos_order_count';
 const LS_PENDING_OPS_KEY = 'tb_pos_pending_ops';
+const LS_SESSION_KEY = 'tb_pos_session'; // ★ v8.0.1: 지점/직원 세션 저장
 
 // ─── Save POS state to localStorage (called frequently) ───
 function localSave() {
@@ -2508,7 +2659,26 @@ function localSave() {
         localStorage.setItem(LS_COMPLETED_KEY, JSON.stringify({ date: today, orders: POS.completedOrders }));
         localStorage.setItem(LS_REGISTER_KEY, JSON.stringify({ date: today, register: POS.register }));
         localStorage.setItem(LS_ORDER_COUNT_KEY, JSON.stringify({ date: today, count: POS.dailyOrderCount }));
+        // ★ v8.0.1: 지점/직원 세션 정보 저장 (오프라인 대비)
+        localStorage.setItem(LS_SESSION_KEY, JSON.stringify({
+            date: today, branch: POS.branch, branchName: POS.branchName,
+            staffId: POS.staffId, staffName: POS.staffName
+        }));
     } catch (e) { console.warn('[LocalSave] error:', e.message); }
+}
+
+// ★ v8.0.1: 세션 저장 (서버 파일 + localStorage) — 오프라인 대비
+function saveSessionToServer() {
+    const session = {
+        branch: POS.branch, branchName: POS.branchName,
+        staffId: POS.staffId, staffName: POS.staffName,
+        branchStaff: BRANCH_STAFF,
+        savedAt: new Date().toISOString()
+    };
+    fetch('/api/offline-data', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ session: session })
+    }).catch(() => {});
 }
 
 // ─── Restore from localStorage on startup ───
@@ -2777,18 +2947,18 @@ function getOrderTotal() {
 function qtyPlus() {
     const item = POS.cart[POS.selectedCartIdx];
     if (!item) { toast('Select an item first', 'error'); return; }
-    // Add a new line (duplicate) instead of incrementing
     POS.cart.splice(POS.selectedCartIdx + 1, 0, { ...item, quantity: 1, totalPrice: item.unitPrice, note: '', free: false });
     POS.selectedCartIdx = POS.selectedCartIdx + 1;
     renderOrderList();
+    poleDisplayItem(item.nameEn, item.unitPrice);
 }
 function qtyMinus() {
     const item = POS.cart[POS.selectedCartIdx];
     if (!item) { toast('Select an item first', 'error'); return; }
-    // Remove the line
     POS.cart.splice(POS.selectedCartIdx, 1);
     POS.selectedCartIdx = Math.min(POS.selectedCartIdx, POS.cart.length - 1);
     renderOrderList();
+    poleDisplayCartUpdate();
 }
 async function qtyEdit() {
     const item = POS.cart[POS.selectedCartIdx];
@@ -2820,6 +2990,7 @@ async function qtyEdit() {
         POS.selectedCartIdx = Math.min(POS.selectedCartIdx, POS.cart.length - 1);
     }
     renderOrderList();
+    poleDisplayCartUpdate();
 }
 function repeatSelected() {
     const item = POS.cart[POS.selectedCartIdx];
@@ -2827,6 +2998,7 @@ function repeatSelected() {
     POS.cart.push({ ...item, quantity: 1, totalPrice: item.unitPrice, note: '', free: false });
     POS.selectedCartIdx = POS.cart.length - 1;
     renderOrderList();
+    poleDisplayItem(item.nameEn, item.unitPrice);
 }
 function editLine() {
     const item = POS.cart[POS.selectedCartIdx];
@@ -2841,12 +3013,14 @@ async function deleteLine() {
     POS.cart.splice(POS.selectedCartIdx, 1);
     POS.selectedCartIdx = Math.min(POS.selectedCartIdx, POS.cart.length - 1);
     renderOrderList();
+    poleDisplayCartUpdate();
 }
 function setFree() {
     const item = POS.cart[POS.selectedCartIdx];
     if (!item) { toast('Select an item first', 'error'); return; }
     item.free = !item.free;
     renderOrderList();
+    poleDisplayCartUpdate();
 }
 // ─── Discount: 터치 전용 멀티 스텝 다이얼로그 ───
 // Step 1: 할인 % 선택 → Step 2: 직원 그리드 선택 → Step 3: Staff 20%면 PIN 패드
@@ -3272,6 +3446,11 @@ function selectPayMethod(method) {
     POS.payMethod = method;
     document.querySelectorAll('.payment-method-btn').forEach(b => b.classList.remove('selected'));
     document.querySelector(`.payment-method-btn.${method === 'not_paid' ? 'not-paid' : method}`)?.classList.add('selected');
+    // ★ v8.0.3: Pole display — 결제 방법 선택 시 표시
+    const total = getOrderTotal();
+    const totalStr = '£' + total.toFixed(2);
+    const label = method === 'cash' ? 'Cash' : method === 'card' ? 'Card' : 'Not Paid';
+    updatePoleDisplay(('Total Due').padEnd(20 - totalStr.length) + totalStr, label.padStart(10 + label.length/2 | 0).padEnd(20));
 
     if (method === 'cash') {
         document.getElementById('payQuickCash').style.display = '';
@@ -3344,7 +3523,7 @@ function setWantedTime(mins) {
     event.target.classList.add('active');
 }
 
-function cancelPayment() { showScreen('screenOrder'); POS._kioskOrderRef = null; }
+function cancelPayment() { showScreen('screenOrder'); POS._kioskOrderRef = null; poleDisplayCartUpdate(); }
 
 // Aggregate cart items (1x per line in display → combine same items for order data)
 function aggregateCartItems(cart) {
@@ -3407,6 +3586,7 @@ function completePayment(printCount) {
             POS.discount = { type: null, value: 0, name: '', approvedBy: '' };
             POS._kioskOrderRef = null;
             renderOrderList();
+            poleDisplayPayment(payMethod, total, change);
 
             toast(`Kiosk ${kioskOrderNum} paid — ${fp(total)} (${payMethod.toUpperCase()})`, 'success');
             updateKioskBadge();
@@ -4756,6 +4936,7 @@ function loadKioskOrderToCart(orderNum) {
     renderOrderList();
 
     toast(`Loaded ${orderNum} — ${fp(o.total)}. Press FINISH to take payment.`, 'info');
+    poleDisplayCartUpdate();
 }
 
 // ─── Delete single order ───
@@ -7126,38 +7307,73 @@ async function detectPoleDisplay() {
 }
 
 // ★ POS → Pole Display: 카트 변경 시 디스플레이 업데이트
+// ★ v8.0.1: enabled 체크 제거 — 서버에서 포트 설정 여부로 판단
 function updatePoleDisplay(line1, line2) {
-    if (!_poleDisplayConfig.enabled) return;
     fetch('/api/pole-display/send', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ line1: (line1 || '').substring(0, 20), line2: (line2 || '').substring(0, 20) })
     }).catch(() => {});
 }
 
-function poleDisplayItem(itemName, price) {
-    const name = (itemName || '').substring(0, 13);
-    const priceStr = '\xA3' + (Number(price) || 0).toFixed(2);
-    updatePoleDisplay(name.padEnd(14) + priceStr.padStart(6), 'TOTAL ' + ('\xA3' + getOrderTotal().toFixed(2)).padStart(14));
+// ★ v8.0.2: 카트 상태 자동 반영 — 카트 비면 Welcome, 있으면 Total 표시
+function poleDisplayCartUpdate() {
+    if (POS.cart.length === 0) {
+        poleDisplayWelcome();
+        return;
+    }
+    const total = getOrderTotal();
+    const items = POS.cart.length;
+    const totalStr = '£' + total.toFixed(2);
+    const line1 = (items + ' item' + (items > 1 ? 's' : '')).padEnd(20 - totalStr.length) + totalStr;
+    const line2 = 'Total ='.padEnd(20 - totalStr.length) + totalStr;
+    updatePoleDisplay(line1, line2);
 }
 
+// ★ v8.0.2: Pole Display 포맷 개선 (£ = UTF-8, 서버에서 CP437 변환)
+// 아이템 추가: Line1 = "Combo Bap    £9.55"  Line2 = "Total =      £9.55"
+function poleDisplayItem(itemName, price) {
+    const priceStr = '£' + (Number(price) || 0).toFixed(2);
+    const maxName = 20 - priceStr.length - 1;
+    const name = (itemName || '').substring(0, maxName);
+    const line1 = name.padEnd(20 - priceStr.length) + priceStr;
+    const total = getOrderTotal();
+    const totalStr = '£' + total.toFixed(2);
+    const line2 = 'Total ='.padEnd(20 - totalStr.length) + totalStr;
+    console.log('[PoleDisplay] Item:', line1, '|', line2);
+    updatePoleDisplay(line1, line2);
+}
+
+// FINISH 누를 때: Line1 = "Total Due    £17.80"  Line2 = "Select Payment"
 function poleDisplayTotal() {
     const total = getOrderTotal();
-    updatePoleDisplay('     YOUR ORDER     ', '  TOTAL  \xA3' + total.toFixed(2).padStart(9));
+    const totalStr = '£' + total.toFixed(2);
+    const line1 = 'Total Due'.padEnd(20 - totalStr.length) + totalStr;
+    updatePoleDisplay(line1, '  Select Payment    ');
 }
 
+// 결제 완료: 현금이면 거스름돈, 카드면 바로 Thank you
 function poleDisplayPayment(method, paid, change) {
     if (method === 'cash' && change > 0.005) {
-        // 현금 결제 + 거스름돈 있을 때만 표시
-        updatePoleDisplay('CHANGE DUE          ', ('\xA3' + change.toFixed(2)).padStart(20));
+        const changeStr = '£' + change.toFixed(2);
+        const line1 = 'Change'.padEnd(20 - changeStr.length) + changeStr;
+        const line2 = '    Thank you!      ';
+        updatePoleDisplay(line1, line2);
         setTimeout(poleDisplayWelcome, 8000);
     } else {
-        // 카드 또는 거스름돈 없으면 바로 감사 메시지
-        poleDisplayWelcome();
+        updatePoleDisplay('    Thank you!      ', '  Have a nice day!  ');
+        setTimeout(poleDisplayWelcome, 8000);
     }
 }
 
+// 대기 상태: Welcome 메시지
 function poleDisplayWelcome() {
-    updatePoleDisplay(' Thank you for      ', '       Visiting!    ');
+    const msg = _poleDisplayConfig.welcomeMsg || 'Thank you for Visiting!';
+    // 20자 2줄로 분배
+    if (msg.length <= 20) {
+        updatePoleDisplay('   Welcome to       ', msg.substring(0,20).padStart(10 + msg.length/2).padEnd(20));
+    } else {
+        updatePoleDisplay(msg.substring(0,20), (msg.substring(20,40) || '').padEnd(20));
+    }
 }
 
 // ═══════════════════════════════════════════

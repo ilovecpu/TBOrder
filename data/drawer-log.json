@@ -268,5 +268,32 @@
     "reason": "manual_change",
     "reasonDetail": "Change",
     "serverTime": "2026-03-17T13:50:51.078Z"
+  },
+  {
+    "timestamp": "2026-03-17T14:46:30.186Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Dev Mode",
+    "reason": "manual_change",
+    "reasonDetail": "Change",
+    "serverTime": "2026-03-17T14:46:30.193Z"
+  },
+  {
+    "timestamp": "2026-03-17T15:24:39.373Z",
+    "branch": "TBS",
+    "branchName": "The Bap Swindon",
+    "staff": "Sunny",
+    "reason": "manual_expense",
+    "reasonDetail": "Expense",
+    "serverTime": "2026-03-17T15:24:39.382Z"
+  },
+  {
+    "timestamp": "2026-03-17T17:24:53.949Z",
+    "branch": "PAB",
+    "branchName": "Pick A Bap",
+    "staff": "Pick A Bap",
+    "reason": "cash_payment",
+    "reasonDetail": "",
+    "serverTime": "2026-03-17T17:24:53.981Z"
   }
 ]
