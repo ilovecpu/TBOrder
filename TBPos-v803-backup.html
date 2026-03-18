@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap POS v8.0.4 | 2026-03-18 -->
+<!-- The Bap POS v8.0.3 | 2026-03-17 -->
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -3759,14 +3759,13 @@ function checkPickupReady(order, newStatus) {
 async function printReceipt(order, count, openDrawer) {
     const b = BRANCHES.find(x => x.code === order.branchCode);
     const branchName = b ? b.name : order.branchCode;
-    const vatNo = b ? (b.vatNo || '') : '';
 
     // ★ Try direct ESC/POS print (no preview, no browser dialog)
     try {
         const resp = await fetch('/api/print', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ type: 'receipt', order, branchName, vatNo, copies: count, openDrawer: !!openDrawer })
+            body: JSON.stringify({ type: 'receipt', order, branchName, copies: count, openDrawer: !!openDrawer })
         });
         const result = await resp.json();
         if (result.success) {
@@ -6080,10 +6079,6 @@ function _fallbackBrowserPrint(title, from, to, orders, cashCnt, cardCnt, cashTo
         document.getElementById('esrVatRows').innerHTML = vatHtml;
         document.getElementById('esrVatTotal').textContent = fp(vatInfo.totalVat || 0);
         document.getElementById('esrFooter').textContent = '';
-        // ★ VAT No
-        const _vatBranch = BRANCHES.find(x => x.code === POS.branch);
-        const esrVatNoEl = document.getElementById('esrVatNo');
-        if (esrVatNoEl) esrVatNoEl.textContent = _vatBranch && _vatBranch.vatNo ? 'VAT No: ' + _vatBranch.vatNo : '';
         const receiptEl = document.getElementById('endSalesReceiptPrint');
         receiptEl.style.display = 'block';
         window.print();
@@ -6858,8 +6853,7 @@ async function printDailyReportSimple(mode) {
                     grandTotal: r.grandTotal,
                     otherTotal: r.reportedOther,
                     otherCustomers: r.reportedOtherCount,
-                    vatData: { byRate: vatByRate, totalVat: mainVat ? mainVat.totalVat : 0 },
-                    vatNo: (BRANCHES.find(x => x.code === POS.branch) || {}).vatNo || ''
+                    vatData: { byRate: vatByRate, totalVat: mainVat ? mainVat.totalVat : 0 }
                 }
             })
         });

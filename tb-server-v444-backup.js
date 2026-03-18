@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * ════════════════════════════════════════════════════════════
- *  🍚 The Bap (더밥) — TBOrder Local Server v4.4.5
- *  Last Updated: 2026-03-18
+ *  🍚 The Bap (더밥) — TBOrder Local Server v4.4.4
+ *  Last Updated: 2026-03-17
  * ════════════════════════════════════════════════════════════
  *
  *  역할:
@@ -510,7 +510,7 @@ if (GOOGLE_MENU_API) {
 //  ★ TBMS Sales Data Push — 자동 푸시 (Daily/Live/EndSales)
 //  Branch server → TBMS Apps Script → Google Sheets → TBMS.html
 // ════════════════════════════════════════════════════════════
-const TBMS_API = process.env.TBMS_API || 'https://script.google.com/macros/s/AKfycbzCE9MIDjtjZG4QeqTNXL032WbTJCIHeXUAQf7wq9K7dIKpWngi-FPFg-IzvtPP3bxK/exec';
+const TBMS_API = process.env.TBMS_API || 'https://script.google.com/macros/s/AKfycby75Nj9fMZLlGYDeAYd-2WH4dpYjvoFVYTjyV2qgyBZ5_3sd-cJQzO-ShO4wMsMidFj/exec';
 const TBMS_API_KEY = 'tBaP2026xKr!mGt9Qz';
 
 // ─── Generic POST to TBMS Apps Script (with redirect follow) ───
@@ -843,7 +843,6 @@ function queueOrderForPush(order, skipSave) {
       vatRate: i.vatRate
     })),
     refunded: !!order.refunded,
-    refundedBy: order.refundedBy || '',
     refundedAt: order.refundedAt || '',
     refundMethod: order.refundMethod || '',
     vat: order.mainVat || 0,
@@ -2351,7 +2350,7 @@ foreach ($p in $ports) {
         let escData = '';
         if (data.type === 'receipt') {
           const branchName = data.branchName || cfg.branchName || '';
-          escData = printer.buildOrderReceipt(data.order, branchName, data.vatNo || '');
+          escData = printer.buildOrderReceipt(data.order, branchName);
           // Cash payment: prepend drawer kick command so it opens with the receipt
           if (data.openDrawer) {
             escData = printer.buildOpenDrawer() + escData;
@@ -2373,8 +2372,7 @@ foreach ($p in $ports) {
             cardTotal: d.cardTotal || 0,
             grandTotal: d.grandTotal || 0,
             vatBreakdown: (d.vatData && d.vatData.byRate) || [],
-            totalVat: (d.vatData && d.vatData.totalVat) || 0,
-            vatNo: d.vatNo || ''
+            totalVat: (d.vatData && d.vatData.totalVat) || 0
           });
         } else if (data.type === 'open_drawer') {
           // ── Cash Drawer: sendToPrinter handles ip/device/printerName automatically ──

@@ -82,7 +82,7 @@ function calcReceiptVat(order) {
 }
 
 // ─── Build receipt ESC/POS data ───
-function buildOrderReceipt(order, branchName, vatNo) {
+function buildOrderReceipt(order, branchName) {
     let d = '';
     d += CMD.INIT + CMD.CODEPAGE;
     d += CMD.ALIGN_CENTER + CMD.SIZE_DOUBLE + CMD.BOLD_ON;
@@ -142,7 +142,6 @@ function buildOrderReceipt(order, branchName, vatNo) {
     d += CMD.FEED;
     d += 'Thank you for visiting The Bap!' + CMD.FEED;
     d += 'K-Food on the Bap' + CMD.FEED;
-    if (vatNo) d += 'VAT No: ' + vatNo + CMD.FEED;
     d += CMD.FEED + CMD.FEED + CMD.FEED;
     d += CMD.CUT;
 
@@ -201,7 +200,6 @@ function buildReportReceipt(data) {
     }
 
     d += CMD.ALIGN_CENTER;
-    if (data.vatNo) d += 'VAT No: ' + data.vatNo + CMD.FEED;
     d += 'Printed: ' + new Date().toLocaleString('en-GB') + CMD.FEED;
     d += CMD.FEED + CMD.FEED + CMD.FEED;
     d += CMD.CUT;
