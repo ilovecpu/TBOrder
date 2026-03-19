@@ -73,7 +73,7 @@ let _branchReady = false;                            // ★ POS 로그인 완료
 let _cashReportPct = 100;                            // ★ POS에서 설정한 Cash Report % (SUB 계산용)
 let _dailyPushTime = '23:50';                        // ★ POS에서 설정한 Daily Push 시간 (HH:MM)
 let _vatPct = 20;                                    // ★ POS에서 설정한 VAT 비율 (0-100%)
-const SERVER_VERSION = '4.4.3';
+const SERVER_VERSION = '4.4.5';
 
 // ════════════════════════════════════════════════════════════
 //  ★ Last Session Restore — 마지막 로그인 세션 저장/복원 (v4.4.0)
@@ -510,7 +510,7 @@ if (GOOGLE_MENU_API) {
 //  ★ TBMS Sales Data Push — 자동 푸시 (Daily/Live/EndSales)
 //  Branch server → TBMS Apps Script → Google Sheets → TBMS.html
 // ════════════════════════════════════════════════════════════
-const TBMS_API = process.env.TBMS_API || 'https://script.google.com/macros/s/AKfycbzCE9MIDjtjZG4QeqTNXL032WbTJCIHeXUAQf7wq9K7dIKpWngi-FPFg-IzvtPP3bxK/exec';
+const TBMS_API = process.env.TBMS_API || 'https://script.google.com/macros/s/AKfycbz_0Vcn1aCQyHZ7i9XRFp72f6O1H5kAsuaFATW4MMSnOhgWakAjMebH8ngMchYDHfS5/exec';
 const TBMS_API_KEY = 'tBaP2026xKr!mGt9Qz';
 
 // ─── Generic POST to TBMS Apps Script (with redirect follow) ───

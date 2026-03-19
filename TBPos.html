@@ -922,7 +922,7 @@ button { font-family: inherit; cursor: pointer; }
         </div>
     </div>
     <div style="text-align:center;padding:10px 0 0;color:#B0B0B0;font-size:11px;line-height:1.6;" id="loginFooter">
-        POS v6.2 <span id="loginServerVer"></span>&nbsp;|&nbsp; © 2026 The Bap. All rights reserved.
+        POS v8.0.4 <span id="loginServerVer"></span>&nbsp;|&nbsp; © 2026 The Bap. All rights reserved.
         <br>
         <button onclick="closePOS()" style="margin-top:4px;padding:4px 14px;border:1px solid #E5E7EB;border-radius:5px;background:#F9FAFB;color:#B0B0B0;font-size:10px;cursor:pointer">✕ Close POS</button>
     </div>
@@ -931,7 +931,7 @@ button { font-family: inherit; cursor: pointer; }
 <!-- ═══════════ SCREEN: MAIN MENU ═══════════ -->
 <div class="screen main-menu-screen" id="screenMainMenu">
     <div class="main-menu-header">
-        <div class="main-menu-header-title">The Bap POS <span style="font-size:10px;color:#9CA3AF;font-weight:400">v6.0</span></div>
+        <div class="main-menu-header-title">The Bap POS <span style="font-size:10px;color:#9CA3AF;font-weight:400">v8.0.4</span></div>
         <div class="main-menu-header-branch" id="mainMenuBranch">TBS</div>
         <div class="main-menu-header-spacer"></div>
         <div class="main-menu-header-time" id="mainMenuTime">12:00:00</div>
@@ -1458,6 +1458,9 @@ function calcSubBreakdown(orders, cashPct) {
         else if (isCash) { cashTotal += (o.total || 0) * (cashPct / 100); cashCount++; }
         else { otherTotal += (o.total || 0) * (cashPct / 100); otherCount++; }
     });
+    // ★ SUB: Cash/Other count도 cashPct% 적용, 반올림, 최소 1건
+    if (cashCount > 0) cashCount = Math.max(1, Math.round(cashCount * cashPct / 100));
+    if (otherCount > 0) otherCount = Math.max(1, Math.round(otherCount * cashPct / 100));
     const grandTotal = Math.round((cashTotal + cardTotal + otherTotal) * 100) / 100;
     // VATable / Non-VATable split
     const vatableGross = Math.round(grandTotal * (vatablePct / 100) * 100) / 100;
@@ -4069,8 +4072,8 @@ async function runSalesAnalysis() {
                 <table class="takings-table">
                     <thead><tr><th>Payment</th><th>Count</th><th>Amount</th></tr></thead>
                     <tbody>
-                        <tr><td>💳 Card</td><td>${cardOrds.length}</td><td class="val-green">${fp(subData.cardTotal)}</td></tr>
-                        <tr><td>💵 Cash</td><td>${cashOrds.length}</td><td class="val-green">${fp(subData.cashTotal)}</td></tr>
+                        <tr><td>💳 Card</td><td>${subData.cardCount}</td><td class="val-green">${fp(subData.cardTotal)}</td></tr>
+                        <tr><td>💵 Cash</td><td>${subData.cashCount}</td><td class="val-green">${fp(subData.cashTotal)}</td></tr>
                     </tbody>
                 </table>
                 <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FDE68A;border-radius:8px;margin-top:4px">
@@ -4424,8 +4427,8 @@ async function viewEndSalesDetail(esId) {
                     <table class="takings-table">
                         <thead><tr><th>Payment</th><th>Count</th><th>Amount</th></tr></thead>
                         <tbody>
-                            <tr><td>💳 CARD</td><td>${s.cardCustomers || 0}</td><td class="val-green">${fp(sub.cardTotal || 0)}</td></tr>
-                            <tr><td>💵 CASH</td><td>${s.cashCustomers || 0}</td><td class="val-green">${fp(sub.cashTotal || 0)}</td></tr>
+                            <tr><td>💳 CARD</td><td>${sub.cardCount || s.cardCustomers || 0}</td><td class="val-green">${fp(sub.cardTotal || 0)}</td></tr>
+                            <tr><td>💵 CASH</td><td>${sub.cashCount || s.cashCustomers || 0}</td><td class="val-green">${fp(sub.cashTotal || 0)}</td></tr>
                         </tbody>
                     </table>
                     <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FDE68A;border-radius:8px;margin-top:4px">
@@ -5860,8 +5863,8 @@ async function endSales() {
                 <table class="takings-table">
                     <thead><tr><th>Payment</th><th>Count</th><th>Amount</th></tr></thead>
                     <tbody>
-                        <tr><td>💳 CARD</td><td>${esCardOrders.length}</td><td class="val-green">${fp(esSub.cardTotal)}</td></tr>
-                        <tr><td>💵 CASH</td><td>${esCashOrders.length}</td><td class="val-green">${fp(esSub.cashTotal)}</td></tr>
+                        <tr><td>💳 CARD</td><td>${esSub.cardCount}</td><td class="val-green">${fp(esSub.cardTotal)}</td></tr>
+                        <tr><td>💵 CASH</td><td>${esSub.cashCount}</td><td class="val-green">${fp(esSub.cashTotal)}</td></tr>
                     </tbody>
                 </table>
                 <div style="display:flex;justify-content:space-between;padding:8px 12px;background:#FDE68A;border-radius:8px;margin-top:4px">
@@ -5965,6 +5968,8 @@ async function confirmEndSales() {
             cashPct: d.subData.cashPct,
             vatablePct: d.subData.vatablePct,
             vatRate: d.subData.vatRate,
+            cashCount: d.subData.cashCount,
+            cardCount: d.subData.cardCount,
             cashTotal: d.subData.cashTotal,
             cardTotal: d.subData.cardTotal,
             grandTotal: d.subData.grandTotal,
@@ -6240,7 +6245,7 @@ ${d.hourKeys.length > 0 ? `<div class="section">
 </div>
 
 <div class="footer">
-    The Bap POS v7.9.6 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.
+    The Bap POS v8.0.4 &copy; ${new Date().getFullYear()} The Bap. All rights reserved.
 </div>
 
 </body></html>`;
@@ -7124,7 +7129,7 @@ function renderSettings() {
             </div>
 
             <div style="text-align:center;padding:8px;color:#9CA3AF;font-size:10px">
-                The Bap POS v7.9.6 | Server v${s.serverVersion} | ${s.nodeVersion}
+                The Bap POS v8.0.4 | Server v${s.serverVersion} | ${s.nodeVersion}
             </div>
         `;
     }

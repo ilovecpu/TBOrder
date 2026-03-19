@@ -141,7 +141,6 @@ function buildOrderReceipt(order, branchName, vatNo) {
     d += CMD.ALIGN_CENTER;
     d += CMD.FEED;
     d += 'Thank you for visiting The Bap!' + CMD.FEED;
-    d += 'K-Food on the Bap' + CMD.FEED;
     if (vatNo) d += 'VAT No: ' + vatNo + CMD.FEED;
     d += CMD.FEED + CMD.FEED + CMD.FEED;
     d += CMD.CUT;
