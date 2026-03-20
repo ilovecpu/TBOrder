@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Admin v3.7 | 2026-03-12 | Category/item dedup on pull + new Google API URL -->
+<!-- The Bap Admin v3.8 | 2026-03-19 | Admin PIN: TBMS admin/senior manager users auth -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -978,7 +978,7 @@
             </div>
             <button id="pinClearBtn" class="btn-secondary" style="width: 100%; margin-bottom: 8px;">Clear</button>
             <button id="pinEnterBtn" class="btn-primary" style="width: 100%;">Enter</button>
-            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v3.7</div>
+            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v3.8</div>
         </div>
     </div>
 
@@ -986,7 +986,7 @@
     <div class="container" id="mainContainer" style="display: none;">
         <!-- SIDEBAR -->
         <div class="sidebar">
-            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v3.7</span></div>
+            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v3.8</span></div>
             <div class="nav-menu">
                 <div class="nav-item active" data-section="dashboard">
                     <div class="nav-icon">📊</div>
@@ -1033,7 +1033,7 @@
                     <span>Settings</span>
                 </div>
             </div>
-            <div class="sidebar-footer">v3.7 | The Bap Group</div>
+            <div class="sidebar-footer">v3.8 | The Bap Group</div>
         </div>
 
         <!-- MAIN CONTENT -->
@@ -1849,12 +1849,65 @@
                 }
             },
 
+            // ★ v3.8: TBMS admin 유저 목록 (PIN 체크용)
+            _adminUsers: [],
+
+            async _loadAdminUsers() {
+                // 1) 서버 offline-data에서 pinUsers 가져오기
+                try {
+                    const resp = await fetch('/api/offline-data');
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        if (data.pinUsers && data.pinUsers.users) {
+                            this._adminUsers = data.pinUsers.users.filter(u => {
+                                const role = (u.role || '').toLowerCase().replace(/[_\-\s]+/g, '');
+                                return role === 'admin' || role === 'seniormanager';
+                            });
+                            console.log('[Admin] Loaded admin users from server:', this._adminUsers.length);
+                            return;
+                        }
+                    }
+                } catch(e) { console.warn('[Admin] Server pinUsers load failed:', e.message); }
+                // 2) Fallback: TBMS API 직접 호출
+                try {
+                    const TBMS_API = 'https://script.google.com/macros/s/AKfycbz_0Vcn1aCQyHZ7i9XRFp72f6O1H5kAsuaFATW4MMSnOhgWakAjMebH8ngMchYDHfS5/exec';
+                    const resp = await fetch(TBMS_API + '?action=read&sheet=Users&apikey=tBaP2026xKr!mGt9Qz', {redirect:'follow'});
+                    const data = await resp.json();
+                    if (data.data) {
+                        this._adminUsers = data.data.filter(u => {
+                            const role = (u.role || '').toLowerCase().replace(/[_\-\s]+/g, '');
+                            return role === 'admin' || role === 'seniormanager';
+                        });
+                        console.log('[Admin] Loaded admin users from TBMS API:', this._adminUsers.length);
+                    }
+                } catch(e) { console.warn('[Admin] TBMS API users load failed:', e.message); }
+            },
+
+            _checkAdminPin(pin) {
+                if (!pin || pin === '') return false;
+                // 1) TBMS admin 유저 password 체크
+                const found = this._adminUsers.find(u => {
+                    const pwd = String(u.password || u.pin || '').trim();
+                    return pwd === pin;
+                });
+                if (found) {
+                    console.log('[Admin] PIN matched:', found.name || found.username, 'role:', found.role);
+                    return true;
+                }
+                // 2) Fallback: 기존 로컬 PIN
+                if (this.currentPin && pin === this.currentPin) return true;
+                return false;
+            },
+
             setupPinLock() {
                 const pinOverlay = document.getElementById('pinLockOverlay');
                 const pinInput = document.getElementById('pinInput');
                 const pinBtns = document.querySelectorAll('.pin-keypad .pin-btn');
                 const clearBtn = document.getElementById('pinClearBtn');
                 const enterBtn = document.getElementById('pinEnterBtn');
+
+                // ★ v3.8: TBMS admin 유저 로드
+                this._loadAdminUsers();
 
                 pinBtns.forEach(btn => {
                     btn.addEventListener('click', () => {
@@ -1871,11 +1924,11 @@
                 });
 
                 enterBtn.addEventListener('click', () => {
-                    if (pinInput.value === this.currentPin) {
+                    if (this._checkAdminPin(pinInput.value)) {
                         pinOverlay.style.display = 'none';
                         document.getElementById('mainContainer').style.display = 'flex';
                     } else {
-                        this.showToast('Invalid PIN', 'error');
+                        this.showToast('Invalid PIN — Admin access required', 'error');
                         pinInput.value = '';
                         pinInput.focus();
                     }
