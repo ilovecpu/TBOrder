@@ -963,7 +963,7 @@
         <div class="pin-lock-panel">
             <div class="pin-lock-logo">The Bap</div>
             <div class="pin-lock-title">Admin Access</div>
-            <input type="password" id="pinInput" class="pin-input" maxlength="4" placeholder="••••" autocomplete="off">
+            <input type="password" id="pinInput" class="pin-input" maxlength="10" placeholder="••••" autocomplete="off">
             <div class="pin-keypad">
                 <button class="pin-btn btn-secondary">1</button>
                 <button class="pin-btn btn-secondary">2</button>
@@ -1020,17 +1020,13 @@
                     <div class="nav-icon">🏢</div>
                     <span>Branches</span>
                 </div>
-                <div class="nav-item" data-section="orders">
-                    <div class="nav-icon">📦</div>
-                    <span>Orders</span>
-                </div>
                 <div class="nav-item" data-section="sync">
                     <div class="nav-icon">☁️</div>
                     <span>Sync</span>
                 </div>
-                <div class="nav-item" data-section="settings">
-                    <div class="nav-icon">⚙️</div>
-                    <span>Settings</span>
+                <div class="nav-item" onclick="app.logout()" style="cursor:pointer;margin-top:auto;">
+                    <div class="nav-icon">🚪</div>
+                    <span>Logout</span>
                 </div>
             </div>
             <div class="sidebar-footer">v3.8 | The Bap Group</div>
@@ -1076,29 +1072,7 @@
                         </div>
                     </div>
 
-                    <div class="card">
-                        <div style="margin-bottom: 16px;">
-                            <h3>Recent Orders</h3>
-                            <p style="color: #999; font-size: 13px; margin-top: 4px;">All branches</p>
-                        </div>
-                        <table>
-                            <thead>
-                                <tr>
-                                    <th>Order ID</th>
-                                    <th>Branch</th>
-                                    <th>Items</th>
-                                    <th>Total</th>
-                                    <th>Status</th>
-                                    <th>Time</th>
-                                </tr>
-                            </thead>
-                            <tbody id="recentOrdersTable">
-                                <tr>
-                                    <td colspan="6" style="text-align: center; color: #999;">No orders yet</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+                    <!-- Orders section removed in v3.8 -->
                 </div>
 
                 <!-- BRANCHES SECTION -->
@@ -1852,35 +1826,48 @@
             // ★ v3.8: TBMS admin 유저 목록 (PIN 체크용)
             _adminUsers: [],
 
+            _adminUsersLoaded: false,
+            _adminUsersPromise: null,
+
             async _loadAdminUsers() {
-                // 1) 서버 offline-data에서 pinUsers 가져오기
+                console.log('[Admin] Loading admin users...');
+                const _filterAdmins = (users) => users.filter(u => {
+                    const role = (u.role || '').toLowerCase().replace(/[_\-\s]+/g, '');
+                    return role === 'admin' || role === 'seniormanager';
+                });
+                // 1) TBMS API 직접 호출 (GitHub Pages 환경 — 서버 없음)
+                try {
+                    const TBMS_API = 'https://script.google.com/macros/s/AKfycbz_0Vcn1aCQyHZ7i9XRFp72f6O1H5kAsuaFATW4MMSnOhgWakAjMebH8ngMchYDHfS5/exec';
+                    const url = TBMS_API + '?action=getSheet&sheet=Users&apikey=' + encodeURIComponent('tBaP2026xKr!mGt9Qz');
+                    console.log('[Admin] Fetching TBMS Users...');
+                    const resp = await fetch(url, {redirect:'follow'});
+                    const data = await resp.json();
+                    console.log('[Admin] TBMS response:', JSON.stringify(data).substring(0, 200));
+                    const users = data.data || data.rows || data || [];
+                    if (Array.isArray(users) && users.length > 0) {
+                        this._adminUsers = _filterAdmins(users);
+                        console.log('[Admin] ✅ Admin users from TBMS API:', this._adminUsers.length);
+                        this._adminUsers.forEach(u => console.log('  👤', u.name || u.username, 'role:', u.role, 'pwd:', (u.password||'').substring(0,2) + '**'));
+                        this._adminUsersLoaded = true;
+                        return;
+                    }
+                } catch(e) { console.warn('[Admin] TBMS API failed:', e.message); }
+                // 2) Fallback: 서버 offline-data (로컬 서버 환경)
                 try {
                     const resp = await fetch('/api/offline-data');
                     if (resp.ok) {
                         const data = await resp.json();
                         if (data.pinUsers && data.pinUsers.users) {
-                            this._adminUsers = data.pinUsers.users.filter(u => {
-                                const role = (u.role || '').toLowerCase().replace(/[_\-\s]+/g, '');
-                                return role === 'admin' || role === 'seniormanager';
-                            });
-                            console.log('[Admin] Loaded admin users from server:', this._adminUsers.length);
+                            this._adminUsers = _filterAdmins(data.pinUsers.users);
+                            console.log('[Admin] ✅ Admin users from server:', this._adminUsers.length);
+                            this._adminUsers.forEach(u => console.log('  👤', u.name || u.username, 'role:', u.role));
+                            this._adminUsersLoaded = true;
                             return;
                         }
                     }
-                } catch(e) { console.warn('[Admin] Server pinUsers load failed:', e.message); }
-                // 2) Fallback: TBMS API 직접 호출
-                try {
-                    const TBMS_API = 'https://script.google.com/macros/s/AKfycbz_0Vcn1aCQyHZ7i9XRFp72f6O1H5kAsuaFATW4MMSnOhgWakAjMebH8ngMchYDHfS5/exec';
-                    const resp = await fetch(TBMS_API + '?action=read&sheet=Users&apikey=tBaP2026xKr!mGt9Qz', {redirect:'follow'});
-                    const data = await resp.json();
-                    if (data.data) {
-                        this._adminUsers = data.data.filter(u => {
-                            const role = (u.role || '').toLowerCase().replace(/[_\-\s]+/g, '');
-                            return role === 'admin' || role === 'seniormanager';
-                        });
-                        console.log('[Admin] Loaded admin users from TBMS API:', this._adminUsers.length);
-                    }
-                } catch(e) { console.warn('[Admin] TBMS API users load failed:', e.message); }
+                } catch(e) { console.warn('[Admin] Server offline-data failed:', e.message); }
+                console.warn('[Admin] ⚠️ No admin users loaded — only local PIN will work');
+                this._adminUsersLoaded = true;
             },
 
             _checkAdminPin(pin) {
@@ -1907,12 +1894,12 @@
                 const enterBtn = document.getElementById('pinEnterBtn');
 
                 // ★ v3.8: TBMS admin 유저 로드
-                this._loadAdminUsers();
+                this._adminUsersPromise = this._loadAdminUsers();
 
                 pinBtns.forEach(btn => {
                     btn.addEventListener('click', () => {
                         const num = btn.textContent.trim();
-                        if (pinInput.value.length < 4) {
+                        if (pinInput.value.length < 10) {
                             pinInput.value += num;
                         }
                     });
@@ -1923,7 +1910,13 @@
                     pinInput.focus();
                 });
 
-                enterBtn.addEventListener('click', () => {
+                enterBtn.addEventListener('click', async () => {
+                    // 유저 데이터 로딩 안 끝났으면 기다림
+                    if (!this._adminUsersLoaded && this._adminUsersPromise) {
+                        enterBtn.textContent = 'Loading...';
+                        await this._adminUsersPromise;
+                        enterBtn.textContent = 'Enter';
+                    }
                     if (this._checkAdminPin(pinInput.value)) {
                         pinOverlay.style.display = 'none';
                         document.getElementById('mainContainer').style.display = 'flex';
@@ -1983,6 +1976,13 @@
             ws: null,
             wsReconnectTimer: null,
             liveOrders: [],  // 서버에서 받은 주문 목록
+
+            logout() {
+                document.getElementById('mainContainer').style.display = 'none';
+                document.getElementById('pinLockOverlay').style.display = 'flex';
+                const pinInput = document.getElementById('pinInput');
+                if (pinInput) { pinInput.value = ''; pinInput.focus(); }
+            },
 
             setupBroadcastChannel() {
                 // BroadcastChannel (같은 브라우저 탭 간)
