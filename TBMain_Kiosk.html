@@ -1154,21 +1154,13 @@
 
                 <!-- ALLERGENS SECTION -->
                 <div class="content-section" id="section-allergens">
-                    <div style="margin-bottom:12px;">
-                        <select id="allergenCatFilter" onchange="app.renderAllergenMatrix()" style="padding:8px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;min-width:200px;">
-                            <option value="__all__">All Categories</option>
-                        </select>
-                    </div>
+                    <div id="allergenCatTabs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
                     <div id="allergenMatrix"></div>
                 </div>
 
                 <!-- NUTRITION SECTION -->
                 <div class="content-section" id="section-nutrition">
-                    <div style="margin-bottom:12px;">
-                        <select id="nutritionCatFilter" onchange="app.renderNutritionTable()" style="padding:8px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;min-width:200px;">
-                            <option value="__all__">All Categories</option>
-                        </select>
-                    </div>
+                    <div id="nutritionCatTabs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
                     <table>
                         <thead>
                             <tr>
@@ -3500,16 +3492,16 @@
                 const catNameMap = {}; categories.forEach(c => { if (c.id) catNameMap[c.id] = c.nameEn || c.name || c.id; });
 
                 // 카테고리 필터 드롭다운 업데이트
-                const filterEl = document.getElementById('allergenCatFilter');
-                if (filterEl && filterEl.options.length <= 1) {
+                // ★ v4.1: 탭 메뉴 렌더링
+                const tabsEl = document.getElementById('allergenCatTabs');
+                if (!this._allergenCat) this._allergenCat = '__all__';
+                if (tabsEl) {
                     const catIds = [...new Set(allItems.map(i => i.category || i.catId).filter(Boolean))];
-                    catIds.forEach(cid => {
-                        const opt = document.createElement('option');
-                        opt.value = cid; opt.textContent = catNameMap[cid] || cid;
-                        filterEl.appendChild(opt);
-                    });
+                    const tabStyle = (active) => `padding:8px 16px;border-radius:20px;border:none;font-size:13px;font-weight:${active?'700':'500'};cursor:pointer;background:${active?'#1D4ED8':'#F3F4F6'};color:${active?'#fff':'#374151'};transition:all .2s;`;
+                    tabsEl.innerHTML = `<button style="${tabStyle(this._allergenCat==='__all__')}" onclick="app._allergenCat='__all__';app.renderAllergenMatrix()">All</button>` +
+                        catIds.map(cid => `<button style="${tabStyle(this._allergenCat===cid)}" onclick="app._allergenCat='${cid}';app.renderAllergenMatrix()">${catNameMap[cid]||cid}</button>`).join('');
                 }
-                const selectedCat = filterEl ? filterEl.value : '__all__';
+                const selectedCat = this._allergenCat || '__all__';
                 const items = selectedCat === '__all__' ? allItems : allItems.filter(i => (i.category || i.catId) === selectedCat);
 
                 let html = '<div class="allergen-matrix">';
@@ -3557,17 +3549,16 @@
                 const categories = JSON.parse(localStorage.getItem('tb_categories') || '[]');
                 const catNameMap = {}; categories.forEach(c => { if (c.id) catNameMap[c.id] = c.nameEn || c.name || c.id; });
 
-                // 카테고리 필터 드롭다운 업데이트
-                const filterEl = document.getElementById('nutritionCatFilter');
-                if (filterEl && filterEl.options.length <= 1) {
+                // ★ v4.1: 탭 메뉴 렌더링
+                const tabsEl = document.getElementById('nutritionCatTabs');
+                if (!this._nutritionCat) this._nutritionCat = '__all__';
+                if (tabsEl) {
                     const catIds = [...new Set(allItems.map(i => i.category || i.catId).filter(Boolean))];
-                    catIds.forEach(cid => {
-                        const opt = document.createElement('option');
-                        opt.value = cid; opt.textContent = catNameMap[cid] || cid;
-                        filterEl.appendChild(opt);
-                    });
+                    const tabStyle = (active) => `padding:8px 16px;border-radius:20px;border:none;font-size:13px;font-weight:${active?'700':'500'};cursor:pointer;background:${active?'#1D4ED8':'#F3F4F6'};color:${active?'#fff':'#374151'};transition:all .2s;`;
+                    tabsEl.innerHTML = `<button style="${tabStyle(this._nutritionCat==='__all__')}" onclick="app._nutritionCat='__all__';app.renderNutritionTable()">All</button>` +
+                        catIds.map(cid => `<button style="${tabStyle(this._nutritionCat===cid)}" onclick="app._nutritionCat='${cid}';app.renderNutritionTable()">${catNameMap[cid]||cid}</button>`).join('');
                 }
-                const selectedCat = filterEl ? filterEl.value : '__all__';
+                const selectedCat = this._nutritionCat || '__all__';
                 const items = selectedCat === '__all__' ? allItems : allItems.filter(i => (i.category || i.catId) === selectedCat);
 
                 const tbody = document.getElementById('nutritionTable');
