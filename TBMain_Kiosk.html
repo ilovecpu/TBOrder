@@ -1055,24 +1055,28 @@
                     </div>
                     <div class="stats-grid">
                         <div class="stat-card">
-                            <div class="stat-label">Total Orders</div>
-                            <div class="stat-value" id="statOrders">0</div>
+                            <div class="stat-label">Menu Items</div>
+                            <div class="stat-value" id="statMenuItems">0</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-label">Revenue Today</div>
-                            <div class="stat-value" id="statRevenue">£0</div>
+                            <div class="stat-label">Categories</div>
+                            <div class="stat-value" id="statCategories">0</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-label">Avg Order Value</div>
-                            <div class="stat-value" id="statAvg">£0</div>
+                            <div class="stat-label">Branches</div>
+                            <div class="stat-value" id="statBranches">0</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-label">Active Kiosks</div>
-                            <div class="stat-value" id="statKiosks">0</div>
+                            <div class="stat-label">Sauces</div>
+                            <div class="stat-value" id="statSauces">0</div>
                         </div>
                     </div>
 
-                    <!-- Orders section removed in v3.8 -->
+                    <!-- ★ v3.8: 카테고리별 메뉴 요약 -->
+                    <div class="card" style="margin-top:16px;">
+                        <h3 style="margin-bottom:12px;">Menu Summary by Category</h3>
+                        <div id="dashMenuSummary" style="font-size:14px;color:#666;">Loading...</div>
+                    </div>
                 </div>
 
                 <!-- BRANCHES SECTION -->
@@ -1984,6 +1988,41 @@
                 if (pinInput) { pinInput.value = ''; pinInput.focus(); }
             },
 
+            _toggleCatDetail(cat, clickedRow) {
+                const detailRow = clickedRow.nextElementSibling;
+                if (!detailRow) return;
+                const isOpen = detailRow.style.display !== 'none';
+                // 닫기
+                if (isOpen) {
+                    detailRow.style.display = 'none';
+                    clickedRow.querySelector('td').textContent = '▶ ' + cat;
+                    return;
+                }
+                // 열기 — 아이템 리스트 렌더
+                clickedRow.querySelector('td').textContent = '▼ ' + cat;
+                const catItems = (window._dashCatItems || {})[cat] || [];
+                const fp = v => '£' + Number(v||0).toFixed(2);
+                detailRow.querySelector('td').innerHTML = `
+                    <table style="width:100%;border-collapse:collapse;margin-top:4px;background:#FAFAFA;border-radius:8px;">
+                        <thead><tr style="border-bottom:1px solid #ddd;">
+                            <th style="text-align:left;padding:6px 8px;font-size:11px;color:#888;">Item</th>
+                            <th style="text-align:right;padding:6px 8px;font-size:11px;color:#888;">Price</th>
+                            <th style="text-align:center;padding:6px 8px;font-size:11px;color:#888;">Status</th>
+                        </tr></thead>
+                        <tbody>${catItems.map(i => {
+                            const name = i.nameEn || i.name || i.id || '—';
+                            const price = i.price || i.basePrice || 0;
+                            const active = i.active !== false && i.active !== 'false';
+                            return `<tr style="border-bottom:1px solid #f0f0f0;">
+                                <td style="padding:6px 8px;font-size:13px;">${name}</td>
+                                <td style="text-align:right;padding:6px 8px;font-size:13px;font-weight:600;">${fp(price)}</td>
+                                <td style="text-align:center;padding:6px 8px;font-size:12px;color:${active ? '#059669' : '#DC2626'}">${active ? 'Active' : 'Inactive'}</td>
+                            </tr>`;
+                        }).join('')}</tbody>
+                    </table>`;
+                detailRow.style.display = '';
+            },
+
             setupBroadcastChannel() {
                 // BroadcastChannel (같은 브라우저 탭 간)
                 try {
@@ -2340,42 +2379,56 @@
             },
 
             updateDashboard() {
-                const orders = this.liveOrders;
                 const branches = JSON.parse(localStorage.getItem('tb_branches') || '[]');
+                const items = JSON.parse(localStorage.getItem('tb_menu_items') || localStorage.getItem('tb_menuItems') || '[]');
+                const categories = JSON.parse(localStorage.getItem('tb_categories') || '[]');
+                const sauces = JSON.parse(localStorage.getItem('tb_sauces') || '[]');
 
-                let totalOrders = orders.length;
-                let revenue = orders.reduce((sum, order) => sum + (order.total || order.subtotal || 0), 0);
-                let avgValue = totalOrders > 0 ? revenue / totalOrders : 0;
-                let activeKiosks = branches.filter(b => b.active).length;
+                const el = (id) => document.getElementById(id);
+                if (el('statMenuItems')) el('statMenuItems').textContent = items.length;
+                if (el('statCategories')) el('statCategories').textContent = categories.length;
+                if (el('statBranches')) el('statBranches').textContent = branches.filter(b => b.active !== false).length;
+                if (el('statSauces')) el('statSauces').textContent = sauces.length;
 
-                document.getElementById('statOrders').textContent = totalOrders;
-                document.getElementById('statRevenue').textContent = '£' + revenue.toFixed(2);
-                document.getElementById('statAvg').textContent = '£' + avgValue.toFixed(2);
-                document.getElementById('statKiosks').textContent = activeKiosks;
-
-                this.renderRecentOrders();
-            },
-
-            renderRecentOrders() {
-                const orders = this.liveOrders;
-                const tbody = document.getElementById('recentOrdersTable');
-                const recent = orders.slice(-5).reverse();
-
-                if (recent.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999;">No orders yet</td></tr>';
-                    return;
+                // 카테고리별 메뉴 요약
+                const summaryEl = el('dashMenuSummary');
+                if (summaryEl) {
+                    if (items.length === 0) {
+                        summaryEl.innerHTML = '<span style="color:#999;">No menu items loaded. Click Refresh to load.</span>';
+                    } else {
+                        const catMap = {};
+                        const catItems = {};
+                        items.forEach(item => {
+                            const cat = item.category || item.categoryName || 'Uncategorized';
+                            if (!catMap[cat]) { catMap[cat] = { count: 0, active: 0 }; catItems[cat] = []; }
+                            catMap[cat].count++;
+                            if (item.active !== false && item.active !== 'false') catMap[cat].active++;
+                            catItems[cat].push(item);
+                        });
+                        // 전역에 저장 (클릭 이벤트에서 사용)
+                        window._dashCatItems = catItems;
+                        const rows = Object.entries(catMap).sort((a,b) => b[1].count - a[1].count);
+                        summaryEl.innerHTML = `
+                            <table style="width:100%;border-collapse:collapse;">
+                                <thead><tr style="border-bottom:2px solid #eee;">
+                                    <th style="text-align:left;padding:8px;font-size:13px;color:#666;">Category</th>
+                                    <th style="text-align:center;padding:8px;font-size:13px;color:#666;">Items</th>
+                                    <th style="text-align:center;padding:8px;font-size:13px;color:#666;">Active</th>
+                                </tr></thead>
+                                <tbody>${rows.map(([cat, d]) => `
+                                    <tr style="border-bottom:1px solid #f3f3f3;cursor:pointer;" onclick="app._toggleCatDetail('${cat.replace(/'/g,"\\'")}', this)">
+                                        <td style="padding:8px;font-weight:600;">▶ ${cat}</td>
+                                        <td style="text-align:center;padding:8px;">${d.count}</td>
+                                        <td style="text-align:center;padding:8px;color:${d.active === d.count ? '#059669' : '#D97706'}">${d.active}</td>
+                                    </tr>
+                                    <tr class="dash-cat-detail" data-cat="${cat}" style="display:none;">
+                                        <td colspan="3" style="padding:0 8px 12px 24px;"></td>
+                                    </tr>`).join('')}
+                                </tbody>
+                            </table>
+                            <div style="margin-top:8px;font-size:12px;color:#999;">Total: ${items.length} items across ${rows.length} categories</div>`;
+                    }
                 }
-
-                tbody.innerHTML = recent.map(order => `
-                    <tr>
-                        <td><strong>${order.orderNumber || '-'}</strong></td>
-                        <td>${order.branchCode || '-'}</td>
-                        <td>${order.items ? order.items.length : 0} items</td>
-                        <td>£${(order.total || order.subtotal || 0).toFixed(2)}</td>
-                        <td><span class="order-status-badge order-status-${order.status}">${order.status || 'pending'}</span></td>
-                        <td>${order.createdAt ? new Date(order.createdAt).toLocaleTimeString('en-GB') : '-'}</td>
-                    </tr>
-                `).join('');
             },
 
             // BRANCHES
