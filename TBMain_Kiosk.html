@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Admin v3.9 | 2026-03-19 | Dashboard menu summary, Settings/Orders removed, Logout, googleGet fix for GitHub -->
+<!-- The Bap Admin v4.0 | 2026-03-19 | Admin PIN auth, Dashboard menu summary, Sauce sync, Allergens/Nutrition to Sheets, branchVisibility -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -978,7 +978,7 @@
             </div>
             <button id="pinClearBtn" class="btn-secondary" style="width: 100%; margin-bottom: 8px;">Clear</button>
             <button id="pinEnterBtn" class="btn-primary" style="width: 100%;">Enter</button>
-            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v3.9</div>
+            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v4.0</div>
         </div>
     </div>
 
@@ -986,7 +986,7 @@
     <div class="container" id="mainContainer" style="display: none;">
         <!-- SIDEBAR -->
         <div class="sidebar">
-            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v3.9</span></div>
+            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v4.0</span></div>
             <div class="nav-menu">
                 <div class="nav-item active" data-section="dashboard">
                     <div class="nav-icon">📊</div>
@@ -1029,7 +1029,7 @@
                     <span>Logout</span>
                 </div>
             </div>
-            <div class="sidebar-footer">v3.9 | The Bap Group</div>
+            <div class="sidebar-footer">v4.0 | The Bap Group</div>
         </div>
 
         <!-- MAIN CONTENT -->
@@ -1072,7 +1072,7 @@
                         </div>
                     </div>
 
-                    <!-- ★ v3.9: 카테고리별 메뉴 요약 -->
+                    <!-- ★ v4.0: 카테고리별 메뉴 요약 -->
                     <div class="card" style="margin-top:16px;">
                         <h3 style="margin-bottom:12px;">Menu Summary by Category</h3>
                         <div id="dashMenuSummary" style="font-size:14px;color:#666;">Loading...</div>
@@ -1730,7 +1730,7 @@
             return h !== 'localhost' && h !== '127.0.0.1' && !h.match(/^192\.168\./) && !h.match(/^10\./) && !h.match(/^172\.(1[6-9]|2\d|3[01])\./);
         }
 
-        // Google Apps Script GET — ★ v3.9: 프록시는 로컬 서버 환경에서만 사용, GitHub/remote에서는 직접 호출
+        // Google Apps Script GET — ★ v4.0: 프록시는 로컬 서버 환경에서만 사용, GitHub/remote에서는 직접 호출
         async function googleGet(action) {
             // 로컬 서버 환경에서만 프록시 시도 (localhost, 192.168.x.x 등)
             if (!isRemote()) {
@@ -1833,7 +1833,7 @@
                 }
             },
 
-            // ★ v3.9: TBMS admin 유저 목록 (PIN 체크용)
+            // ★ v4.0: TBMS admin 유저 목록 (PIN 체크용)
             _adminUsers: [],
 
             _adminUsersLoaded: false,
@@ -1903,7 +1903,7 @@
                 const clearBtn = document.getElementById('pinClearBtn');
                 const enterBtn = document.getElementById('pinEnterBtn');
 
-                // ★ v3.9: TBMS admin 유저 로드
+                // ★ v4.0: TBMS admin 유저 로드
                 this._adminUsersPromise = this._loadAdminUsers();
 
                 pinBtns.forEach(btn => {
