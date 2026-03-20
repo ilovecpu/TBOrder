@@ -1717,7 +1717,7 @@
         const ALLERGENS_LIST = ['Sesame', 'Soy', 'Egg', 'Peanuts', 'Tree Nuts', 'Milk', 'Gluten', 'Fish', 'Shellfish', 'Mustard', 'Celery', 'Lupin', 'Molluscs', 'Sulphites'];
 
         // ─── Google Apps Script API (직접 통신) ───
-        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbzoEItk-hU2BPDyj_Dy1Vwxzu-R7PQoZYVzwzVsdPuTJWYCykVIWdWTwG8nieWCwaUD7w/exec';
+        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycby2MUiZOhHKJ3K3-lc8XPS0KSgb5joMIk-4r-YiB2CfNBhtfxqFOaM6pkcYPA31-ivwxw/exec';
 
         // 원격 모드 감지 (GitHub Pages, file://, ?remote=true 등)
         function isRemote() {
@@ -3389,15 +3389,15 @@
                 const tbody = document.getElementById('saucesTable');
 
                 tbody.innerHTML = sauces.map(sauce => {
-                    const spice = Math.min(sauce.spice || 0, 8);
+                    const spice = Math.min(sauce.spiceLevel || sauce.spice || 0, 8);
                     const flames = '🔥'.repeat(spice) + '❄️'.repeat(8 - spice);
                     return `
                         <tr>
-                            <td><strong>${sauce.name}</strong></td>
-                            <td>${sauce.nameKr}</td>
+                            <td><strong>${sauce.nameEn || sauce.name || ''}</strong></td>
+                            <td>${sauce.nameKr || ''}</td>
                             <td><span class="flame">${flames}</span></td>
-                            <td>${sauce.description}</td>
-                            <td style="font-size: 12px; color: #666;">${sauce.allergens}</td>
+                            <td>${sauce.description || ''}</td>
+                            <td style="font-size: 12px; color: #666;">${sauce.allergens || ''}</td>
                             <td>
                                 <button class="btn-secondary btn-small" onclick="app.editSauce('${sauce.id}')">Edit</button>
                                 <button class="btn-danger btn-small" onclick="app.deleteSauce('${sauce.id}')">Delete</button>
@@ -3419,11 +3419,11 @@
                 if (!sauce) return;
 
                 this.editingSauceId = id;
-                document.getElementById('sauceName').value = sauce.name;
-                document.getElementById('sauceNameKr').value = sauce.nameKr;
-                document.getElementById('sauceSpice').value = sauce.spice;
-                document.getElementById('sauceDescription').value = sauce.description;
-                document.getElementById('sauceAllergens').value = sauce.allergens;
+                document.getElementById('sauceName').value = sauce.nameEn || sauce.name || '';
+                document.getElementById('sauceNameKr').value = sauce.nameKr || '';
+                document.getElementById('sauceSpice').value = sauce.spiceLevel || sauce.spice || 0;
+                document.getElementById('sauceDescription').value = sauce.description || '';
+                document.getElementById('sauceAllergens').value = sauce.allergens || '';
 
                 document.getElementById('sauceModal').classList.add('active');
             },
@@ -3433,9 +3433,9 @@
 
                 const sauceData = {
                     id: this.editingSauceId || 'SA' + Date.now(),
-                    name: document.getElementById('sauceName').value,
+                    nameEn: document.getElementById('sauceName').value,
                     nameKr: document.getElementById('sauceNameKr').value,
-                    spice: parseInt(document.getElementById('sauceSpice').value),
+                    spiceLevel: parseInt(document.getElementById('sauceSpice').value),
                     description: document.getElementById('sauceDescription').value,
                     allergens: document.getElementById('sauceAllergens').value
                 };

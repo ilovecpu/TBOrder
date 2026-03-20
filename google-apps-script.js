@@ -1,10 +1,11 @@
 /**
  * ════════════════════════════════════════════════════════════
- *  🍚 The Bap — Google Apps Script v2.3
+ *  🍚 The Bap — Google Apps Script v2.4
  *  Menu API + Orders + Image Upload + TBMS Stores + Users + DailySales + EndSales
  *  + Branches, BranchVisibility, Allergens, Nutrition
  *  + Category showInKiosk/showInPos + Item showOnKiosk/showOnPos boolean parsing
- *  Last Updated: 2026-03-13
+ *  + Sauces: description, allergens 컬럼 추가
+ *  Last Updated: 2026-03-19
  * ════════════════════════════════════════════════════════════
  *
  *  설정 방법:
@@ -484,7 +485,7 @@ function deleteMenuItem(itemId) {
 
 // ─── Sauces ───
 function updateAllSauces(sauces) {
-  writeSheet(SH_SAUCE, ['id','nameEn','nameKr','price','spiceLevel'], sauces);
+  writeSheet(SH_SAUCE, ['id','nameEn','nameKr','price','spiceLevel','description','allergens'], sauces);
 }
 
 // ─── Branches (지점 목록) ───

@@ -124,8 +124,8 @@ function restoreLastSession() {
 // 서버 시작 시 마지막 세션 복원 시도
 restoreLastSession();
 const SERVER_START_TIME = new Date().toISOString();
-const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycbwFgdpRpbOnq6WN1cDfkWotKPy3oM1hVYiSdnr9ZYvxP21Wc6HXFVffWJtiDQJbP0IVpA/exec';
-const GOOGLE_API = process.env.GOOGLE_API || 'https://script.google.com/macros/s/AKfycbwleB1U6eLEVtGpzaXlzeUkm0Wi35myeYm1bAyIvWc09slWctAGsGOt33uK0VRtn2_Odg/exec';
+const GOOGLE_MENU_API = process.env.GOOGLE_MENU_API || 'https://script.google.com/macros/s/AKfycby2MUiZOhHKJ3K3-lc8XPS0KSgb5joMIk-4r-YiB2CfNBhtfxqFOaM6pkcYPA31-ivwxw/exec';
+const GOOGLE_API = process.env.GOOGLE_API || 'https://script.google.com/macros/s/AKfycby2MUiZOhHKJ3K3-lc8XPS0KSgb5joMIk-4r-YiB2CfNBhtfxqFOaM6pkcYPA31-ivwxw/exec';
 
 // ════════════════════════════════════════════════════════════
 //  ★ Internet Connectivity Monitor — 오프라인 대응 (v4.4.0)
