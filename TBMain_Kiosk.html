@@ -1717,7 +1717,7 @@
         const ALLERGENS_LIST = ['Sesame', 'Soy', 'Egg', 'Peanuts', 'Tree Nuts', 'Milk', 'Gluten', 'Fish', 'Shellfish', 'Mustard', 'Celery', 'Lupin', 'Molluscs', 'Sulphites'];
 
         // ─── Google Apps Script API (직접 통신) ───
-        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycby2MUiZOhHKJ3K3-lc8XPS0KSgb5joMIk-4r-YiB2CfNBhtfxqFOaM6pkcYPA31-ivwxw/exec';
+        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbyRtWRXXRJFR5EYLy4E4H2h5NRohMJyWZX_epjCdymIseT9npaviRaOJRKX7gwOqM-foA/exec';
 
         // 원격 모드 감지 (GitHub Pages, file://, ?remote=true 등)
         function isRemote() {
@@ -3450,7 +3450,8 @@
                 localStorage.setItem('tb_sauces', JSON.stringify(sauces));
                 this.closeSauceModal();
                 this.renderSauces();
-                this.showToast('Sauce saved', 'success');
+                this.autoSyncToServer();
+                this.showToast('Sauce saved & synced', 'success');
             },
 
             async deleteSauce(id) {
@@ -3461,7 +3462,8 @@
                 localStorage.setItem('tb_sauces', JSON.stringify(sauces));
 
                 this.renderSauces();
-                this.showToast('Sauce deleted', 'success');
+                this.autoSyncToServer();
+                this.showToast('Sauce deleted & synced', 'success');
             },
 
             closeSauceModal() {

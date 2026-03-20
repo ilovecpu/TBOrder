@@ -47,7 +47,12 @@ const SH_CAT = 'Categories';
 const SH_ITEM = 'MenuItems';
 const SH_SAUCE = 'Sauces';
 const SH_BRANCH = 'BranchPricing';
+const SH_ALLERGENS = 'Allergens';
+const SH_NUTRITION = 'Nutrition';
 const SH_ORDER = 'Orders';
+
+const ALLERGENS_HEADERS = ['itemId','Sesame','Soy','Egg','Peanuts','Tree Nuts','Milk','Gluten','Fish','Shellfish','Mustard','Celery','Lupin','Molluscs','Sulphites'];
+const NUTRITION_HEADERS = ['itemId','calories','carbs','protein','fat','sugar'];
 
 // ─── TBMS API (지점 정보 읽기 전용) ───
 const TBMS_API = 'https://script.google.com/macros/s/AKfycbwaC6b6WTo4Gw_UpgbpbrVDj52ooG-qqcqPeR4Tgne_bWbzDomXw14SlD0q6QiszZw5/exec';
@@ -279,8 +284,8 @@ function getFullMenu() {
     branchPricing: getBranchPricing(),
     branches: getBranches(),
     branchVisibility: loadJsonProperty('branchVisibility'),
-    allergens: loadJsonProperty('allergens'),
-    nutrition: loadJsonProperty('nutrition'),
+    allergens: getAllergens(),
+    nutrition: getNutrition(),
   };
 }
 
@@ -340,6 +345,59 @@ function getSauces() {
   }));
 }
 
+// ─── Allergens: { itemId: { Sesame: 'free', Soy: 'contains', ... } } ↔ 시트 ───
+function getAllergens() {
+  const rows = sheetToArray(SH_ALLERGENS);
+  const result = {};
+  rows.forEach(r => {
+    if (!r.itemId) return;
+    const obj = {};
+    ALLERGENS_HEADERS.slice(1).forEach(h => { obj[h] = r[h] || 'free'; });
+    result[r.itemId] = obj;
+  });
+  return result;
+}
+
+function updateAllergens(data) {
+  // data = { "M001": { "Sesame": "free", "Soy": "contains" }, ... }
+  const rows = Object.entries(data).map(([itemId, vals]) => {
+    const row = { itemId };
+    ALLERGENS_HEADERS.slice(1).forEach(h => { row[h] = (vals && vals[h]) || 'free'; });
+    return row;
+  });
+  writeSheet(SH_ALLERGENS, ALLERGENS_HEADERS, rows);
+}
+
+// ─── Nutrition: { itemId: { calories, carbs, protein, fat, sugar } } ↔ 시트 ───
+function getNutrition() {
+  const rows = sheetToArray(SH_NUTRITION);
+  const result = {};
+  rows.forEach(r => {
+    if (!r.itemId) return;
+    result[r.itemId] = {
+      calories: parseFloat(r.calories) || 0,
+      carbs: parseFloat(r.carbs) || 0,
+      protein: parseFloat(r.protein) || 0,
+      fat: parseFloat(r.fat) || 0,
+      sugar: parseFloat(r.sugar) || 0
+    };
+  });
+  return result;
+}
+
+function updateNutrition(data) {
+  // data = { "M001": { calories: 500, carbs: 40, ... }, ... }
+  const rows = Object.entries(data).map(([itemId, vals]) => ({
+    itemId,
+    calories: (vals && vals.calories) || 0,
+    carbs: (vals && vals.carbs) || 0,
+    protein: (vals && vals.protein) || 0,
+    fat: (vals && vals.fat) || 0,
+    sugar: (vals && vals.sugar) || 0
+  }));
+  writeSheet(SH_NUTRITION, NUTRITION_HEADERS, rows);
+}
+
 function getBranchPricing() {
   const rows = sheetToArray(SH_BRANCH);
   const result = {};
@@ -370,8 +428,8 @@ function updateFullMenu(data) {
     // ─── 새 데이터 타입 (Branches 시트 + JSON PropertiesService) ───
     if (data.branches) updateBranches(data.branches);
     if (data.branchVisibility) saveJsonProperty('branchVisibility', data.branchVisibility);
-    if (data.allergens) saveJsonProperty('allergens', data.allergens);
-    if (data.nutrition) saveJsonProperty('nutrition', data.nutrition);
+    if (data.allergens) updateAllergens(data.allergens);
+    if (data.nutrition) updateNutrition(data.nutrition);
     incrementMenuVersion();
   } finally {
     lock.releaseLock();
