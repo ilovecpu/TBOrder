@@ -1650,8 +1650,8 @@
                     <input type="text" id="sauceNameKr" required>
                 </div>
                 <div class="form-group">
-                    <label>Spice Level (0-5)</label>
-                    <input type="number" id="sauceSpice" min="0" max="5" required>
+                    <label>Spice Level (0-8)</label>
+                    <input type="number" id="sauceSpice" min="0" max="8" required>
                 </div>
                 <div class="form-group">
                     <label>Description</label>
@@ -3389,7 +3389,8 @@
                 const tbody = document.getElementById('saucesTable');
 
                 tbody.innerHTML = sauces.map(sauce => {
-                    const flames = '🔥'.repeat(sauce.spice) + '❄️'.repeat(5 - sauce.spice);
+                    const spice = Math.min(sauce.spice || 0, 8);
+                    const flames = '🔥'.repeat(spice) + '❄️'.repeat(8 - spice);
                     return `
                         <tr>
                             <td><strong>${sauce.name}</strong></td>
