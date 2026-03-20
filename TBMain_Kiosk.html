@@ -1730,22 +1730,28 @@
             return h !== 'localhost' && h !== '127.0.0.1' && !h.match(/^192\.168\./) && !h.match(/^10\./) && !h.match(/^172\.(1[6-9]|2\d|3[01])\./);
         }
 
-        // Google Apps Script GET — TBMS와 동일한 패턴
+        // Google Apps Script GET — ★ v3.8: 프록시는 로컬 서버 환경에서만 사용, GitHub/remote에서는 직접 호출
         async function googleGet(action) {
-            // 프록시 서버가 있으면 프록시 우선 (ADMIN.command 실행 시)
-            if (location.protocol !== 'file:') {
+            // 로컬 서버 환경에서만 프록시 시도 (localhost, 192.168.x.x 등)
+            if (!isRemote()) {
                 try {
                     const pr = await fetch('/google?action=' + encodeURIComponent(action));
-                    if (pr.ok) return await pr.json();
+                    if (pr.ok) {
+                        const data = await pr.json();
+                        if (data && !data.error) return data;
+                    }
                 } catch(e) {}
             }
-            // 직접 호출 (TBMS 패턴: redirect:follow, resp.ok 체크 안함)
+            // 직접 Google Apps Script 호출 (GitHub Pages, file://, remote 환경)
+            console.log('[googleGet] Direct API call: action=' + action);
             try {
                 const url = GOOGLE_API + '?action=' + encodeURIComponent(action);
                 const r = await fetch(url, {redirect:'follow'});
-                return await r.json();
+                const data = await r.json();
+                console.log('[googleGet] Response:', action, '→', data ? 'OK' : 'empty', 'categories:', data?.categories?.length || 0);
+                return data;
             } catch(e) {
-                console.error('googleGet error:', e);
+                console.error('[googleGet] Direct API failed:', e);
                 throw e;
             }
         }
@@ -2396,11 +2402,17 @@
                     if (items.length === 0) {
                         summaryEl.innerHTML = '<span style="color:#999;">No menu items loaded. Click Refresh to load.</span>';
                     } else {
+                        // ★ 카테고리 id → name 매핑 (nameEn 우선)
+                        const catNameMap = {};
+                        categories.forEach(c => { if (c.id) catNameMap[c.id] = c.nameEn || c.name || c.id; });
+                        // 아이템의 categoryName도 fallback으로 수집
+                        items.forEach(i => { if (i.category && i.categoryName && !catNameMap[i.category]) catNameMap[i.category] = i.categoryName; });
                         const catMap = {};
                         const catItems = {};
                         items.forEach(item => {
-                            const cat = item.category || item.categoryName || 'Uncategorized';
-                            if (!catMap[cat]) { catMap[cat] = { count: 0, active: 0 }; catItems[cat] = []; }
+                            const catId = item.category || item.categoryName || 'Uncategorized';
+                            const cat = catNameMap[catId] || catId;
+                            if (!catMap[cat]) { catMap[cat] = { count: 0, active: 0, id: catId }; catItems[cat] = []; }
                             catMap[cat].count++;
                             if (item.active !== false && item.active !== 'false') catMap[cat].active++;
                             catItems[cat].push(item);
@@ -3851,6 +3863,7 @@
                     }
 
                     // Convert server format → admin localStorage format
+                    console.log('[Pull] Data received — categories:', data?.categories?.length || 0, 'items:', data?.items?.length || 0);
                     const catMap = {};
                     if (data.categories) {
                         data.categories.forEach(c => { catMap[c.id] = c.nameEn || c.name || c.id; });
