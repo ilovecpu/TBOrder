@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Admin v4.0 | 2026-03-19 | Admin PIN auth, Dashboard menu summary, Sauce sync, Allergens/Nutrition to Sheets, branchVisibility -->
+<!-- The Bap Admin v4.1 | 2026-03-19 | Allergens/Nutrition category filter + sheet init, Sauce sync fix -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -978,7 +978,7 @@
             </div>
             <button id="pinClearBtn" class="btn-secondary" style="width: 100%; margin-bottom: 8px;">Clear</button>
             <button id="pinEnterBtn" class="btn-primary" style="width: 100%;">Enter</button>
-            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v4.0</div>
+            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v4.1</div>
         </div>
     </div>
 
@@ -986,7 +986,7 @@
     <div class="container" id="mainContainer" style="display: none;">
         <!-- SIDEBAR -->
         <div class="sidebar">
-            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v4.0</span></div>
+            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v4.1</span></div>
             <div class="nav-menu">
                 <div class="nav-item active" data-section="dashboard">
                     <div class="nav-icon">📊</div>
@@ -1029,7 +1029,7 @@
                     <span>Logout</span>
                 </div>
             </div>
-            <div class="sidebar-footer">v4.0 | The Bap Group</div>
+            <div class="sidebar-footer">v4.1 | The Bap Group</div>
         </div>
 
         <!-- MAIN CONTENT -->
@@ -1072,7 +1072,7 @@
                         </div>
                     </div>
 
-                    <!-- ★ v4.0: 카테고리별 메뉴 요약 -->
+                    <!-- ★ v4.1: 카테고리별 메뉴 요약 -->
                     <div class="card" style="margin-top:16px;">
                         <h3 style="margin-bottom:12px;">Menu Summary by Category</h3>
                         <div id="dashMenuSummary" style="font-size:14px;color:#666;">Loading...</div>
@@ -1154,11 +1154,21 @@
 
                 <!-- ALLERGENS SECTION -->
                 <div class="content-section" id="section-allergens">
+                    <div style="margin-bottom:12px;">
+                        <select id="allergenCatFilter" onchange="app.renderAllergenMatrix()" style="padding:8px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;min-width:200px;">
+                            <option value="__all__">All Categories</option>
+                        </select>
+                    </div>
                     <div id="allergenMatrix"></div>
                 </div>
 
                 <!-- NUTRITION SECTION -->
                 <div class="content-section" id="section-nutrition">
+                    <div style="margin-bottom:12px;">
+                        <select id="nutritionCatFilter" onchange="app.renderNutritionTable()" style="padding:8px 12px;border-radius:8px;border:1px solid #ddd;font-size:14px;min-width:200px;">
+                            <option value="__all__">All Categories</option>
+                        </select>
+                    </div>
                     <table>
                         <thead>
                             <tr>
@@ -1258,6 +1268,17 @@
                                 <strong>Google API:</strong> Connected
                             </div>
                         </div>
+                    </div>
+
+                    <!-- ★ v4.1: Allergens/Nutrition 구글시트 초기화 -->
+                    <div class="card" style="margin-top:16px;">
+                        <h3>📋 Allergens / Nutrition → Google Sheets</h3>
+                        <p style="font-size:12px;color:#888;margin-top:4px;margin-bottom:12px">현재 메뉴 아이템을 기준으로 Allergens/Nutrition 시트를 초기화합니다. 이미 존재하는 아이템은 건드리지 않고, 새 아이템만 추가합니다.</p>
+                        <div style="display:flex;gap:8px;">
+                            <button class="btn-secondary" onclick="app.initAllergenSheet()" style="flex:1;padding:10px;font-size:13px;">⚠️ Init Allergens Sheet</button>
+                            <button class="btn-secondary" onclick="app.initNutritionSheet()" style="flex:1;padding:10px;font-size:13px;">📊 Init Nutrition Sheet</button>
+                        </div>
+                        <div id="initSheetStatus" style="margin-top:8px;font-size:12px;color:#059669;display:none;"></div>
                     </div>
                 </div>
 
@@ -1730,7 +1751,7 @@
             return h !== 'localhost' && h !== '127.0.0.1' && !h.match(/^192\.168\./) && !h.match(/^10\./) && !h.match(/^172\.(1[6-9]|2\d|3[01])\./);
         }
 
-        // Google Apps Script GET — ★ v4.0: 프록시는 로컬 서버 환경에서만 사용, GitHub/remote에서는 직접 호출
+        // Google Apps Script GET — ★ v4.1: 프록시는 로컬 서버 환경에서만 사용, GitHub/remote에서는 직접 호출
         async function googleGet(action) {
             // 로컬 서버 환경에서만 프록시 시도 (localhost, 192.168.x.x 등)
             if (!isRemote()) {
@@ -1833,7 +1854,7 @@
                 }
             },
 
-            // ★ v4.0: TBMS admin 유저 목록 (PIN 체크용)
+            // ★ v4.1: TBMS admin 유저 목록 (PIN 체크용)
             _adminUsers: [],
 
             _adminUsersLoaded: false,
@@ -1903,7 +1924,7 @@
                 const clearBtn = document.getElementById('pinClearBtn');
                 const enterBtn = document.getElementById('pinEnterBtn');
 
-                // ★ v4.0: TBMS admin 유저 로드
+                // ★ v4.1: TBMS admin 유저 로드
                 this._adminUsersPromise = this._loadAdminUsers();
 
                 pinBtns.forEach(btn => {
@@ -3473,8 +3494,23 @@
 
             // ALLERGENS
             renderAllergenMatrix() {
-                const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
+                const allItems = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
                 const allergens = JSON.parse(localStorage.getItem('tb_allergens') || '{}');
+                const categories = JSON.parse(localStorage.getItem('tb_categories') || '[]');
+                const catNameMap = {}; categories.forEach(c => { if (c.id) catNameMap[c.id] = c.nameEn || c.name || c.id; });
+
+                // 카테고리 필터 드롭다운 업데이트
+                const filterEl = document.getElementById('allergenCatFilter');
+                if (filterEl && filterEl.options.length <= 1) {
+                    const catIds = [...new Set(allItems.map(i => i.category || i.catId).filter(Boolean))];
+                    catIds.forEach(cid => {
+                        const opt = document.createElement('option');
+                        opt.value = cid; opt.textContent = catNameMap[cid] || cid;
+                        filterEl.appendChild(opt);
+                    });
+                }
+                const selectedCat = filterEl ? filterEl.value : '__all__';
+                const items = selectedCat === '__all__' ? allItems : allItems.filter(i => (i.category || i.catId) === selectedCat);
 
                 let html = '<div class="allergen-matrix">';
 
@@ -3486,7 +3522,7 @@
 
                 // Data rows
                 items.forEach(item => {
-                    html += `<div style="font-weight: 500; padding: 8px; font-size: 13px;">${item.nameEn}</div>`;
+                    html += `<div style="font-weight: 500; padding: 8px; font-size: 13px;">${item.nameEn || item.name || ''}</div>`;
 
                     ALLERGENS_LIST.forEach(allergen => {
                         const state = allergens[item.id] ? allergens[item.id][allergen] : 'free';
@@ -3516,8 +3552,23 @@
 
             // NUTRITION
             renderNutritionTable() {
-                const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
+                const allItems = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
                 const nutrition = JSON.parse(localStorage.getItem('tb_nutrition') || '{}');
+                const categories = JSON.parse(localStorage.getItem('tb_categories') || '[]');
+                const catNameMap = {}; categories.forEach(c => { if (c.id) catNameMap[c.id] = c.nameEn || c.name || c.id; });
+
+                // 카테고리 필터 드롭다운 업데이트
+                const filterEl = document.getElementById('nutritionCatFilter');
+                if (filterEl && filterEl.options.length <= 1) {
+                    const catIds = [...new Set(allItems.map(i => i.category || i.catId).filter(Boolean))];
+                    catIds.forEach(cid => {
+                        const opt = document.createElement('option');
+                        opt.value = cid; opt.textContent = catNameMap[cid] || cid;
+                        filterEl.appendChild(opt);
+                    });
+                }
+                const selectedCat = filterEl ? filterEl.value : '__all__';
+                const items = selectedCat === '__all__' ? allItems : allItems.filter(i => (i.category || i.catId) === selectedCat);
 
                 const tbody = document.getElementById('nutritionTable');
 
@@ -4050,6 +4101,38 @@
                 } catch (err) {
                     console.error('[Admin] Auto-sync failed:', err);
                 }
+            },
+
+            // ★ v4.1: Allergens 시트 초기화 — 새 아이템만 추가, 기존 유지
+            async initAllergenSheet() {
+                const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
+                const allergens = JSON.parse(localStorage.getItem('tb_allergens') || '{}');
+                let added = 0;
+                items.forEach(i => {
+                    if (!allergens[i.id]) { allergens[i.id] = {}; added++; }
+                });
+                localStorage.setItem('tb_allergens', JSON.stringify(allergens));
+                await this.autoSyncToServer();
+                const el = document.getElementById('initSheetStatus');
+                el.style.display = 'block';
+                el.textContent = `✅ Allergens: ${items.length}개 아이템 중 ${added}개 새로 추가, ${items.length - added}개 기존 유지 → Google Sheets 동기화 완료`;
+                this.renderAllergenMatrix();
+            },
+
+            // ★ v4.1: Nutrition 시트 초기화 — 새 아이템만 추가, 기존 유지
+            async initNutritionSheet() {
+                const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
+                const nutrition = JSON.parse(localStorage.getItem('tb_nutrition') || '{}');
+                let added = 0;
+                items.forEach(i => {
+                    if (!nutrition[i.id]) { nutrition[i.id] = { calories: 0, carbs: 0, protein: 0, fat: 0, sugar: 0 }; added++; }
+                });
+                localStorage.setItem('tb_nutrition', JSON.stringify(nutrition));
+                await this.autoSyncToServer();
+                const el = document.getElementById('initSheetStatus');
+                el.style.display = 'block';
+                el.textContent = `✅ Nutrition: ${items.length}개 아이템 중 ${added}개 새로 추가, ${items.length - added}개 기존 유지 → Google Sheets 동기화 완료`;
+                this.renderNutritionTable();
             },
 
             // SETTINGS
