@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Admin v4.1 | 2026-03-19 | Allergens/Nutrition category filter + sheet init, Sauce sync fix -->
+<!-- The Bap Admin v4.2 | 2026-03-19 | Allergens/Nutrition tab menu filter + sheet init, Sauce sync fix -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -978,7 +978,7 @@
             </div>
             <button id="pinClearBtn" class="btn-secondary" style="width: 100%; margin-bottom: 8px;">Clear</button>
             <button id="pinEnterBtn" class="btn-primary" style="width: 100%;">Enter</button>
-            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v4.1</div>
+            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v4.2</div>
         </div>
     </div>
 
@@ -986,7 +986,7 @@
     <div class="container" id="mainContainer" style="display: none;">
         <!-- SIDEBAR -->
         <div class="sidebar">
-            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v4.1</span></div>
+            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v4.2</span></div>
             <div class="nav-menu">
                 <div class="nav-item active" data-section="dashboard">
                     <div class="nav-icon">📊</div>
@@ -1029,7 +1029,7 @@
                     <span>Logout</span>
                 </div>
             </div>
-            <div class="sidebar-footer">v4.1 | The Bap Group</div>
+            <div class="sidebar-footer">v4.2 | The Bap Group</div>
         </div>
 
         <!-- MAIN CONTENT -->
@@ -1072,7 +1072,7 @@
                         </div>
                     </div>
 
-                    <!-- ★ v4.1: 카테고리별 메뉴 요약 -->
+                    <!-- ★ v4.2: 카테고리별 메뉴 요약 -->
                     <div class="card" style="margin-top:16px;">
                         <h3 style="margin-bottom:12px;">Menu Summary by Category</h3>
                         <div id="dashMenuSummary" style="font-size:14px;color:#666;">Loading...</div>
@@ -1262,7 +1262,7 @@
                         </div>
                     </div>
 
-                    <!-- ★ v4.1: Allergens/Nutrition 구글시트 초기화 -->
+                    <!-- ★ v4.2: Allergens/Nutrition 구글시트 초기화 -->
                     <div class="card" style="margin-top:16px;">
                         <h3>📋 Allergens / Nutrition → Google Sheets</h3>
                         <p style="font-size:12px;color:#888;margin-top:4px;margin-bottom:12px">현재 메뉴 아이템을 기준으로 Allergens/Nutrition 시트를 초기화합니다. 이미 존재하는 아이템은 건드리지 않고, 새 아이템만 추가합니다.</p>
@@ -1743,7 +1743,7 @@
             return h !== 'localhost' && h !== '127.0.0.1' && !h.match(/^192\.168\./) && !h.match(/^10\./) && !h.match(/^172\.(1[6-9]|2\d|3[01])\./);
         }
 
-        // Google Apps Script GET — ★ v4.1: 프록시는 로컬 서버 환경에서만 사용, GitHub/remote에서는 직접 호출
+        // Google Apps Script GET — ★ v4.2: 프록시는 로컬 서버 환경에서만 사용, GitHub/remote에서는 직접 호출
         async function googleGet(action) {
             // 로컬 서버 환경에서만 프록시 시도 (localhost, 192.168.x.x 등)
             if (!isRemote()) {
@@ -1846,7 +1846,7 @@
                 }
             },
 
-            // ★ v4.1: TBMS admin 유저 목록 (PIN 체크용)
+            // ★ v4.2: TBMS admin 유저 목록 (PIN 체크용)
             _adminUsers: [],
 
             _adminUsersLoaded: false,
@@ -1916,7 +1916,7 @@
                 const clearBtn = document.getElementById('pinClearBtn');
                 const enterBtn = document.getElementById('pinEnterBtn');
 
-                // ★ v4.1: TBMS admin 유저 로드
+                // ★ v4.2: TBMS admin 유저 로드
                 this._adminUsersPromise = this._loadAdminUsers();
 
                 pinBtns.forEach(btn => {
@@ -3492,7 +3492,7 @@
                 const catNameMap = {}; categories.forEach(c => { if (c.id) catNameMap[c.id] = c.nameEn || c.name || c.id; });
 
                 // 카테고리 필터 드롭다운 업데이트
-                // ★ v4.1: 탭 메뉴 렌더링
+                // ★ v4.2: 탭 메뉴 렌더링
                 const tabsEl = document.getElementById('allergenCatTabs');
                 if (!this._allergenCat) this._allergenCat = '__all__';
                 if (tabsEl) {
@@ -3549,7 +3549,7 @@
                 const categories = JSON.parse(localStorage.getItem('tb_categories') || '[]');
                 const catNameMap = {}; categories.forEach(c => { if (c.id) catNameMap[c.id] = c.nameEn || c.name || c.id; });
 
-                // ★ v4.1: 탭 메뉴 렌더링
+                // ★ v4.2: 탭 메뉴 렌더링
                 const tabsEl = document.getElementById('nutritionCatTabs');
                 if (!this._nutritionCat) this._nutritionCat = '__all__';
                 if (tabsEl) {
@@ -4094,7 +4094,7 @@
                 }
             },
 
-            // ★ v4.1: Allergens 시트 초기화 — 새 아이템만 추가, 기존 유지
+            // ★ v4.2: Allergens 시트 초기화 — 새 아이템만 추가, 기존 유지
             async initAllergenSheet() {
                 const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
                 const allergens = JSON.parse(localStorage.getItem('tb_allergens') || '{}');
@@ -4110,7 +4110,7 @@
                 this.renderAllergenMatrix();
             },
 
-            // ★ v4.1: Nutrition 시트 초기화 — 새 아이템만 추가, 기존 유지
+            // ★ v4.2: Nutrition 시트 초기화 — 새 아이템만 추가, 기존 유지
             async initNutritionSheet() {
                 const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
                 const nutrition = JSON.parse(localStorage.getItem('tb_nutrition') || '{}');
