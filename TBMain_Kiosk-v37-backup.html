@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- The Bap Admin v4.4 | 2026-03-19 | Branch Menu tab buttons, Allergens/Nutrition UK14 order -->
+<!-- The Bap Admin v3.7 | 2026-03-12 | Category/item dedup on pull + new Google API URL -->
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -963,7 +963,7 @@
         <div class="pin-lock-panel">
             <div class="pin-lock-logo">The Bap</div>
             <div class="pin-lock-title">Admin Access</div>
-            <input type="password" id="pinInput" class="pin-input" maxlength="10" placeholder="••••" autocomplete="off">
+            <input type="password" id="pinInput" class="pin-input" maxlength="4" placeholder="••••" autocomplete="off">
             <div class="pin-keypad">
                 <button class="pin-btn btn-secondary">1</button>
                 <button class="pin-btn btn-secondary">2</button>
@@ -978,7 +978,7 @@
             </div>
             <button id="pinClearBtn" class="btn-secondary" style="width: 100%; margin-bottom: 8px;">Clear</button>
             <button id="pinEnterBtn" class="btn-primary" style="width: 100%;">Enter</button>
-            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v4.4</div>
+            <div style="margin-top:16px;font-size:11px;color:#9CA3AF">Admin v3.7</div>
         </div>
     </div>
 
@@ -986,7 +986,7 @@
     <div class="container" id="mainContainer" style="display: none;">
         <!-- SIDEBAR -->
         <div class="sidebar">
-            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v4.4</span></div>
+            <div class="logo">The Bap Admin <span style="font-size:10px;color:rgba(255,255,255,.5);font-weight:400">v3.7</span></div>
             <div class="nav-menu">
                 <div class="nav-item active" data-section="dashboard">
                     <div class="nav-icon">📊</div>
@@ -1020,16 +1020,20 @@
                     <div class="nav-icon">🏢</div>
                     <span>Branches</span>
                 </div>
+                <div class="nav-item" data-section="orders">
+                    <div class="nav-icon">📦</div>
+                    <span>Orders</span>
+                </div>
                 <div class="nav-item" data-section="sync">
                     <div class="nav-icon">☁️</div>
                     <span>Sync</span>
                 </div>
-                <div class="nav-item" onclick="app.logout()" style="cursor:pointer;margin-top:auto;">
-                    <div class="nav-icon">🚪</div>
-                    <span>Logout</span>
+                <div class="nav-item" data-section="settings">
+                    <div class="nav-icon">⚙️</div>
+                    <span>Settings</span>
                 </div>
             </div>
-            <div class="sidebar-footer">v4.4 | The Bap Group</div>
+            <div class="sidebar-footer">v3.7 | The Bap Group</div>
         </div>
 
         <!-- MAIN CONTENT -->
@@ -1055,27 +1059,45 @@
                     </div>
                     <div class="stats-grid">
                         <div class="stat-card">
-                            <div class="stat-label">Menu Items</div>
-                            <div class="stat-value" id="statMenuItems">0</div>
+                            <div class="stat-label">Total Orders</div>
+                            <div class="stat-value" id="statOrders">0</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-label">Categories</div>
-                            <div class="stat-value" id="statCategories">0</div>
+                            <div class="stat-label">Revenue Today</div>
+                            <div class="stat-value" id="statRevenue">£0</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-label">Branches</div>
-                            <div class="stat-value" id="statBranches">0</div>
+                            <div class="stat-label">Avg Order Value</div>
+                            <div class="stat-value" id="statAvg">£0</div>
                         </div>
                         <div class="stat-card">
-                            <div class="stat-label">Sauces</div>
-                            <div class="stat-value" id="statSauces">0</div>
+                            <div class="stat-label">Active Kiosks</div>
+                            <div class="stat-value" id="statKiosks">0</div>
                         </div>
                     </div>
 
-                    <!-- ★ v4.4: 카테고리별 메뉴 요약 -->
-                    <div class="card" style="margin-top:16px;">
-                        <h3 style="margin-bottom:12px;">Menu Summary by Category</h3>
-                        <div id="dashMenuSummary" style="font-size:14px;color:#666;">Loading...</div>
+                    <div class="card">
+                        <div style="margin-bottom: 16px;">
+                            <h3>Recent Orders</h3>
+                            <p style="color: #999; font-size: 13px; margin-top: 4px;">All branches</p>
+                        </div>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Order ID</th>
+                                    <th>Branch</th>
+                                    <th>Items</th>
+                                    <th>Total</th>
+                                    <th>Status</th>
+                                    <th>Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="recentOrdersTable">
+                                <tr>
+                                    <td colspan="6" style="text-align: center; color: #999;">No orders yet</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
@@ -1123,7 +1145,12 @@
 
                 <!-- BRANCH MENU SECTION -->
                 <div class="content-section" id="section-branchMenu">
-                    <div id="branchMenuTabs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
+                    <div class="sector-controls">
+                        <label>Select Branch:</label>
+                        <select id="branchMenuSelector" onchange="app.loadBranchMenuSettings()">
+                            <option value="">Choose a branch...</option>
+                        </select>
+                    </div>
                     <div id="branchMenuTable"></div>
                 </div>
 
@@ -1149,22 +1176,20 @@
 
                 <!-- ALLERGENS SECTION -->
                 <div class="content-section" id="section-allergens">
-                    <div id="allergenCatTabs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
                     <div id="allergenMatrix"></div>
                 </div>
 
                 <!-- NUTRITION SECTION -->
                 <div class="content-section" id="section-nutrition">
-                    <div id="nutritionCatTabs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;"></div>
                     <table>
                         <thead>
                             <tr>
                                 <th>Item</th>
+                                <th>Calories</th>
                                 <th>Carbs (g)</th>
                                 <th>Protein (g)</th>
                                 <th>Fat (g)</th>
                                 <th>Sugar (g)</th>
-                                <th>Calories (kcal)</th>
                             </tr>
                         </thead>
                         <tbody id="nutritionTable"></tbody>
@@ -1255,17 +1280,6 @@
                                 <strong>Google API:</strong> Connected
                             </div>
                         </div>
-                    </div>
-
-                    <!-- ★ v4.4: Allergens/Nutrition 구글시트 초기화 -->
-                    <div class="card" style="margin-top:16px;">
-                        <h3>📋 Allergens / Nutrition → Google Sheets</h3>
-                        <p style="font-size:12px;color:#888;margin-top:4px;margin-bottom:12px">현재 메뉴 아이템을 기준으로 Allergens/Nutrition 시트를 초기화합니다. 이미 존재하는 아이템은 건드리지 않고, 새 아이템만 추가합니다.</p>
-                        <div style="display:flex;gap:8px;">
-                            <button class="btn-secondary" onclick="app.initAllergenSheet()" style="flex:1;padding:10px;font-size:13px;">⚠️ Init Allergens Sheet</button>
-                            <button class="btn-secondary" onclick="app.initNutritionSheet()" style="flex:1;padding:10px;font-size:13px;">📊 Init Nutrition Sheet</button>
-                        </div>
-                        <div id="initSheetStatus" style="margin-top:8px;font-size:12px;color:#059669;display:none;"></div>
                     </div>
                 </div>
 
@@ -1658,8 +1672,8 @@
                     <input type="text" id="sauceNameKr" required>
                 </div>
                 <div class="form-group">
-                    <label>Spice Level (0-8)</label>
-                    <input type="number" id="sauceSpice" min="0" max="8" required>
+                    <label>Spice Level (0-5)</label>
+                    <input type="number" id="sauceSpice" min="0" max="5" required>
                 </div>
                 <div class="form-group">
                     <label>Description</label>
@@ -1722,10 +1736,10 @@
             { id: 'SA008', name: 'Yuzu Ponzu', nameKr: '유자 퐁즈', spice: 1, description: 'Citrus Japanese sauce', allergens: 'Soy, Fish' }
         ];
 
-        const ALLERGENS_LIST = ['Celery', 'Gluten', 'Crustaceans', 'Eggs', 'Fish', 'Lupin', 'Milk', 'Molluscs', 'Mustard', 'Nuts', 'Peanuts', 'Sesame', 'Soya', 'Sulphur Dioxide'];
+        const ALLERGENS_LIST = ['Sesame', 'Soy', 'Egg', 'Peanuts', 'Tree Nuts', 'Milk', 'Gluten', 'Fish', 'Shellfish', 'Mustard', 'Celery', 'Lupin', 'Molluscs', 'Sulphites'];
 
         // ─── Google Apps Script API (직접 통신) ───
-        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbyRtWRXXRJFR5EYLy4E4H2h5NRohMJyWZX_epjCdymIseT9npaviRaOJRKX7gwOqM-foA/exec';
+        const GOOGLE_API = 'https://script.google.com/macros/s/AKfycbzoEItk-hU2BPDyj_Dy1Vwxzu-R7PQoZYVzwzVsdPuTJWYCykVIWdWTwG8nieWCwaUD7w/exec';
 
         // 원격 모드 감지 (GitHub Pages, file://, ?remote=true 등)
         function isRemote() {
@@ -1738,28 +1752,22 @@
             return h !== 'localhost' && h !== '127.0.0.1' && !h.match(/^192\.168\./) && !h.match(/^10\./) && !h.match(/^172\.(1[6-9]|2\d|3[01])\./);
         }
 
-        // Google Apps Script GET — ★ v4.4: 프록시는 로컬 서버 환경에서만 사용, GitHub/remote에서는 직접 호출
+        // Google Apps Script GET — TBMS와 동일한 패턴
         async function googleGet(action) {
-            // 로컬 서버 환경에서만 프록시 시도 (localhost, 192.168.x.x 등)
-            if (!isRemote()) {
+            // 프록시 서버가 있으면 프록시 우선 (ADMIN.command 실행 시)
+            if (location.protocol !== 'file:') {
                 try {
                     const pr = await fetch('/google?action=' + encodeURIComponent(action));
-                    if (pr.ok) {
-                        const data = await pr.json();
-                        if (data && !data.error) return data;
-                    }
+                    if (pr.ok) return await pr.json();
                 } catch(e) {}
             }
-            // 직접 Google Apps Script 호출 (GitHub Pages, file://, remote 환경)
-            console.log('[googleGet] Direct API call: action=' + action);
+            // 직접 호출 (TBMS 패턴: redirect:follow, resp.ok 체크 안함)
             try {
                 const url = GOOGLE_API + '?action=' + encodeURIComponent(action);
                 const r = await fetch(url, {redirect:'follow'});
-                const data = await r.json();
-                console.log('[googleGet] Response:', action, '→', data ? 'OK' : 'empty', 'categories:', data?.categories?.length || 0);
-                return data;
+                return await r.json();
             } catch(e) {
-                console.error('[googleGet] Direct API failed:', e);
+                console.error('googleGet error:', e);
                 throw e;
             }
         }
@@ -1841,69 +1849,6 @@
                 }
             },
 
-            // ★ v4.4: TBMS admin 유저 목록 (PIN 체크용)
-            _adminUsers: [],
-
-            _adminUsersLoaded: false,
-            _adminUsersPromise: null,
-
-            async _loadAdminUsers() {
-                console.log('[Admin] Loading admin users...');
-                const _filterAdmins = (users) => users.filter(u => {
-                    const role = (u.role || '').toLowerCase().replace(/[_\-\s]+/g, '');
-                    return role === 'admin' || role === 'seniormanager';
-                });
-                // 1) TBMS API 직접 호출 (GitHub Pages 환경 — 서버 없음)
-                try {
-                    const TBMS_API = 'https://script.google.com/macros/s/AKfycby4irMFSDru9chUIforWPoeMHyDhd1CRrfoPJk65SBplyRCpkCDFtf4xkpb9ESr4y4z/exec';
-                    const url = TBMS_API + '?action=getSheet&sheet=Users&apikey=' + encodeURIComponent('tBaP2026xKr!mGt9Qz');
-                    console.log('[Admin] Fetching TBMS Users...');
-                    const resp = await fetch(url, {redirect:'follow'});
-                    const data = await resp.json();
-                    console.log('[Admin] TBMS response:', JSON.stringify(data).substring(0, 200));
-                    const users = data.data || data.rows || data || [];
-                    if (Array.isArray(users) && users.length > 0) {
-                        this._adminUsers = _filterAdmins(users);
-                        console.log('[Admin] ✅ Admin users from TBMS API:', this._adminUsers.length);
-                        this._adminUsers.forEach(u => console.log('  👤', u.name || u.username, 'role:', u.role, 'pwd:', (u.password||'').substring(0,2) + '**'));
-                        this._adminUsersLoaded = true;
-                        return;
-                    }
-                } catch(e) { console.warn('[Admin] TBMS API failed:', e.message); }
-                // 2) Fallback: 서버 offline-data (로컬 서버 환경)
-                try {
-                    const resp = await fetch('/api/offline-data');
-                    if (resp.ok) {
-                        const data = await resp.json();
-                        if (data.pinUsers && data.pinUsers.users) {
-                            this._adminUsers = _filterAdmins(data.pinUsers.users);
-                            console.log('[Admin] ✅ Admin users from server:', this._adminUsers.length);
-                            this._adminUsers.forEach(u => console.log('  👤', u.name || u.username, 'role:', u.role));
-                            this._adminUsersLoaded = true;
-                            return;
-                        }
-                    }
-                } catch(e) { console.warn('[Admin] Server offline-data failed:', e.message); }
-                console.warn('[Admin] ⚠️ No admin users loaded — only local PIN will work');
-                this._adminUsersLoaded = true;
-            },
-
-            _checkAdminPin(pin) {
-                if (!pin || pin === '') return false;
-                // 1) TBMS admin 유저 password 체크
-                const found = this._adminUsers.find(u => {
-                    const pwd = String(u.password || u.pin || '').trim();
-                    return pwd === pin;
-                });
-                if (found) {
-                    console.log('[Admin] PIN matched:', found.name || found.username, 'role:', found.role);
-                    return true;
-                }
-                // 2) Fallback: 기존 로컬 PIN
-                if (this.currentPin && pin === this.currentPin) return true;
-                return false;
-            },
-
             setupPinLock() {
                 const pinOverlay = document.getElementById('pinLockOverlay');
                 const pinInput = document.getElementById('pinInput');
@@ -1911,13 +1856,10 @@
                 const clearBtn = document.getElementById('pinClearBtn');
                 const enterBtn = document.getElementById('pinEnterBtn');
 
-                // ★ v4.4: TBMS admin 유저 로드
-                this._adminUsersPromise = this._loadAdminUsers();
-
                 pinBtns.forEach(btn => {
                     btn.addEventListener('click', () => {
                         const num = btn.textContent.trim();
-                        if (pinInput.value.length < 10) {
+                        if (pinInput.value.length < 4) {
                             pinInput.value += num;
                         }
                     });
@@ -1928,18 +1870,12 @@
                     pinInput.focus();
                 });
 
-                enterBtn.addEventListener('click', async () => {
-                    // 유저 데이터 로딩 안 끝났으면 기다림
-                    if (!this._adminUsersLoaded && this._adminUsersPromise) {
-                        enterBtn.textContent = 'Loading...';
-                        await this._adminUsersPromise;
-                        enterBtn.textContent = 'Enter';
-                    }
-                    if (this._checkAdminPin(pinInput.value)) {
+                enterBtn.addEventListener('click', () => {
+                    if (pinInput.value === this.currentPin) {
                         pinOverlay.style.display = 'none';
                         document.getElementById('mainContainer').style.display = 'flex';
                     } else {
-                        this.showToast('Invalid PIN — Admin access required', 'error');
+                        this.showToast('Invalid PIN', 'error');
                         pinInput.value = '';
                         pinInput.focus();
                     }
@@ -1994,48 +1930,6 @@
             ws: null,
             wsReconnectTimer: null,
             liveOrders: [],  // 서버에서 받은 주문 목록
-
-            logout() {
-                document.getElementById('mainContainer').style.display = 'none';
-                document.getElementById('pinLockOverlay').style.display = 'flex';
-                const pinInput = document.getElementById('pinInput');
-                if (pinInput) { pinInput.value = ''; pinInput.focus(); }
-            },
-
-            _toggleCatDetail(cat, clickedRow) {
-                const detailRow = clickedRow.nextElementSibling;
-                if (!detailRow) return;
-                const isOpen = detailRow.style.display !== 'none';
-                // 닫기
-                if (isOpen) {
-                    detailRow.style.display = 'none';
-                    clickedRow.querySelector('td').textContent = '▶ ' + cat;
-                    return;
-                }
-                // 열기 — 아이템 리스트 렌더
-                clickedRow.querySelector('td').textContent = '▼ ' + cat;
-                const catItems = (window._dashCatItems || {})[cat] || [];
-                const fp = v => '£' + Number(v||0).toFixed(2);
-                detailRow.querySelector('td').innerHTML = `
-                    <table style="width:100%;border-collapse:collapse;margin-top:4px;background:#FAFAFA;border-radius:8px;">
-                        <thead><tr style="border-bottom:1px solid #ddd;">
-                            <th style="text-align:left;padding:6px 8px;font-size:11px;color:#888;">Item</th>
-                            <th style="text-align:right;padding:6px 8px;font-size:11px;color:#888;">Price</th>
-                            <th style="text-align:center;padding:6px 8px;font-size:11px;color:#888;">Status</th>
-                        </tr></thead>
-                        <tbody>${catItems.map(i => {
-                            const name = i.nameEn || i.name || i.id || '—';
-                            const price = i.price || i.basePrice || 0;
-                            const active = i.active !== false && i.active !== 'false';
-                            return `<tr style="border-bottom:1px solid #f0f0f0;">
-                                <td style="padding:6px 8px;font-size:13px;">${name}</td>
-                                <td style="text-align:right;padding:6px 8px;font-size:13px;font-weight:600;">${fp(price)}</td>
-                                <td style="text-align:center;padding:6px 8px;font-size:12px;color:${active ? '#059669' : '#DC2626'}">${active ? 'Active' : 'Inactive'}</td>
-                            </tr>`;
-                        }).join('')}</tbody>
-                    </table>`;
-                detailRow.style.display = '';
-            },
 
             setupBroadcastChannel() {
                 // BroadcastChannel (같은 브라우저 탭 간)
@@ -2393,62 +2287,42 @@
             },
 
             updateDashboard() {
+                const orders = this.liveOrders;
                 const branches = JSON.parse(localStorage.getItem('tb_branches') || '[]');
-                const items = JSON.parse(localStorage.getItem('tb_menu_items') || localStorage.getItem('tb_menuItems') || '[]');
-                const categories = JSON.parse(localStorage.getItem('tb_categories') || '[]');
-                const sauces = JSON.parse(localStorage.getItem('tb_sauces') || '[]');
 
-                const el = (id) => document.getElementById(id);
-                if (el('statMenuItems')) el('statMenuItems').textContent = items.length;
-                if (el('statCategories')) el('statCategories').textContent = categories.length;
-                if (el('statBranches')) el('statBranches').textContent = branches.filter(b => b.active !== false).length;
-                if (el('statSauces')) el('statSauces').textContent = sauces.length;
+                let totalOrders = orders.length;
+                let revenue = orders.reduce((sum, order) => sum + (order.total || order.subtotal || 0), 0);
+                let avgValue = totalOrders > 0 ? revenue / totalOrders : 0;
+                let activeKiosks = branches.filter(b => b.active).length;
 
-                // 카테고리별 메뉴 요약
-                const summaryEl = el('dashMenuSummary');
-                if (summaryEl) {
-                    if (items.length === 0) {
-                        summaryEl.innerHTML = '<span style="color:#999;">No menu items loaded. Click Refresh to load.</span>';
-                    } else {
-                        // ★ 카테고리 id → name 매핑 (nameEn 우선)
-                        const catNameMap = {};
-                        categories.forEach(c => { if (c.id) catNameMap[c.id] = c.nameEn || c.name || c.id; });
-                        // 아이템의 categoryName도 fallback으로 수집
-                        items.forEach(i => { if (i.category && i.categoryName && !catNameMap[i.category]) catNameMap[i.category] = i.categoryName; });
-                        const catMap = {};
-                        const catItems = {};
-                        items.forEach(item => {
-                            const catId = item.category || item.categoryName || 'Uncategorized';
-                            const cat = catNameMap[catId] || catId;
-                            if (!catMap[cat]) { catMap[cat] = { count: 0, active: 0, id: catId }; catItems[cat] = []; }
-                            catMap[cat].count++;
-                            if (item.active !== false && item.active !== 'false') catMap[cat].active++;
-                            catItems[cat].push(item);
-                        });
-                        // 전역에 저장 (클릭 이벤트에서 사용)
-                        window._dashCatItems = catItems;
-                        const rows = Object.entries(catMap).sort((a,b) => b[1].count - a[1].count);
-                        summaryEl.innerHTML = `
-                            <table style="width:100%;border-collapse:collapse;">
-                                <thead><tr style="border-bottom:2px solid #eee;">
-                                    <th style="text-align:left;padding:8px;font-size:13px;color:#666;">Category</th>
-                                    <th style="text-align:center;padding:8px;font-size:13px;color:#666;">Items</th>
-                                    <th style="text-align:center;padding:8px;font-size:13px;color:#666;">Active</th>
-                                </tr></thead>
-                                <tbody>${rows.map(([cat, d]) => `
-                                    <tr style="border-bottom:1px solid #f3f3f3;cursor:pointer;" onclick="app._toggleCatDetail('${cat.replace(/'/g,"\\'")}', this)">
-                                        <td style="padding:8px;font-weight:600;">▶ ${cat}</td>
-                                        <td style="text-align:center;padding:8px;">${d.count}</td>
-                                        <td style="text-align:center;padding:8px;color:${d.active === d.count ? '#059669' : '#D97706'}">${d.active}</td>
-                                    </tr>
-                                    <tr class="dash-cat-detail" data-cat="${cat}" style="display:none;">
-                                        <td colspan="3" style="padding:0 8px 12px 24px;"></td>
-                                    </tr>`).join('')}
-                                </tbody>
-                            </table>
-                            <div style="margin-top:8px;font-size:12px;color:#999;">Total: ${items.length} items across ${rows.length} categories</div>`;
-                    }
+                document.getElementById('statOrders').textContent = totalOrders;
+                document.getElementById('statRevenue').textContent = '£' + revenue.toFixed(2);
+                document.getElementById('statAvg').textContent = '£' + avgValue.toFixed(2);
+                document.getElementById('statKiosks').textContent = activeKiosks;
+
+                this.renderRecentOrders();
+            },
+
+            renderRecentOrders() {
+                const orders = this.liveOrders;
+                const tbody = document.getElementById('recentOrdersTable');
+                const recent = orders.slice(-5).reverse();
+
+                if (recent.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: #999;">No orders yet</td></tr>';
+                    return;
                 }
+
+                tbody.innerHTML = recent.map(order => `
+                    <tr>
+                        <td><strong>${order.orderNumber || '-'}</strong></td>
+                        <td>${order.branchCode || '-'}</td>
+                        <td>${order.items ? order.items.length : 0} items</td>
+                        <td>£${(order.total || order.subtotal || 0).toFixed(2)}</td>
+                        <td><span class="order-status-badge order-status-${order.status}">${order.status || 'pending'}</span></td>
+                        <td>${order.createdAt ? new Date(order.createdAt).toLocaleTimeString('en-GB') : '-'}</td>
+                    </tr>
+                `).join('');
             },
 
             // BRANCHES
@@ -3272,19 +3146,15 @@
 
             // BRANCH MENU SETTINGS
             populateBranchMenuSelector() {
-                const branches = JSON.parse(localStorage.getItem('tb_branches') || '[]').filter(b => b.active !== false);
-                const tabsEl = document.getElementById('branchMenuTabs');
-                if (!tabsEl) return;
-                if (!this._branchMenuCode && branches.length > 0) this._branchMenuCode = branches[0].code;
-                const tabStyle = (active) => `padding:8px 16px;border-radius:20px;border:none;font-size:13px;font-weight:${active?'700':'500'};cursor:pointer;background:${active?'#1D4ED8':'#F3F4F6'};color:${active?'#fff':'#374151'};transition:all .2s;`;
-                tabsEl.innerHTML = branches.map(b =>
-                    `<button style="${tabStyle(this._branchMenuCode===b.code)}" onclick="app._branchMenuCode='${b.code}';app.populateBranchMenuSelector();app.loadBranchMenuSettings()">${b.name}</button>`
-                ).join('');
-                this.loadBranchMenuSettings();
+                const branches = JSON.parse(localStorage.getItem('tb_branches') || '[]');
+                const selector = document.getElementById('branchMenuSelector');
+
+                selector.innerHTML = '<option value="">Choose a branch...</option>' +
+                    branches.map(b => `<option value="${b.code}">${b.name}</option>`).join('');
             },
 
             loadBranchMenuSettings() {
-                const branchCode = this._branchMenuCode;
+                const branchCode = document.getElementById('branchMenuSelector').value;
                 if (!branchCode) {
                     document.getElementById('branchMenuTable').innerHTML = '<p style="color: #999;">Select a branch to view menu settings</p>';
                     return;
@@ -3401,15 +3271,14 @@
                 const tbody = document.getElementById('saucesTable');
 
                 tbody.innerHTML = sauces.map(sauce => {
-                    const spice = Math.min(sauce.spiceLevel || sauce.spice || 0, 8);
-                    const flames = '🔥'.repeat(spice) + '❄️'.repeat(8 - spice);
+                    const flames = '🔥'.repeat(sauce.spice) + '❄️'.repeat(5 - sauce.spice);
                     return `
                         <tr>
-                            <td><strong>${sauce.nameEn || sauce.name || ''}</strong></td>
-                            <td>${sauce.nameKr || ''}</td>
+                            <td><strong>${sauce.name}</strong></td>
+                            <td>${sauce.nameKr}</td>
                             <td><span class="flame">${flames}</span></td>
-                            <td>${sauce.description || ''}</td>
-                            <td style="font-size: 12px; color: #666;">${sauce.allergens || ''}</td>
+                            <td>${sauce.description}</td>
+                            <td style="font-size: 12px; color: #666;">${sauce.allergens}</td>
                             <td>
                                 <button class="btn-secondary btn-small" onclick="app.editSauce('${sauce.id}')">Edit</button>
                                 <button class="btn-danger btn-small" onclick="app.deleteSauce('${sauce.id}')">Delete</button>
@@ -3431,11 +3300,11 @@
                 if (!sauce) return;
 
                 this.editingSauceId = id;
-                document.getElementById('sauceName').value = sauce.nameEn || sauce.name || '';
-                document.getElementById('sauceNameKr').value = sauce.nameKr || '';
-                document.getElementById('sauceSpice').value = sauce.spiceLevel || sauce.spice || 0;
-                document.getElementById('sauceDescription').value = sauce.description || '';
-                document.getElementById('sauceAllergens').value = sauce.allergens || '';
+                document.getElementById('sauceName').value = sauce.name;
+                document.getElementById('sauceNameKr').value = sauce.nameKr;
+                document.getElementById('sauceSpice').value = sauce.spice;
+                document.getElementById('sauceDescription').value = sauce.description;
+                document.getElementById('sauceAllergens').value = sauce.allergens;
 
                 document.getElementById('sauceModal').classList.add('active');
             },
@@ -3445,9 +3314,9 @@
 
                 const sauceData = {
                     id: this.editingSauceId || 'SA' + Date.now(),
-                    nameEn: document.getElementById('sauceName').value,
+                    name: document.getElementById('sauceName').value,
                     nameKr: document.getElementById('sauceNameKr').value,
-                    spiceLevel: parseInt(document.getElementById('sauceSpice').value),
+                    spice: parseInt(document.getElementById('sauceSpice').value),
                     description: document.getElementById('sauceDescription').value,
                     allergens: document.getElementById('sauceAllergens').value
                 };
@@ -3462,8 +3331,7 @@
                 localStorage.setItem('tb_sauces', JSON.stringify(sauces));
                 this.closeSauceModal();
                 this.renderSauces();
-                this.autoSyncToServer();
-                this.showToast('Sauce saved & synced', 'success');
+                this.showToast('Sauce saved', 'success');
             },
 
             async deleteSauce(id) {
@@ -3474,8 +3342,7 @@
                 localStorage.setItem('tb_sauces', JSON.stringify(sauces));
 
                 this.renderSauces();
-                this.autoSyncToServer();
-                this.showToast('Sauce deleted & synced', 'success');
+                this.showToast('Sauce deleted', 'success');
             },
 
             closeSauceModal() {
@@ -3485,23 +3352,8 @@
 
             // ALLERGENS
             renderAllergenMatrix() {
-                const allItems = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
+                const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
                 const allergens = JSON.parse(localStorage.getItem('tb_allergens') || '{}');
-                const categories = JSON.parse(localStorage.getItem('tb_categories') || '[]');
-                const catNameMap = {}; categories.forEach(c => { if (c.id) catNameMap[c.id] = c.nameEn || c.name || c.id; });
-
-                // 카테고리 필터 드롭다운 업데이트
-                // ★ v4.4: 탭 메뉴 렌더링
-                const tabsEl = document.getElementById('allergenCatTabs');
-                if (!this._allergenCat) this._allergenCat = '__all__';
-                if (tabsEl) {
-                    const catIds = [...new Set(allItems.map(i => i.category || i.catId).filter(Boolean))];
-                    const tabStyle = (active) => `padding:8px 16px;border-radius:20px;border:none;font-size:13px;font-weight:${active?'700':'500'};cursor:pointer;background:${active?'#1D4ED8':'#F3F4F6'};color:${active?'#fff':'#374151'};transition:all .2s;`;
-                    tabsEl.innerHTML = `<button style="${tabStyle(this._allergenCat==='__all__')}" onclick="app._allergenCat='__all__';app.renderAllergenMatrix()">All</button>` +
-                        catIds.map(cid => `<button style="${tabStyle(this._allergenCat===cid)}" onclick="app._allergenCat='${cid}';app.renderAllergenMatrix()">${catNameMap[cid]||cid}</button>`).join('');
-                }
-                const selectedCat = this._allergenCat || '__all__';
-                const items = selectedCat === '__all__' ? allItems : allItems.filter(i => (i.category || i.catId) === selectedCat);
 
                 let html = '<div class="allergen-matrix">';
 
@@ -3513,7 +3365,7 @@
 
                 // Data rows
                 items.forEach(item => {
-                    html += `<div style="font-weight: 500; padding: 8px; font-size: 13px;">${item.nameEn || item.name || ''}</div>`;
+                    html += `<div style="font-weight: 500; padding: 8px; font-size: 13px;">${item.nameEn}</div>`;
 
                     ALLERGENS_LIST.forEach(allergen => {
                         const state = allergens[item.id] ? allergens[item.id][allergen] : 'free';
@@ -3543,22 +3395,8 @@
 
             // NUTRITION
             renderNutritionTable() {
-                const allItems = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
+                const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
                 const nutrition = JSON.parse(localStorage.getItem('tb_nutrition') || '{}');
-                const categories = JSON.parse(localStorage.getItem('tb_categories') || '[]');
-                const catNameMap = {}; categories.forEach(c => { if (c.id) catNameMap[c.id] = c.nameEn || c.name || c.id; });
-
-                // ★ v4.4: 탭 메뉴 렌더링
-                const tabsEl = document.getElementById('nutritionCatTabs');
-                if (!this._nutritionCat) this._nutritionCat = '__all__';
-                if (tabsEl) {
-                    const catIds = [...new Set(allItems.map(i => i.category || i.catId).filter(Boolean))];
-                    const tabStyle = (active) => `padding:8px 16px;border-radius:20px;border:none;font-size:13px;font-weight:${active?'700':'500'};cursor:pointer;background:${active?'#1D4ED8':'#F3F4F6'};color:${active?'#fff':'#374151'};transition:all .2s;`;
-                    tabsEl.innerHTML = `<button style="${tabStyle(this._nutritionCat==='__all__')}" onclick="app._nutritionCat='__all__';app.renderNutritionTable()">All</button>` +
-                        catIds.map(cid => `<button style="${tabStyle(this._nutritionCat===cid)}" onclick="app._nutritionCat='${cid}';app.renderNutritionTable()">${catNameMap[cid]||cid}</button>`).join('');
-                }
-                const selectedCat = this._nutritionCat || '__all__';
-                const items = selectedCat === '__all__' ? allItems : allItems.filter(i => (i.category || i.catId) === selectedCat);
 
                 const tbody = document.getElementById('nutritionTable');
 
@@ -3568,11 +3406,11 @@
                     return `
                         <tr>
                             <td><strong>${item.nameEn}</strong></td>
+                            <td><input type="number" value="${nut.calories}" onchange="app.updateNutrition('${item.id}', 'calories', this.value)" style="width: 80px;"></td>
                             <td><input type="number" step="0.1" value="${nut.carbs}" onchange="app.updateNutrition('${item.id}', 'carbs', this.value)" style="width: 80px;"></td>
                             <td><input type="number" step="0.1" value="${nut.protein}" onchange="app.updateNutrition('${item.id}', 'protein', this.value)" style="width: 80px;"></td>
                             <td><input type="number" step="0.1" value="${nut.fat}" onchange="app.updateNutrition('${item.id}', 'fat', this.value)" style="width: 80px;"></td>
                             <td><input type="number" step="0.1" value="${nut.sugar}" onchange="app.updateNutrition('${item.id}', 'sugar', this.value)" style="width: 80px;"></td>
-                            <td><input type="number" value="${nut.calories}" onchange="app.updateNutrition('${item.id}', 'calories', this.value)" style="width: 80px;"></td>
                         </tr>
                     `;
                 }).join('');
@@ -3907,7 +3745,6 @@
                     }
 
                     // Convert server format → admin localStorage format
-                    console.log('[Pull] Data received — categories:', data?.categories?.length || 0, 'items:', data?.items?.length || 0);
                     const catMap = {};
                     if (data.categories) {
                         data.categories.forEach(c => { catMap[c.id] = c.nameEn || c.name || c.id; });
@@ -4091,38 +3928,6 @@
                 } catch (err) {
                     console.error('[Admin] Auto-sync failed:', err);
                 }
-            },
-
-            // ★ v4.4: Allergens 시트 초기화 — 새 아이템만 추가, 기존 유지
-            async initAllergenSheet() {
-                const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
-                const allergens = JSON.parse(localStorage.getItem('tb_allergens') || '{}');
-                let added = 0;
-                items.forEach(i => {
-                    if (!allergens[i.id]) { allergens[i.id] = {}; added++; }
-                });
-                localStorage.setItem('tb_allergens', JSON.stringify(allergens));
-                await this.autoSyncToServer();
-                const el = document.getElementById('initSheetStatus');
-                el.style.display = 'block';
-                el.textContent = `✅ Allergens: ${items.length}개 아이템 중 ${added}개 새로 추가, ${items.length - added}개 기존 유지 → Google Sheets 동기화 완료`;
-                this.renderAllergenMatrix();
-            },
-
-            // ★ v4.4: Nutrition 시트 초기화 — 새 아이템만 추가, 기존 유지
-            async initNutritionSheet() {
-                const items = JSON.parse(localStorage.getItem('tb_menu_items') || '[]');
-                const nutrition = JSON.parse(localStorage.getItem('tb_nutrition') || '{}');
-                let added = 0;
-                items.forEach(i => {
-                    if (!nutrition[i.id]) { nutrition[i.id] = { calories: 0, carbs: 0, protein: 0, fat: 0, sugar: 0 }; added++; }
-                });
-                localStorage.setItem('tb_nutrition', JSON.stringify(nutrition));
-                await this.autoSyncToServer();
-                const el = document.getElementById('initSheetStatus');
-                el.style.display = 'block';
-                el.textContent = `✅ Nutrition: ${items.length}개 아이템 중 ${added}개 새로 추가, ${items.length - added}개 기존 유지 → Google Sheets 동기화 완료`;
-                this.renderNutritionTable();
             },
 
             // SETTINGS

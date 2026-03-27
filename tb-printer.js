@@ -1,10 +1,13 @@
 // ═══════════════════════════════════════════════════════════
-//  The Bap — ESC/POS Thermal Printer Module  v3.0
+//  The Bap — ESC/POS Thermal Printer Module  v3.1
 //
 //  Windows USB 프린터: winspool.Drv API 경유 (유일한 방법)
 //    → C# helper .exe를 1회 컴파일 후 재사용 (PowerShell보다 10배 빠름)
 //  Network 프린터: TCP 소켓 (port 9100)
 //  Linux/Mac USB: fs.writeFileSync (device path)
+//
+//  v3.1 — codepage 자동 감지: WPC1252(£=0xA3) / CP437(£=0x9C)
+//         printer-config.json의 codepage 필드로 지점별 설정 가능
 //
 //  No npm dependencies — pure Node.js
 // ═══════════════════════════════════════════════════════════
@@ -13,13 +16,42 @@ const fs = require('fs');
 const path = require('path');
 const os = require('os');
 
+// ─── Codepage Configuration ───
+// 프린터 모델에 따라 지원하는 codepage가 다름
+// WPC1252 (Code Page 16): £ = 0xA3 — 대부분의 최신 프린터
+// CP437   (Code Page 0):  £ = 0x9C — 구형/일부 프린터 (Bristol TBB 등)
+let _currentCodepage = 'WPC1252';  // default
+
+const CODEPAGE_MAP = {
+    'WPC1252': { cmd: '\x10', pound: '\xA3' },  // Code Page 16
+    'CP437':   { cmd: '\x00', pound: '\x9C' },  // Code Page 0
+    'CP858':   { cmd: '\x13', pound: '\x9C' },  // Code Page 19 (CP437 + €)
+};
+
+function setCodepage(cp) {
+    if (CODEPAGE_MAP[cp]) {
+        _currentCodepage = cp;
+        console.log(`[Printer] Codepage set to ${cp} (£ = 0x${CODEPAGE_MAP[cp].pound.charCodeAt(0).toString(16).toUpperCase()})`);
+    } else {
+        console.warn(`[Printer] Unknown codepage "${cp}", keeping ${_currentCodepage}`);
+    }
+}
+
+function getCodepageCmd() {
+    return ESC + '\x74' + (CODEPAGE_MAP[_currentCodepage] || CODEPAGE_MAP['WPC1252']).cmd;
+}
+
+function getPoundChar() {
+    return (CODEPAGE_MAP[_currentCodepage] || CODEPAGE_MAP['WPC1252']).pound;
+}
+
 // ─── ESC/POS Command Constants ───
 const ESC = '\x1B';
 const GS = '\x1D';
 const CMD = {
     INIT:           ESC + '\x40',
-    // Code Page 16 = WPC1252 (Windows-1252) — £ = 0xA3 ✓
-    CODEPAGE:       ESC + '\x74\x10',
+    // Codepage은 동적으로 설정됨 — getCodepageCmd() 사용
+    CODEPAGE:       null,  // 아래 buildOrderReceipt 등에서 getCodepageCmd() 호출
     BOLD_ON:        ESC + '\x45\x01',
     BOLD_OFF:       ESC + '\x45\x00',
     ALIGN_LEFT:     ESC + '\x61\x00',
@@ -55,13 +87,13 @@ function centerText(text, width = 48) {
 }
 
 function formatPrice(n) {
-    return '\xA3' + (Number(n) || 0).toFixed(2);
+    return getPoundChar() + (Number(n) || 0).toFixed(2);
 }
 
-// ─── Convert ESC/POS string to Buffer (Windows-1252 compatible) ───
+// ─── Convert ESC/POS string to Buffer ───
 // ESC/POS commands use raw bytes 0x00-0xFF.
 // JS string with \xNN chars → Buffer byte-by-byte.
-// UTF-8 £ (U+00A3) is already handled by using \xA3 in formatPrice.
+// £ 기호는 codepage에 따라 동적으로 결정됨 (getPoundChar())
 function toEscPosBuffer(str) {
     const len = str.length;
     const buf = Buffer.alloc(len);
@@ -84,7 +116,7 @@ function calcReceiptVat(order) {
 // ─── Build receipt ESC/POS data ───
 function buildOrderReceipt(order, branchName, vatNo) {
     let d = '';
-    d += CMD.INIT + CMD.CODEPAGE;
+    d += CMD.INIT + getCodepageCmd();
     d += CMD.ALIGN_CENTER + CMD.SIZE_DOUBLE + CMD.BOLD_ON;
     d += 'The Bap' + CMD.FEED;
     d += CMD.SIZE_NORMAL + CMD.BOLD_ON;
@@ -151,7 +183,7 @@ function buildOrderReceipt(order, branchName, vatNo) {
 // ─── Build report receipt ───
 function buildReportReceipt(data) {
     let d = '';
-    d += CMD.INIT + CMD.CODEPAGE;
+    d += CMD.INIT + getCodepageCmd();
     d += CMD.ALIGN_CENTER + CMD.SIZE_DOUBLE + CMD.BOLD_ON;
     d += 'The Bap' + CMD.FEED;
     d += CMD.SIZE_NORMAL + CMD.BOLD_ON;
@@ -515,5 +547,7 @@ module.exports = {
     openDrawerViaSpooler,
     ensureHelper,
     toEscPosBuffer,
+    setCodepage,
+    CODEPAGE_MAP,
     CMD,
 };

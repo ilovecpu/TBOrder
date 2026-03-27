@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
  * ════════════════════════════════════════════════════════════
- *  🍚 The Bap (더밥) — TBOrder Local Server v4.4.5
- *  Last Updated: 2026-03-19
+ *  🍚 The Bap (더밥) — TBOrder Local Server v4.4.9
+ *  Last Updated: 2026-03-27
  * ════════════════════════════════════════════════════════════
  *
  *  역할:
@@ -10,6 +10,7 @@
  *   2) WebSocket 실시간 통신 (주문 → 주방) — ws 패키지 사용
  *   3) REST API (상태 확인, 주문 데이터)
  *   4) Stripe Terminal 카드 결제 처리
+ *   5) 카드 단말기 연동: Poynt POS Bridge + myPOS ePOS API (v4.4.8)
  *
  *  설치: npm install
  *  실행: node tb-server.js
@@ -73,7 +74,7 @@ let _branchReady = false;                            // ★ POS 로그인 완료
 let _cashReportPct = 100;                            // ★ POS에서 설정한 Cash Report % (SUB 계산용)
 let _dailyPushTime = '23:50';                        // ★ POS에서 설정한 Daily Push 시간 (HH:MM)
 let _vatPct = 20;                                    // ★ POS에서 설정한 VAT 비율 (0-100%)
-const SERVER_VERSION = '4.4.5';
+const SERVER_VERSION = '4.4.9';
 
 // ════════════════════════════════════════════════════════════
 //  ★ Last Session Restore — 마지막 로그인 세션 저장/복원 (v4.4.0)
@@ -510,7 +511,7 @@ if (GOOGLE_MENU_API) {
 //  ★ TBMS Sales Data Push — 자동 푸시 (Daily/Live/EndSales)
 //  Branch server → TBMS Apps Script → Google Sheets → TBMS.html
 // ════════════════════════════════════════════════════════════
-const TBMS_API = process.env.TBMS_API || 'https://script.google.com/macros/s/AKfycbz_0Vcn1aCQyHZ7i9XRFp72f6O1H5kAsuaFATW4MMSnOhgWakAjMebH8ngMchYDHfS5/exec';
+const TBMS_API = process.env.TBMS_API || 'https://script.google.com/macros/s/AKfycby4irMFSDru9chUIforWPoeMHyDhd1CRrfoPJk65SBplyRCpkCDFtf4xkpb9ESr4y4z/exec';
 const TBMS_API_KEY = 'tBaP2026xKr!mGt9Qz';
 
 // ─── Generic POST to TBMS Apps Script (with redirect follow) ───
@@ -2300,6 +2301,47 @@ foreach ($p in $ports) {
     return;
   }
 
+  // ─── 프린터 목록 조회 API (Windows/Linux/Mac) ★ v4.4.6 ───
+  if (url === '/api/printer-list' && req.method === 'GET') {
+    const { execSync } = require('child_process');
+    const platform = process.platform;
+    let printers = [];
+    try {
+      if (platform === 'win32') {
+        // Windows: wmic 또는 PowerShell로 프린터 목록 조회
+        let raw = '';
+        try {
+          raw = execSync('wmic printer get Name /format:list', { encoding: 'utf8', timeout: 5000 });
+          printers = raw.split('\n')
+            .map(line => line.replace(/^Name=/, '').trim())
+            .filter(name => name.length > 0);
+        } catch (_) {
+          // wmic 실패 시 PowerShell fallback
+          raw = execSync('powershell -Command "Get-Printer | Select-Object -ExpandProperty Name"', { encoding: 'utf8', timeout: 8000 });
+          printers = raw.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+        }
+      } else if (platform === 'linux') {
+        const raw = execSync('lpstat -a 2>/dev/null || true', { encoding: 'utf8', timeout: 5000 });
+        printers = raw.split('\n')
+          .map(line => (line.split(/\s+/)[0] || '').trim())
+          .filter(s => s.length > 0);
+      } else if (platform === 'darwin') {
+        const raw = execSync('lpstat -a 2>/dev/null || true', { encoding: 'utf8', timeout: 5000 });
+        printers = raw.split('\n')
+          .map(line => (line.split(/\s+/)[0] || '').trim())
+          .filter(s => s.length > 0);
+      }
+      console.log(`[Printer] Detected ${printers.length} printer(s):`, printers.join(', '));
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ printers, platform }));
+    } catch (e) {
+      console.warn('[Printer] Failed to list printers:', e.message);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ printers: [], platform, error: e.message }));
+    }
+    return;
+  }
+
   if (url === '/api/printer-config' && req.method === 'GET') {
     try {
       const cfg = fs.existsSync(PRINTER_CONFIG_FILE) ? JSON.parse(fs.readFileSync(PRINTER_CONFIG_FILE, 'utf8')) : {};
@@ -2340,7 +2382,12 @@ foreach ($p in $ports) {
         const cfgRaw = fs.existsSync(PRINTER_CONFIG_FILE) ? fs.readFileSync(PRINTER_CONFIG_FILE, 'utf8') : '{}';
         const cfg = JSON.parse(cfgRaw);
 
-        console.log(`[Printer] Request: type=${data.type} | config: ip=${cfg.ip||''} device=${cfg.device||''} printerName=${cfg.printerName||''}`);
+        // ★ v3.1: codepage 설정 적용 (프린터별 £ 기호 인코딩)
+        if (cfg.codepage) {
+          printer.setCodepage(cfg.codepage);
+        }
+
+        console.log(`[Printer] Request: type=${data.type} | config: ip=${cfg.ip||''} device=${cfg.device||''} printerName=${cfg.printerName||''} codepage=${cfg.codepage||'WPC1252'}`);
 
         if (!cfg.ip && !cfg.device && !cfg.printerName) {
           res.writeHead(400, { 'Content-Type': 'application/json' });
@@ -2433,8 +2480,19 @@ foreach ($p in $ports) {
           res.end(JSON.stringify({ error: 'No printer configured. Save config first.' }));
           return;
         }
-        // Build test print
-        let d = printer.CMD.INIT + printer.CMD.CODEPAGE;
+        // ★ v3.1: codepage 설정 적용
+        const savedCfg = fs.existsSync(PRINTER_CONFIG_FILE) ? JSON.parse(fs.readFileSync(PRINTER_CONFIG_FILE, 'utf8')) : {};
+        if (savedCfg.codepage || testCfg.codepage) {
+          printer.setCodepage(savedCfg.codepage || testCfg.codepage);
+        }
+
+        // Build test print — codepage를 동적으로 적용
+        const cpMap = printer.CODEPAGE_MAP;
+        const cpName = savedCfg.codepage || testCfg.codepage || 'WPC1252';
+        const cpCmd = cpMap[cpName] ? '\x1B\x74' + cpMap[cpName].cmd : '\x1B\x74\x10';
+        const poundChar = cpMap[cpName] ? cpMap[cpName].pound : '\xA3';
+
+        let d = printer.CMD.INIT + cpCmd;
         d += printer.CMD.ALIGN_CENTER + printer.CMD.SIZE_DOUBLE + printer.CMD.BOLD_ON;
         d += 'PRINTER TEST' + printer.CMD.FEED;
         d += printer.CMD.SIZE_NORMAL + printer.CMD.BOLD_OFF;
@@ -2442,9 +2500,10 @@ foreach ($p in $ports) {
         d += printer.CMD.DASHES + printer.CMD.FEED;
         d += 'Connection: OK' + printer.CMD.FEED;
         d += `Target: ${testCfg.ip || testCfg.device || testCfg.printerName}` + printer.CMD.FEED;
+        d += `Codepage: ${cpName}` + printer.CMD.FEED;
         d += `Time: ${new Date().toLocaleString('en-GB')}` + printer.CMD.FEED;
         d += printer.CMD.DASHES + printer.CMD.FEED;
-        d += 'Test: \xA3 symbol OK?' + printer.CMD.FEED;
+        d += `Test: ${poundChar}12.50 symbol OK?` + printer.CMD.FEED;
         d += 'If you can read this,' + printer.CMD.FEED;
         d += 'the printer is working!' + printer.CMD.FEED;
         d += printer.CMD.FEED + printer.CMD.FEED + printer.CMD.FEED;
@@ -3044,6 +3103,330 @@ foreach ($p in $ports) {
       res.writeHead(500, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ error: e.message }));
     }
+    return;
+  }
+
+  // ─── myPOS ePOS API Helper Functions ───
+  // OAuth2 토큰 발급
+  async function _myposGetToken(clientId, clientSecret) {
+    const https = require('https');
+    const postData = `grant_type=client_credentials&client_id=${encodeURIComponent(clientId)}&client_secret=${encodeURIComponent(clientSecret)}`;
+    return new Promise((resolve, reject) => {
+      const req = https.request({
+        hostname: 'auth-api.mypos.com',
+        port: 443,
+        path: '/oauth/token',
+        method: 'POST',
+        timeout: 10000,
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'Content-Length': Buffer.byteLength(postData) }
+      }, (res) => {
+        let data = '';
+        res.on('data', c => data += c);
+        res.on('end', () => {
+          try {
+            const json = JSON.parse(data);
+            resolve(json.access_token || null);
+          } catch (e) { resolve(null); }
+        });
+      });
+      req.on('error', (e) => reject(e));
+      req.on('timeout', () => { req.destroy(); reject(new Error('myPOS auth timeout')); });
+      req.write(postData);
+      req.end();
+    });
+  }
+
+  // myPOS ePOS 결제 요청
+  async function _myposSendPayment(token, tid, amountCents, currency, referenceId) {
+    const https = require('https');
+    const payData = JSON.stringify({ tid, amount: amountCents, currency, reference: referenceId });
+    return new Promise((resolve, reject) => {
+      const req = https.request({
+        hostname: 'api.mypos.com',
+        port: 443,
+        path: '/v1/epos/payments',
+        method: 'POST',
+        timeout: 60000,
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Content-Length': Buffer.byteLength(payData)
+        }
+      }, (res) => {
+        let data = '';
+        res.on('data', c => data += c);
+        res.on('end', () => {
+          try {
+            const json = JSON.parse(data);
+            const success = res.statusCode === 200 && (json.status === 'completed' || json.status === 'approved' || json.status === 'COMPLETED' || json.status === 'APPROVED');
+            resolve({
+              success,
+              status: json.status || 'unknown',
+              transactionId: json.transactionId || json.id || '',
+              message: success ? '결제 완료' : (json.message || json.error || '결제 실패')
+            });
+          } catch (e) {
+            resolve({ success: false, error: '응답 파싱 실패', raw: data.substring(0, 500) });
+          }
+        });
+      });
+      req.on('error', (e) => reject(e));
+      req.on('timeout', () => { req.destroy(); reject(new Error('myPOS payment timeout (60초)')); });
+      req.write(payData);
+      req.end();
+    });
+  }
+
+  // ─── Card Terminal API (Poynt + myPOS) ★ v4.4.8 ───
+  const CARD_TERMINAL_CONFIG_FILE = path.join(DATA_DIR, 'card-terminal-config.json');
+
+  // 카드 단말기 설정 조회
+  if (url === '/api/card-terminal-config' && req.method === 'GET') {
+    try {
+      const cfg = fs.existsSync(CARD_TERMINAL_CONFIG_FILE) ? JSON.parse(fs.readFileSync(CARD_TERMINAL_CONFIG_FILE, 'utf8')) : {};
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(cfg));
+    } catch (e) {
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({}));
+    }
+    return;
+  }
+
+  // 카드 단말기 설정 저장
+  if (url === '/api/card-terminal-config' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const cfg = JSON.parse(body);
+        safeWriteFileSync(CARD_TERMINAL_CONFIG_FILE, JSON.stringify(cfg, null, 2));
+        console.log(`  💳 카드 단말기 설정 저장: mode=${cfg.mode}`);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // 카드 단말기 연결 테스트
+  if (url === '/api/card-terminal-test' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const { mode } = JSON.parse(body);
+        const cfgRaw = fs.existsSync(CARD_TERMINAL_CONFIG_FILE) ? fs.readFileSync(CARD_TERMINAL_CONFIG_FILE, 'utf8') : '{}';
+        const cfg = JSON.parse(cfgRaw);
+
+        if (mode === 'poynt') {
+          // ── Poynt POS Bridge 테스트 (port 55555) ──
+          const ip = cfg.poyntIp;
+          if (!ip) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'Poynt IP가 설정되지 않았습니다' }));
+            return;
+          }
+          const testReq = http.get(`http://${ip}:55555/v1/discover`, { timeout: 5000 }, (testRes) => {
+            let data = '';
+            testRes.on('data', c => data += c);
+            testRes.on('end', () => {
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: true, info: `Poynt @ ${ip}` }));
+            });
+          });
+          testReq.on('error', (e) => {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: `Poynt 연결 실패: ${e.message}` }));
+          });
+          testReq.on('timeout', () => {
+            testReq.destroy();
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'Poynt 연결 시간 초과 (5초)' }));
+          });
+
+        } else if (mode === 'mypos') {
+          // ── myPOS ePOS API 테스트 (OAuth2 토큰 발급) ──
+          const { myposClientId, myposClientSecret, myposTID } = cfg;
+          if (!myposClientId || !myposClientSecret) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'myPOS Client ID/Secret이 설정되지 않았습니다' }));
+            return;
+          }
+          try {
+            const token = await _myposGetToken(myposClientId, myposClientSecret);
+            if (token) {
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: true, info: `myPOS TID: ${myposTID || '(no TID)'}` }));
+            } else {
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: false, error: 'OAuth2 토큰 발급 실패 — Client 자격증명을 확인하세요' }));
+            }
+          } catch (te) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: `myPOS API 오류: ${te.message}` }));
+          }
+
+        } else {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: '알 수 없는 모드' }));
+        }
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // 카드 단말기 결제 요청 (Poynt / myPOS 통합)
+  if (url === '/api/card-terminal-payment' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', async () => {
+      try {
+        const { mode, amount, currency, referenceId } = JSON.parse(body);
+        const cfgRaw = fs.existsSync(CARD_TERMINAL_CONFIG_FILE) ? fs.readFileSync(CARD_TERMINAL_CONFIG_FILE, 'utf8') : '{}';
+        const cfg = JSON.parse(cfgRaw);
+
+        if (!amount) {
+          res.writeHead(400, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: '결제 금액이 필요합니다' }));
+          return;
+        }
+
+        if (mode === 'poynt') {
+          // ── Poynt POS Bridge 결제 ──
+          const ip = cfg.poyntIp;
+          if (!ip) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'Poynt IP 미설정' }));
+            return;
+          }
+          const amountInPence = Math.round(amount * 100);
+          const paymentData = JSON.stringify({
+            action: 'sale',
+            purchaseAmount: amountInPence,
+            tipAmount: 0,
+            currency: currency || 'GBP',
+            referenceId: referenceId || `TB-${Date.now()}`
+          });
+
+          const payReq = http.request({
+            hostname: ip, port: 55555, path: '/v1/transactions', method: 'POST',
+            timeout: 60000,
+            headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(paymentData) }
+          }, (payRes) => {
+            let data = '';
+            payRes.on('data', c => data += c);
+            payRes.on('end', () => {
+              try {
+                const result = JSON.parse(data);
+                const success = payRes.statusCode === 200 && (result.status === 'COMPLETED' || result.status === 'AUTHORIZED');
+                console.log(`  💳 Poynt 결제 ${success ? '성공' : '실패'}: £${amount}`);
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success, status: result.status, transactionId: result.transactionId || '', message: success ? '결제 완료' : (result.message || '결제 실패') }));
+              } catch (pe) {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: '응답 파싱 실패' }));
+              }
+            });
+          });
+          payReq.on('error', (e) => {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: `Poynt 연결 실패: ${e.message}` }));
+          });
+          payReq.on('timeout', () => {
+            payReq.destroy();
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: '결제 시간 초과 (60초)' }));
+          });
+          payReq.write(paymentData);
+          payReq.end();
+
+        } else if (mode === 'mypos') {
+          // ── myPOS ePOS API 결제 ──
+          const { myposClientId, myposClientSecret, myposTID } = cfg;
+          if (!myposClientId || !myposClientSecret || !myposTID) {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: 'myPOS 설정이 완전하지 않습니다 (TID/ClientID/Secret)' }));
+            return;
+          }
+          try {
+            const token = await _myposGetToken(myposClientId, myposClientSecret);
+            if (!token) {
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: false, error: 'myPOS OAuth 토큰 발급 실패' }));
+              return;
+            }
+            const amountInCents = Math.round(amount * 100);
+            const result = await _myposSendPayment(token, myposTID, amountInCents, currency || 'GBP', referenceId || `TB-${Date.now()}`);
+            console.log(`  💳 myPOS 결제 ${result.success ? '성공' : '실패'}: £${amount}`);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(result));
+          } catch (me) {
+            console.error('  ⚠️ myPOS 결제 오류:', me.message);
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: `myPOS API 오류: ${me.message}` }));
+          }
+
+        } else {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: false, error: '수동 모드 — 단말기에 직접 입력하세요' }));
+        }
+      } catch (e) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: e.message }));
+      }
+    });
+    return;
+  }
+
+  // 카드 단말기 결제 취소
+  if (url === '/api/card-terminal-cancel' && req.method === 'POST') {
+    let body = '';
+    req.on('data', c => body += c);
+    req.on('end', () => {
+      try {
+        const { mode } = JSON.parse(body);
+        const cfgRaw = fs.existsSync(CARD_TERMINAL_CONFIG_FILE) ? fs.readFileSync(CARD_TERMINAL_CONFIG_FILE, 'utf8') : '{}';
+        const cfg = JSON.parse(cfgRaw);
+        console.log(`  ⛔ 카드 결제 취소 요청 (mode=${mode})`);
+
+        if (mode === 'poynt' && cfg.poyntIp) {
+          // Poynt POS Bridge cancel — DELETE 또는 cancel endpoint
+          const cancelReq = http.request({
+            hostname: cfg.poyntIp, port: 55555, path: '/v1/transactions/cancel', method: 'POST',
+            timeout: 5000,
+            headers: { 'Content-Type': 'application/json', 'Content-Length': 2 }
+          }, (cancelRes) => {
+            let data = '';
+            cancelRes.on('data', c => data += c);
+            cancelRes.on('end', () => {
+              res.writeHead(200, { 'Content-Type': 'application/json' });
+              res.end(JSON.stringify({ success: true, info: 'Poynt cancel sent' }));
+            });
+          });
+          cancelReq.on('error', () => {
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: true, info: 'Cancel sent (terminal may have already completed)' }));
+          });
+          cancelReq.on('timeout', () => { cancelReq.destroy(); });
+          cancelReq.write('{}');
+          cancelReq.end();
+        } else {
+          // myPOS 또는 기타 — 서버측에서 추가 취소 불필요 (API 타임아웃으로 처리)
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ success: true, info: 'Cancel acknowledged' }));
+        }
+      } catch (e) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ success: true }));
+      }
+    });
     return;
   }
 

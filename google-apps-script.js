@@ -1,6 +1,6 @@
 /**
  * ════════════════════════════════════════════════════════════
- *  🍚 The Bap — Google Apps Script v2.4
+ *  🍚 The Bap — Google Apps Script v2.6
  *  Menu API + Orders + Image Upload + TBMS Stores + Users + DailySales + EndSales
  *  + Branches, BranchVisibility, Allergens, Nutrition
  *  + Category showInKiosk/showInPos + Item showOnKiosk/showOnPos boolean parsing
@@ -51,11 +51,11 @@ const SH_ALLERGENS = 'Allergens';
 const SH_NUTRITION = 'Nutrition';
 const SH_ORDER = 'Orders';
 
-const ALLERGENS_HEADERS = ['itemId','Sesame','Soy','Egg','Peanuts','Tree Nuts','Milk','Gluten','Fish','Shellfish','Mustard','Celery','Lupin','Molluscs','Sulphites'];
-const NUTRITION_HEADERS = ['itemId','calories','carbs','protein','fat','sugar'];
+const ALLERGENS_HEADERS = ['itemId','Celery','Gluten','Crustaceans','Eggs','Fish','Lupin','Milk','Molluscs','Mustard','Nuts','Peanuts','Sesame','Soya','Sulphur Dioxide'];
+const NUTRITION_HEADERS = ['itemId','carbs','protein','fat','sugar','calories'];
 
 // ─── TBMS API (지점 정보 읽기 전용) ───
-const TBMS_API = 'https://script.google.com/macros/s/AKfycbwaC6b6WTo4Gw_UpgbpbrVDj52ooG-qqcqPeR4Tgne_bWbzDomXw14SlD0q6QiszZw5/exec';
+const TBMS_API = 'https://script.google.com/macros/s/AKfycby4irMFSDru9chUIforWPoeMHyDhd1CRrfoPJk65SBplyRCpkCDFtf4xkpb9ESr4y4z/exec';
 const TBMS_KEY = 'tBaP2026xKr!mGt9Qz';
 
 // ─── Google Drive 이미지 폴더 ───
@@ -118,6 +118,7 @@ function doPost(e) {
 
       // ─── 지점별 가격 ───
       case 'updateBranchPricing': updateBranchPricing(data.branchPricing); break;
+
 
       // ─── 이미지 업로드 ───
       case 'uploadImage':      return jsonOut(uploadImageToDrive(data));
