@@ -21,7 +21,7 @@
 
 ---
 
-**URL 3** — `AKfycby4irMFSDru9ch...` (TBMS_API)
+**URL 3** — `AKfycbxRqSo00Q3YUzKk...` (TBMS_API)
 - **용도**: The Bap Management System — 지점·직원 정보 조회 (Read-only)
 - **사용 파일**: tb-server.js, TBPos.html, TBMain_Kiosk.html, google-apps-script.js
 - **연결된 시트**: **별도의 TBMS 전용 Google Sheet** — 아래 탭 포함

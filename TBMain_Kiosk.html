@@ -1855,7 +1855,7 @@
                 });
                 // 1) TBMS API 직접 호출 (GitHub Pages 환경 — 서버 없음)
                 try {
-                    const TBMS_API = 'https://script.google.com/macros/s/AKfycby4irMFSDru9chUIforWPoeMHyDhd1CRrfoPJk65SBplyRCpkCDFtf4xkpb9ESr4y4z/exec';
+                    const TBMS_API = 'https://script.google.com/macros/s/AKfycbxRqSo00Q3YUzKkqhBESbNq0mOX_ruQ_Dn8_gWaNa_94YhEjuA08HcYNCzoWdVBnG88/exec';
                     const url = TBMS_API + '?action=getSheet&sheet=Users&apikey=' + encodeURIComponent('tBaP2026xKr!mGt9Qz');
                     console.log('[Admin] Fetching TBMS Users...');
                     const resp = await fetch(url, {redirect:'follow'});

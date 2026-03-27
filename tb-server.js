@@ -511,7 +511,7 @@ if (GOOGLE_MENU_API) {
 //  ★ TBMS Sales Data Push — 자동 푸시 (Daily/Live/EndSales)
 //  Branch server → TBMS Apps Script → Google Sheets → TBMS.html
 // ════════════════════════════════════════════════════════════
-const TBMS_API = process.env.TBMS_API || 'https://script.google.com/macros/s/AKfycby4irMFSDru9chUIforWPoeMHyDhd1CRrfoPJk65SBplyRCpkCDFtf4xkpb9ESr4y4z/exec';
+const TBMS_API = process.env.TBMS_API || 'https://script.google.com/macros/s/AKfycbxRqSo00Q3YUzKkqhBESbNq0mOX_ruQ_Dn8_gWaNa_94YhEjuA08HcYNCzoWdVBnG88/exec';
 const TBMS_API_KEY = 'tBaP2026xKr!mGt9Qz';
 
 // ─── Generic POST to TBMS Apps Script (with redirect follow) ───

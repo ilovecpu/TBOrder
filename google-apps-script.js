@@ -55,7 +55,7 @@ const ALLERGENS_HEADERS = ['itemId','Celery','Gluten','Crustaceans','Eggs','Fish
 const NUTRITION_HEADERS = ['itemId','carbs','protein','fat','sugar','calories'];
 
 // ─── TBMS API (지점 정보 읽기 전용) ───
-const TBMS_API = 'https://script.google.com/macros/s/AKfycby4irMFSDru9chUIforWPoeMHyDhd1CRrfoPJk65SBplyRCpkCDFtf4xkpb9ESr4y4z/exec';
+const TBMS_API = 'https://script.google.com/macros/s/AKfycbxRqSo00Q3YUzKkqhBESbNq0mOX_ruQ_Dn8_gWaNa_94YhEjuA08HcYNCzoWdVBnG88/exec';
 const TBMS_KEY = 'tBaP2026xKr!mGt9Qz';
 
 // ─── Google Drive 이미지 폴더 ───
